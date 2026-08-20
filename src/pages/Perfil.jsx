@@ -5,7 +5,6 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, StatPill, GoldDivider } from '@/components/ui/marian';
 import { formatDate } from '@/lib/marianDates';
-import ExportJourneyPdf from '@/components/ExportJourneyPdf';
 import SpiritualStatus from '@/components/perfil/SpiritualStatus';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
@@ -108,7 +107,7 @@ export default function Perfil() {
       {/* Menu */}
       <div className="space-y-1">
         <MenuItem to="/minha-consagracao" icon={Flower2} label="Minha Consagração" />
-        <ExportJourneyPdf />
+        <MenuItem to="/caminho" icon={Flower2} label="Ver minha caminhada" />
         <MenuItem to="/calendario" icon={Calendar} label="Calendário Mariano" />
         <MenuItem to="/intencoes" icon={Heart} label="Intenções de Oração" />
         <MenuItem to="/jornadas" icon={BookOpen} label="Jornadas Coletivas" />

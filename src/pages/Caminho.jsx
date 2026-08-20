@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, GoldDivider } from '@/components/ui/marian';
 import MedalGrid from '@/components/caminho/MedalGrid';
+import ExportJourneyPdf from '@/components/ExportJourneyPdf';
 import { formatDate, daysUntil, parseDate, daysBetween } from '@/lib/marianDates';
 
 const DEFAULT_PHASES = {
@@ -251,6 +252,11 @@ export default function Caminho() {
             </div>
           );
         })}
+      </div>
+
+      <GoldDivider />
+      <div className="flex justify-center">
+        <ExportJourneyPdf />
       </div>
     </div>
   );
