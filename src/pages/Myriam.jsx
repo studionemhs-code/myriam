@@ -1,16 +1,20 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Leaf } from 'lucide-react';
+import { Leaf, MessageCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
 import Composer from '@/components/myriam/Composer';
 import PostCard from '@/components/myriam/PostCard';
 import StoriesBar from '@/components/myriam/StoriesBar';
+import ChatList from '@/components/myriam/ChatList';
 
 export default function Myriam() {
   const { user, loading } = useCurrentUser();
+  const { isVisible } = useFeatureFlags();
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [tab, setTab] = useState('feed');
 
   const load = useCallback(async () => {
     setLoadingPosts(true);
@@ -32,11 +36,26 @@ export default function Myriam() {
     return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
   }
 
+  const showChat = isVisible('chat');
+
   return (
     <div>
       <PageHeader title="Myriam" subtitle="A rede social da comunidade mariana" icon={Leaf} />
 
-      <div className="mb-5 rounded-2xl bg-gradient-to-br from-marian/10 to-gold/10 p-4">
+      {showChat && (
+        <div className="mb-5 flex gap-1 rounded-xl bg-muted/60 p-1">
+          <button onClick={() => setTab('feed')} className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${tab === 'feed' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
+            <Leaf className="h-4 w-4" /> Feed
+          </button>
+          <button onClick={() => setTab('chat')} className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${tab === 'chat' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
+            <MessageCircle className="h-4 w-4" /> Conversas
+          </button>
+        </div>
+      )}
+
+      {tab === 'feed' ? (
+        <>
+        <div className="mb-5 rounded-2xl bg-gradient-to-br from-marian/10 to-gold/10 p-4">
         <p className="font-display italic text-sm text-muted-foreground">
           "Eis aqui a serva do Senhor." — Um espaço para partilhar a caminhada, testemunhos e intenções com seus irmãos e irmãs em Maria.
         </p>
@@ -60,6 +79,10 @@ export default function Myriam() {
             <PostCard key={p.id} post={p} user={user} />
           ))}
         </div>
+      )}
+        </>
+      ) : (
+        <ChatList user={user} />
       )}
     </div>
   );

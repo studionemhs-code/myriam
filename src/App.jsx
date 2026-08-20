@@ -29,7 +29,6 @@ import Perfil from '@/pages/Perfil';
 import Configuracoes from '@/pages/Configuracoes';
 import Myriam from '@/pages/Myriam';
 import Notificacoes from '@/pages/Notificacoes';
-import Chat from '@/pages/Chat';
 import ChatConversation from '@/pages/ChatConversation';
 import PublicProfile from '@/pages/PublicProfile';
 import JourneyDetail from '@/pages/JourneyDetail';
@@ -99,7 +98,7 @@ const AuthenticatedApp = () => {
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/myriam" element={<Myriam />} />
           <Route path="/notificacoes" element={<Notificacoes />} />
-          <Route path="/chat" element={<Chat />} />
+          <Route path="/chat" element={<Navigate to="/myriam" replace />} />
           <Route path="/chat/:id" element={<ChatConversation />} />
           <Route path="/perfil/:userId" element={<PublicProfile />} />
           <Route path="/jornadas/:id" element={<JourneyDetail />} />

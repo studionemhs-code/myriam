@@ -9,7 +9,7 @@ const DEFAULT_FLAGS = [
   { feature: 'myriam', label: 'Myriam (Comunidade)' },
   { feature: 'intencoes', label: 'Intenções de Oração' },
   { feature: 'jornadas', label: 'Jornadas Coletivas' },
-  { feature: 'chat', label: 'Conversas (Chat)' },
+  { feature: 'chat', label: 'Conversas (no Myriam)' },
   { feature: 'calendario', label: 'Calendário Mariano' },
 ];
 

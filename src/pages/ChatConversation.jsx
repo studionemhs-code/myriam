@@ -120,7 +120,7 @@ export default function ChatConversation() {
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 140px)' }}>
       <div className="mb-3 flex items-center gap-3 border-b border-border pb-3">
-        <button onClick={() => navigate('/chat')} className="text-muted-foreground"><ChevronLeft className="h-5 w-5" /></button>
+        <button onClick={() => navigate('/myriam')} className="text-muted-foreground"><ChevronLeft className="h-5 w-5" /></button>
         {otherPhoto ? <img src={otherPhoto} className="h-10 w-10 rounded-full object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-full bg-marian/15 text-sm text-marian">{(otherName || 'A')[0]}</div>}
         <p className="font-display text-lg">{otherName}</p>
       </div>

@@ -1,12 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageCircle, Plus, Search, X } from 'lucide-react';
+import { Plus, Search, X, MessageCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { PageHeader, EmptyState } from '@/components/ui/marian';
+import { EmptyState } from '@/components/ui/marian';
 
-export default function Chat() {
-  const { user, loading } = useCurrentUser();
+export default function ChatList({ user }) {
   const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [showNew, setShowNew] = useState(false);
@@ -50,10 +48,6 @@ export default function Chat() {
     navigate(`/chat/${conv.id}`);
   };
 
-  if (loading || !user) {
-    return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
-  }
-
   const otherInfo = (conv) => {
     const idx = conv.participants.indexOf(user.id);
     const otherIdx = idx === 0 ? 1 : 0;
@@ -62,8 +56,6 @@ export default function Chat() {
 
   return (
     <div>
-      <PageHeader title="Conversas" subtitle="Mensagens privadas com a comunidade" icon={MessageCircle} />
-
       <button onClick={() => setShowNew(true)} className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground">
         <Plus className="h-4 w-4" /> Nova conversa
       </button>
