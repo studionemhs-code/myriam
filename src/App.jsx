@@ -35,6 +35,7 @@ import JourneyDetail from '@/pages/JourneyDetail';
 import AdminLayout from '@/components/AdminLayout';
 import AdminRoute from '@/components/AdminRoute';
 import AdminDashboard from '@/pages/admin/Dashboard';
+import Stats from '@/pages/admin/Stats';
 import ACAMFAdmin from '@/pages/admin/ACAMFAdmin';
 import Reports from '@/pages/admin/Reports';
 import UsersAdmin from '@/pages/admin/Users';
@@ -107,6 +108,7 @@ const AuthenticatedApp = () => {
       <Route element={<AdminRoute />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/estatisticas" element={<Stats />} />
           <Route path="/admin/acamf" element={<ACAMFAdmin />} />
           <Route path="/admin/dias" element={<PreparationDaysAdmin />} />
           <Route path="/admin/calendario" element={<CalendarAdmin />} />

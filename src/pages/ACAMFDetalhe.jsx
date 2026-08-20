@@ -21,6 +21,9 @@ export default function ACAMFDetalhe() {
       try {
         const c = await base44.entities.ACAMFContent.get(id);
         setContent(c);
+        if (c.status === 'publicado') {
+          base44.functions.invoke('incrementContentView', { content_id: id }).catch(() => {});
+        }
         if (c.category_id) {
           const cats = await base44.entities.ACAMFCategory.filter({ id: c.category_id });
           setCategory(cats[0]);

@@ -88,7 +88,12 @@
     },
     "related_day_number": {
       "type": "integer",
-      "description": "Dia da prepara\u00e7\u00e3o ao qual este conte\u00fado est\u00e1 recomendado"
+      "description": "Dia da prepara\u00e7\u00e3o ao qual este conte\u00fado \u00e9 recomendado"
+    },
+    "view_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "N\u00famero de acessos ao conte\u00fado"
     }
   },
   "required": [
