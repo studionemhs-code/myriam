@@ -16,7 +16,7 @@ export default function Onboarding() {
       await update({ status: 'interessado', onboarding_completed: true });
       navigate('/acamf');
     } else if (path === 'preparar') {
-      await update({ status: 'interessado', onboarding_completed: true });
+      await update({ status: 'preparacao', onboarding_completed: true });
       navigate('/caminho');
     } else if (path === 'consagrado') {
       setStep(1);
