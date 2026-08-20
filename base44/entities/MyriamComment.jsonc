@@ -1,0 +1,23 @@
+{
+  "name": "MyriamComment",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_photo": {
+      "type": "string",
+      "format": "uri"
+    }
+  },
+  "required": [
+    "post_id",
+    "text"
+  ]
+}

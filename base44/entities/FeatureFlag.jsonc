@@ -1,0 +1,24 @@
+{
+  "name": "FeatureFlag",
+  "type": "object",
+  "properties": {
+    "feature": {
+      "type": "string",
+      "description": "Identificador \u00fanico da funcionalidade (ex: acamf, myriam)"
+    },
+    "label": {
+      "type": "string",
+      "description": "Nome amig\u00e1vel exibido no painel administrativo"
+    },
+    "visible": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se a funcionalidade aparece no app para os usu\u00e1rios"
+    }
+  },
+  "required": [
+    "feature",
+    "label",
+    "visible"
+  ]
+}

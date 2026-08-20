@@ -1,0 +1,39 @@
+{
+  "properties": {
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "publicacao",
+        "comentario",
+        "usuario",
+        "mensagem",
+        "conteudo",
+        "intencao"
+      ]
+    },
+    "target_id": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "analisando",
+        "resolvido"
+      ],
+      "default": "pendente"
+    },
+    "resolution_note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_type",
+    "reason"
+  ],
+  "name": "Report",
+  "type": "object"
+}

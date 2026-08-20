@@ -1,0 +1,35 @@
+{
+  "properties": {
+    "day_number": {
+      "type": "integer"
+    },
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "description": "Texto da reflex\u00e3o pessoal"
+    },
+    "is_private": {
+      "type": "boolean",
+      "default": true,
+      "description": "Privada por padr\u00e3o \u2014 somente o autor visualiza"
+    },
+    "mood": {
+      "type": "string",
+      "enum": [
+        "grato",
+        "esperan\u00e7oso",
+        "inquieto",
+        "pacifico",
+        "outros"
+      ]
+    }
+  },
+  "required": [
+    "day_number",
+    "content"
+  ],
+  "name": "Reflection",
+  "type": "object"
+}

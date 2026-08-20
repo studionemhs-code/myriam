@@ -1,0 +1,42 @@
+{
+  "properties": {
+    "current_day": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1
+    },
+    "completed_days": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "default": []
+    },
+    "started_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "last_access_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ativa",
+        "concluida",
+        "pausada"
+      ],
+      "default": "ativa"
+    }
+  },
+  "required": [
+    "current_day"
+  ],
+  "name": "UserProgress",
+  "type": "object"
+}

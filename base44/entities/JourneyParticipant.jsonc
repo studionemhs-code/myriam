@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "journey_id": {
+      "type": "string"
+    },
+    "joined_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "progress": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "journey_id"
+  ],
+  "name": "JourneyParticipant",
+  "type": "object"
+}

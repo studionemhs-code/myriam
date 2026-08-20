@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 270 14% 94%;
+    --foreground: 272 40% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 272 40% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 272 40% 14%;
+    --primary: 272 49% 34%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 272 30% 92%;
+    --secondary-foreground: 272 45% 20%;
+    --muted: 272 18% 92%;
+    --muted-foreground: 272 16% 42%;
+    --accent: 272 40% 90%;
+    --accent-foreground: 272 45% 18%;
+    --gold: 41 50% 52%;
+    --gold-soft: 41 60% 88%;
+    --marian: 272 49% 34%;
+    --marian-light: 272 40% 55%;
+    --deep: 272 45% 16%;
+    --destructive: 0 70% 48%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 272 18% 88%;
+    --input: 272 18% 88%;
+    --ring: 272 49% 34%;
+    --chart-1: 272 49% 34%;
+    --chart-2: 41 50% 52%;
+    --chart-3: 272 40% 55%;
+    --chart-4: 152 30% 45%;
+    --chart-5: 12 60% 55%;
+    --radius: 0.5rem;
+    --font-heading: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --sidebar-background: 272 45% 16%;
+    --sidebar-foreground: 270 20% 88%;
+    --sidebar-primary: 41 50% 52%;
+    --sidebar-primary-foreground: 272 45% 14%;
+    --sidebar-accent: 272 35% 24%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 272 30% 26%;
+    --sidebar-ring: 41 50% 52%;
+  }
+
+  .dark {
+    --background: 272 35% 10%;
+    --foreground: 270 20% 96%;
+    --card: 272 32% 14%;
+    --card-foreground: 270 20% 96%;
+    --popover: 272 32% 14%;
+    --popover-foreground: 270 20% 96%;
+    --primary: 272 45% 60%;
+    --primary-foreground: 272 45% 12%;
+    --secondary: 272 25% 22%;
+    --secondary-foreground: 270 20% 96%;
+    --muted: 272 25% 22%;
+    --muted-foreground: 270 14% 65%;
+    --accent: 272 30% 26%;
+    --accent-foreground: 270 20% 96%;
+    --gold: 41 55% 60%;
+    --gold-soft: 41 40% 32%;
+    --marian: 272 45% 60%;
+    --marian-light: 272 50% 72%;
+    --deep: 272 42% 12%;
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 272 25% 26%;
+    --input: 272 25% 26%;
+    --ring: 272 45% 60%;
+    --sidebar-background: 272 42% 8%;
+    --sidebar-foreground: 270 20% 88%;
+    --sidebar-primary: 41 55% 60%;
+    --sidebar-primary-foreground: 272 45% 12%;
+    --sidebar-accent: 272 30% 18%;
+    --sidebar-accent-foreground: 270 20% 96%;
+    --sidebar-border: 272 25% 22%;
+    --sidebar-ring: 41 55% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .text-gold {
+    color: hsl(var(--gold));
+  }
+  .bg-marian {
+    background-color: hsl(var(--marian));
+  }
+  .bg-deep {
+    background-color: hsl(var(--deep));
+  }
+  .gold-line {
+    background: linear-gradient(90deg, transparent, hsl(var(--gold)), transparent);
+    height: 1px;
+  }
+  .ornament {
+    color: hsl(var(--gold));
+    letter-spacing: 0.4em;
+  }
+  .glass-card {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px);
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');

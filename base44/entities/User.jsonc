@@ -1,0 +1,72 @@
+{
+  "properties": {
+    "role": {
+      "type": "string",
+      "description": "Papel do usu\u00e1rio no ecossistema Theotokos",
+      "enum": [
+        "admin",
+        "moderator",
+        "user"
+      ],
+      "default": "user"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Breve biografia do usu\u00e1rio"
+    },
+    "photo_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Foto de perfil"
+    },
+    "status": {
+      "type": "string",
+      "description": "Est\u00e1gio da caminhada do usu\u00e1rio",
+      "enum": [
+        "interessado",
+        "preparacao",
+        "consagrado"
+      ],
+      "default": "interessado"
+    },
+    "consecration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data em que o usu\u00e1rio realizou a Total Consagra\u00e7\u00e3o"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indica se o usu\u00e1rio concluiu o onboarding inicial"
+    },
+    "preparation_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de in\u00edcio da prepara\u00e7\u00e3o de 33 dias"
+    },
+    "target_consecration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data prevista para a consagra\u00e7\u00e3o"
+    },
+    "last_renewal_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da \u00faltima renova\u00e7\u00e3o anual registrada"
+    },
+    "renewals": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "date"
+      },
+      "default": [],
+      "description": "Hist\u00f3rico de renova\u00e7\u00f5es anuais"
+    }
+  },
+  "required": [
+    "role"
+  ],
+  "name": "User",
+  "type": "object"
+}

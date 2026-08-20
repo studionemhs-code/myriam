@@ -1,0 +1,30 @@
+{
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string",
+      "description": "Cor hexadecimal para identidade visual da categoria"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Nome do \u00edcone lucide"
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "name": "ACAMFCategory",
+  "type": "object"
+}

@@ -1,0 +1,16 @@
+{
+  "properties": {
+    "intention_id": {
+      "type": "string"
+    },
+    "prayed": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "intention_id"
+  ],
+  "name": "PrayerInteraction",
+  "type": "object"
+}

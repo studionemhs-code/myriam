@@ -1,0 +1,80 @@
+{
+  "properties": {
+    "day_number": {
+      "type": "integer",
+      "description": "N\u00famero do dia (1 a 33)",
+      "minimum": 1,
+      "maximum": 33
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do dia"
+    },
+    "description": {
+      "type": "string",
+      "description": "Breve descri\u00e7\u00e3o do tema do dia"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "desejo",
+        "conhecimento",
+        "ilumina\u00e7\u00e3o",
+        "entrega"
+      ],
+      "description": "Fase da prepara\u00e7\u00e3o de S\u00e3o Lu\u00eds Maria Grignion de Montfort"
+    },
+    "text": {
+      "type": "string",
+      "description": "Conte\u00fado textual do dia (formato rico/markdown)"
+    },
+    "prayer": {
+      "type": "string",
+      "description": "Ora\u00e7\u00e3o do dia"
+    },
+    "practice": {
+      "type": "string",
+      "description": "Pr\u00e1tica espiritual sugerida"
+    },
+    "reflection_prompt": {
+      "type": "string",
+      "description": "Pergunta-guia para reflex\u00e3o pessoal"
+    },
+    "audio_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "video_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "youtube_id": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "pdf_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "related_content_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "is_published": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "day_number",
+    "title"
+  ],
+  "name": "PreparationDay",
+  "type": "object"
+}

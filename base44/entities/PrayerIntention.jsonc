@@ -1,0 +1,44 @@
+{
+  "properties": {
+    "text": {
+      "type": "string",
+      "description": "Texto da inten\u00e7\u00e3o de ora\u00e7\u00e3o"
+    },
+    "image_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "saude",
+        "familia",
+        "trabalho",
+        "conversao",
+        "gratidao",
+        "outros"
+      ],
+      "default": "outros"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ativo",
+        "atendido",
+        "arquivado"
+      ],
+      "default": "ativo"
+    },
+    "prayer_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "N\u00famero de pessoas que rezaram por esta inten\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "text",
+    "category"
+  ],
+  "name": "PrayerIntention",
+  "type": "object"
+}

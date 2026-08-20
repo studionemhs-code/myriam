@@ -1,0 +1,55 @@
+{
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "image_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "solenidade",
+        "festa",
+        "memoria",
+        "jornada",
+        "pessoal",
+        "evento"
+      ],
+      "default": "festa"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_system": {
+      "type": "boolean",
+      "default": true,
+      "description": "Datas marianas padr\u00e3o do sistema"
+    },
+    "related_content_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "related_journey_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "event_date"
+  ],
+  "name": "MarianCalendarEvent",
+  "type": "object"
+}

@@ -1,0 +1,101 @@
+{
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "subtitle": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category_id": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "cover_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado em texto rico (HTML/markdown)"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "texto",
+        "pdf",
+        "ebook",
+        "audio",
+        "video",
+        "imagem"
+      ],
+      "default": "texto"
+    },
+    "file_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "youtube_id": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "iniciante",
+        "intermediario",
+        "aprofundamento"
+      ],
+      "default": "iniciante"
+    },
+    "duration": {
+      "type": "string",
+      "description": "Dura\u00e7\u00e3o estimada (ex.: 12 min, 1h20)"
+    },
+    "published_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rascunho",
+        "publicado",
+        "arquivado"
+      ],
+      "default": "rascunho"
+    },
+    "related_content_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "recommended": {
+      "type": "boolean",
+      "default": false
+    },
+    "related_day_number": {
+      "type": "integer",
+      "description": "Dia da prepara\u00e7\u00e3o ao qual este conte\u00fado est\u00e1 recomendado"
+    }
+  },
+  "required": [
+    "title",
+    "content_type",
+    "status"
+  ],
+  "name": "ACAMFContent",
+  "type": "object"
+}

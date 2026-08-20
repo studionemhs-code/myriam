@@ -1,0 +1,52 @@
+{
+  "name": "MyriamPost",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "description": "Texto da publica\u00e7\u00e3o"
+    },
+    "image_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_photo": {
+      "type": "string",
+      "format": "uri"
+    },
+    "author_status": {
+      "type": "string",
+      "enum": [
+        "interessado",
+        "preparacao",
+        "consagrado"
+      ],
+      "default": "interessado"
+    },
+    "like_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "prayer_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "comment_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "text"
+  ]
+}

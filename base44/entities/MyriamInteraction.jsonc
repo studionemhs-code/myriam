@@ -1,0 +1,21 @@
+{
+  "name": "MyriamInteraction",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "like",
+        "pray"
+      ],
+      "default": "like"
+    }
+  },
+  "required": [
+    "post_id",
+    "type"
+  ]
+}
