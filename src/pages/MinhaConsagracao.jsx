@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Flower2, Heart, Calendar, Check, Sparkles } from 'lucide-react';
+import { Flower2, Heart, Calendar, Check, Sparkles, Award, FileDown } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, GoldDivider, StatPill } from '@/components/ui/marian';
 import {
   daysSince, daysUntil, formatDate, formatDuration, nextRenewal, isToday, parseDate
 } from '@/lib/marianDates';
 
+const typeLabel = { preparacao: 'Preparação', jornada: 'Jornada', renovacao: 'Renovação' };
+
 export default function MinhaConsagracao() {
   const { user, update } = useCurrentUser();
   const [registering, setRegistering] = useState(false);
+  const [certificates, setCertificates] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      base44.entities.Certificate.filter({ user_id: user.id }, '-issue_date', 20)
+        .then(setCertificates)
+        .catch(() => {});
+    }
+  }, [user]);
 
   if (!user?.consecration_date) {
     return (
@@ -103,6 +115,29 @@ export default function MinhaConsagracao() {
           ))}
         </div>
       </section>
+
+      {/* Certificados emitidos */}
+      {certificates.length > 0 && (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 font-display text-lg"><Award className="h-4 w-4 text-gold" /> Certificados Emitidos</h2>
+          <div className="space-y-2">
+            {certificates.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gold/15"><Award className="h-4 w-4 text-gold" /></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{typeLabel[c.certificate_type] || 'Certificado'}{c.journey_title ? ` · ${c.journey_title}` : ''}</p>
+                  <p className="text-xs text-muted-foreground">Emitido em {formatDate(c.issue_date)}</p>
+                </div>
+                {c.pdf_url && (
+                  <a href={c.pdf_url} download target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs text-primary hover:bg-muted">
+                    <FileDown className="h-4 w-4" /> Baixar
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <GoldDivider />
       <div className="text-center">

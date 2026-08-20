@@ -57,6 +57,11 @@
     "personal_data": {
       "type": "object",
       "description": "Dados preenchidos pelo usu\u00e1rio (cidade, estado, etc.)"
+    },
+    "pdf_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL do PDF unificado (certificado + termo) armazenado ap\u00f3s emiss\u00e3o"
     }
   },
   "required": [

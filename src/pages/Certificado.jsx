@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Award, FileDown, Loader2, PenLine, Upload, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -21,6 +21,7 @@ export default function Certificado() {
   const [sigUploaded, setSigUploaded] = useState('');
   const [uploadingSig, setUploadingSig] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generated, setGenerated] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -72,6 +73,12 @@ export default function Certificado() {
         certificateType: type,
         journeyTitle: journey?.title
       });
+
+      const fileName = `certificado-${form.name.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      const blob = doc.output('blob');
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
       await base44.entities.Certificate.create({
         user_id: user.id,
         user_name: form.name,
@@ -86,9 +93,12 @@ export default function Certificado() {
         agreement_text: template.agreement_text,
         signature_type: sigType,
         signature_data: sigType === 'typed' ? sigTyped : sigUploaded,
-        personal_data: { city: form.city, state: form.state }
+        personal_data: { city: form.city, state: form.state },
+        pdf_url: file_url
       });
-      doc.save(`certificado-${form.name.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+
+      doc.save(fileName);
+      setGenerated({ url: file_url, name: fileName });
     } catch (e) {
       alert('Erro ao gerar certificado.');
       console.error(e);
@@ -109,6 +119,40 @@ export default function Certificado() {
           <Award className="mx-auto h-10 w-10 text-muted-foreground" />
           <p className="mt-3 text-sm text-muted-foreground">Nenhum modelo de certificado disponível no momento.</p>
         </div>
+      </div>
+    );
+  }
+
+  if (generated) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Certificado Emitido" icon={Award} />
+        <section className="rounded-2xl border border-gold/30 bg-gradient-to-br from-card to-accent p-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gold/15">
+            <Check className="h-8 w-8 text-gold" />
+          </div>
+          <h2 className="mt-4 font-display text-2xl text-primary">Seu certificado está pronto!</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            O PDF unificado com o certificado e o termo de concordância foi gerado e salvo em sua conta.
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <a
+              href={generated.url}
+              download={generated.name}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-6 py-3 font-medium text-deep"
+            >
+              <FileDown className="h-5 w-5" /> Baixar PDF
+            </a>
+            <Link
+              to="/minha-consagracao"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-6 py-3 text-sm font-medium"
+            >
+              Ver em Minha Consagração
+            </Link>
+          </div>
+        </section>
       </div>
     );
   }
