@@ -1,4 +1,6 @@
 {
+  "name": "CollectiveJourney",
+  "type": "object",
   "properties": {
     "title": {
       "type": "string"
@@ -27,6 +29,35 @@
         "encerrada"
       ],
       "default": "ativa"
+    },
+    "journey_type": {
+      "type": "string",
+      "enum": [
+        "consagracao",
+        "renovacao"
+      ],
+      "default": "consagracao",
+      "description": "Tipo da jornada: consagra\u00e7\u00e3o ou renova\u00e7\u00e3o"
+    },
+    "welcome_message": {
+      "type": "string",
+      "description": "Mensagem exibida ao iniciar a jornada"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Etapas gamificadas da jornada"
     },
     "content_ids": {
       "type": "array",
@@ -61,8 +92,6 @@
     "title",
     "status"
   ],
-  "name": "CollectiveJourney",
-  "type": "object",
   "rls": {
     "read": {},
     "create": {

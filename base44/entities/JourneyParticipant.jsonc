@@ -1,4 +1,6 @@
 {
+  "name": "JourneyParticipant",
+  "type": "object",
   "properties": {
     "journey_id": {
       "type": "string"
@@ -10,13 +12,19 @@
     "progress": {
       "type": "integer",
       "default": 0
+    },
+    "completed_steps": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "default": [],
+      "description": "\u00cdndices das etapas conclu\u00eddas"
     }
   },
   "required": [
     "journey_id"
   ],
-  "name": "JourneyParticipant",
-  "type": "object",
   "rls": {
     "read": {},
     "create": {

@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Pencil, Trash2, X } from 'lucide-react';
-import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/admin/ui';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { AdminPageTitle, Loading, Badge } from '@/components/admin/ui';
+import JourneyEditor from '@/components/admin/JourneyEditor';
 
-const empty = { title: '', description: '', image_url: '', start_date: '', end_date: '', status: 'ativa', content_ids: [] };
 const statusLabels = { rascunho: 'Rascunho', ativa: 'Ativa', pausada: 'Pausada', encerrada: 'Encerrada' };
+const typeLabels = { consagracao: 'Consagração', renovacao: 'Renovação' };
 
 export default function JourneysAdmin() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
-  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -20,22 +20,16 @@ export default function JourneysAdmin() {
   };
   useEffect(() => { load(); }, []);
 
-  const set = (k, v) => setEditing((p) => ({ ...p, [k]: v }));
-  const save = async () => {
-    if (!editing.title) return;
-    setSaving(true);
-    try {
-      const wasActive = editing.id ? items.find((j) => j.id === editing.id)?.status === 'ativa' : false;
-      const saved = editing.id
-        ? await base44.entities.CollectiveJourney.update(editing.id, editing)
-        : await base44.entities.CollectiveJourney.create(editing);
-      // Notifica todos os usuários quando uma jornada é iniciada (nova e ativa, ou reativada).
-      if (saved.status === 'ativa' && !wasActive) {
-        await notifyNewJourney(saved);
-      }
-      setEditing(null);
-      await load();
-    } finally { setSaving(false); }
+  const handleSave = async (payload) => {
+    const wasActive = payload.id ? items.find((j) => j.id === payload.id)?.status === 'ativa' : false;
+    const saved = payload.id
+      ? await base44.entities.CollectiveJourney.update(payload.id, payload)
+      : await base44.entities.CollectiveJourney.create(payload);
+    if (saved.status === 'ativa' && !wasActive) {
+      await notifyNewJourney(saved);
+    }
+    setEditing(null);
+    await load();
   };
 
   const notifyNewJourney = async (journey) => {
@@ -53,7 +47,13 @@ export default function JourneysAdmin() {
       if (notifs.length) await base44.entities.Notification.bulkCreate(notifs);
     } catch (e) { /* notificações são best-effort */ }
   };
-  const remove = async (id) => { if (confirm('Excluir jornada?')) { await base44.entities.CollectiveJourney.delete(id); await load(); } };
+
+  const remove = async (id) => {
+    if (confirm('Excluir jornada?')) {
+      await base44.entities.CollectiveJourney.delete(id);
+      await load();
+    }
+  };
 
   if (loading) return <Loading />;
 
@@ -63,7 +63,7 @@ export default function JourneysAdmin() {
         title="Jornadas Coletivas"
         subtitle={`${items.length} jornadas`}
         action={
-          <button onClick={() => setEditing({ ...empty })} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+          <button onClick={() => setEditing({})} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
             <Plus className="h-4 w-4" /> Nova Jornada
           </button>
         }
@@ -75,48 +75,30 @@ export default function JourneysAdmin() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-display text-lg">{j.title}</p>
-                <Badge tone={j.status === 'ativa' ? 'green' : 'muted'}>{statusLabels[j.status]}</Badge>
+                <div className="mt-1 flex gap-2">
+                  <Badge tone={j.status === 'ativa' ? 'green' : 'muted'}>{statusLabels[j.status]}</Badge>
+                  <Badge tone={j.journey_type === 'renovacao' ? 'gold' : 'muted'}>{typeLabels[j.journey_type] || 'Consagração'}</Badge>
+                </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setEditing({ ...empty, ...j })} className="text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
+                <button onClick={() => setEditing({ ...j })} className="text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
                 <button onClick={() => remove(j.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
             {j.description && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{j.description}</p>}
-            <p className="mt-2 text-xs text-muted-foreground">
-              {j.start_date && new Date(j.start_date).toLocaleDateString('pt-BR')} — {j.end_date && new Date(j.end_date).toLocaleDateString('pt-BR')}
-            </p>
+            <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+              {j.start_date && <span>{new Date(j.start_date).toLocaleDateString('pt-BR')} — {j.end_date && new Date(j.end_date).toLocaleDateString('pt-BR')}</span>}
+              {j.steps?.length > 0 && <span>{j.steps.length} etapas</span>}
+              {j.notices?.length > 0 && <span>{j.notices.length} avisos</span>}
+              {j.content_ids?.length > 0 && <span>{j.content_ids.length} conteúdos</span>}
+              <span>{j.participant_count || 0} participantes</span>
+            </div>
           </div>
         ))}
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditing(null)}>
-          <div className="w-full max-w-lg rounded-2xl bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-xl">{editing.id ? 'Editar Jornada' : 'Nova Jornada'}</h2>
-              <button onClick={() => setEditing(null)} className="text-muted-foreground"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2"><Field label="Título"><input className={inputCls} value={editing.title} onChange={(e) => set('title', e.target.value)} /></Field></div>
-              <div className="col-span-2"><Field label="Descrição"><textarea className={inputCls} rows={3} value={editing.description} onChange={(e) => set('description', e.target.value)} /></Field></div>
-              <Field label="Início"><input type="date" className={inputCls} value={editing.start_date} onChange={(e) => set('start_date', e.target.value)} /></Field>
-              <Field label="Término"><input type="date" className={inputCls} value={editing.end_date} onChange={(e) => set('end_date', e.target.value)} /></Field>
-              <Field label="Status">
-                <select className={inputCls} value={editing.status} onChange={(e) => set('status', e.target.value)}>
-                  {Object.entries(statusLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
-              </Field>
-              <Field label="Imagem URL"><input className={inputCls} value={editing.image_url} onChange={(e) => set('image_url', e.target.value)} /></Field>
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setEditing(null)} className="rounded-lg px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
-              <button onClick={save} disabled={saving} className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">
-                {saving ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <JourneyEditor journey={editing} onClose={() => setEditing(null)} onSave={handleSave} />
       )}
     </div>
   );
