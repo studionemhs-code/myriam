@@ -1,65 +1,53 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Flower2, ChevronRight, Calendar, Sparkles, Play } from 'lucide-react';
+import { Flower2, ChevronRight, Calendar, Sparkles, Play, Lock, Check, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, GoldDivider } from '@/components/ui/marian';
-import { formatDate, daysUntil, getNextMarianEvent, parseDate, daysBetween } from '@/lib/marianDates';
+import { formatDate, daysUntil, parseDate, daysBetween } from '@/lib/marianDates';
 
-const PHASES = {
-  desejo: { name: 'Espírito de Desejo', range: 'Dias 1–12' },
-  conhecimento: { name: 'Conhecimento de Si', range: 'Dias 13–19' },
-  iluminacao: { name: 'Conhecimento de Maria', range: 'Dias 20–27' },
-  entrega: { name: 'Conhecimento de Jesus', range: 'Dias 28–33' }
+const DEFAULT_PHASES = {
+  desejo: 'Espírito de Desejo',
+  conhecimento: 'Conhecimento de Si',
+  iluminacao: 'Conhecimento de Maria',
+  entrega: 'Conhecimento de Jesus'
 };
-
-function phaseForDay(day) {
-  if (day <= 12) return 'desejo';
-  if (day <= 19) return 'conhecimento';
-  if (day <= 27) return 'iluminacao';
-  return 'entrega';
-}
 
 export default function Caminho() {
   const { user, update, loading } = useCurrentUser();
   const [progress, setProgress] = useState(null);
   const [days, setDays] = useState([]);
+  const [phases, setPhases] = useState([]);
   const [showSetup, setShowSetup] = useState(false);
-  const [toggling, setToggling] = useState(new Set());
 
   const loadProgress = async () => {
     if (!user) return;
     try {
       const list = await base44.entities.UserProgress.filter({ created_by_id: user.id });
-      setProgress(list[0] || null);
-      const allDays = await base44.entities.PreparationDay.list('day_number', 33);
+      const p = list[0] || null;
+      const [allDays, phaseList] = await Promise.all([
+        base44.entities.PreparationDay.list('day_number', 33),
+        base44.entities.PreparationPhase.list('sort_order', 50)
+      ]);
       setDays(allDays);
+      setPhases(phaseList);
+      // Sincroniza current_day com o valor baseado em tempo
+      if (p && p.started_date) {
+        const elapsed = daysBetween(parseDate(p.started_date), new Date());
+        const unlocked = Math.min(33, Math.max(1, elapsed + 1));
+        if (p.current_day !== unlocked) {
+          const updated = await base44.entities.UserProgress.update(p.id, { current_day: unlocked });
+          setProgress(updated);
+        } else {
+          setProgress(p);
+        }
+      } else {
+        setProgress(p);
+      }
     } catch (e) { /* ignore */ }
   };
 
   useEffect(() => { if (user) loadProgress(); }, [user]);
-
-  const toggleDay = async (dayNumber) => {
-    if (!progress) return;
-    const current = progress.completed_days || [];
-    const isDone = current.includes(dayNumber);
-    const newCompleted = isDone
-      ? current.filter((n) => n !== dayNumber)
-      : [...current, dayNumber].sort((a, b) => a - b);
-    setToggling((s) => new Set(s).add(dayNumber));
-    try {
-      await base44.entities.UserProgress.update(progress.id, { completed_days: newCompleted });
-      setProgress((p) => (p ? { ...p, completed_days: newCompleted } : p));
-    } catch (e) {
-      /* ignore */
-    } finally {
-      setToggling((s) => {
-        const n = new Set(s);
-        n.delete(dayNumber);
-        return n;
-      });
-    }
-  };
 
   if (loading || !user) {
     return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
@@ -75,16 +63,8 @@ export default function Caminho() {
           <div className="ornament text-gold">✦</div>
           <h2 className="mt-3 font-display text-2xl">A preparação de 33 dias</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Durante 33 dias você percorrerá quatro etapas — desejo, conhecimento de si, conhecimento de Maria e conhecimento de Jesus — culminando na sua Consagração.
+            Durante 33 dias você percorrerá as etapas da preparação, culminando na sua Consagração.
           </p>
-          <div className="mt-5 grid grid-cols-2 gap-3 text-left">
-            {Object.entries(PHASES).map(([k, v]) => (
-              <div key={k} className="rounded-xl bg-card p-3 border border-border/60">
-                <p className="font-display text-sm">{v.name}</p>
-                <p className="text-[11px] text-muted-foreground">{v.range}</p>
-              </div>
-            ))}
-          </div>
           <button
             onClick={() => setShowSetup(true)}
             className="mt-6 rounded-xl bg-gold px-6 py-3 font-medium text-deep transition hover:bg-gold/90"
@@ -100,19 +80,41 @@ export default function Caminho() {
     return <SetupPreparation user={user} update={update} onDone={loadProgress} onCancel={() => setShowSetup(false)} />;
   }
 
-  // Journey active
-  const current = progress?.current_day || 1;
+  // Desbloqueio baseado em tempo: cada dia abre à meia-noite
+  const startedDate = progress?.started_date ? parseDate(progress.started_date) : null;
+  const now = new Date();
+  const daysElapsed = startedDate ? daysBetween(startedDate, now) : 0;
+  const currentUnlocked = Math.min(33, Math.max(1, daysElapsed + 1));
   const completedDays = progress?.completed_days || [];
   const completed = completedDays.length;
   const pct = Math.round((completed / 33) * 100);
   const allReady = days.length === 33;
   const daysLeft = user.target_consecration_date
     ? Math.max(0, daysUntil(user.target_consecration_date))
-    : Math.max(0, 33 - current + 1);
+    : Math.max(0, 33 - currentUnlocked + 1);
+  const journeyEnded = daysElapsed >= 33;
+
+  const phaseName = (phase) => {
+    if (!phase) return 'Sem fase';
+    const found = phases.find((p) => p.name === phase);
+    return found?.name || DEFAULT_PHASES[phase] || phase;
+  };
+
+  const getDayStatus = (dayNum) => {
+    if (!startedDate) return 'locked';
+    if (dayNum > currentUnlocked) return 'locked'; // ainda não chegou o dia
+    const isExpired = daysElapsed >= dayNum; // janela de 24h passou
+    const openedEntry = (progress?.day_opened_at || []).find((d) => d.day === dayNum);
+    const wasOpenedInTime = openedEntry && daysBetween(startedDate, new Date(openedEntry.opened_at)) < dayNum;
+    if (isExpired && !wasOpenedInTime) return 'missed'; // perdeu o prazo
+    if (completedDays.includes(dayNum)) return 'completed';
+    if (dayNum === currentUnlocked) return 'current';
+    return 'available';
+  };
 
   return (
     <div>
-      <PageHeader title="Caminho" subtitle={`Dia ${current} de 33`} icon={Flower2} />
+      <PageHeader title="Caminho" subtitle={`Dia ${currentUnlocked} de 33`} icon={Flower2} />
 
       {/* Progresso */}
       <section className="rounded-2xl bg-deep p-6 text-primary-foreground">
@@ -144,15 +146,15 @@ export default function Caminho() {
             )}
           </div>
         </div>
-        {progress?.status !== 'concluida' && current <= 33 && allReady && (
+        {progress?.status !== 'concluida' && currentUnlocked <= 33 && allReady && getDayStatus(currentUnlocked) !== 'missed' && (
           <Link
-            to={`/caminho/dia/${current}`}
+            to={`/caminho/dia/${currentUnlocked}`}
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep"
           >
-            <Play className="h-4 w-4" /> Continuar pelo Dia {current}
+            <Play className="h-4 w-4" /> Continuar pelo Dia {currentUnlocked}
           </Link>
         )}
-        {progress?.status === 'concluida' && (
+        {(progress?.status === 'concluida' || journeyEnded) && (
           <Link to="/consagracao" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">
             <Flower2 className="h-4 w-4" /> Registrar minha Consagração
           </Link>
@@ -162,38 +164,50 @@ export default function Caminho() {
       <GoldDivider />
 
       {/* Lista de dias */}
-      <p className="mb-3 text-xs text-muted-foreground">Toque no círculo para marcar um dia como concluído.</p>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Cada dia desbloqueia à meia-noite. Abra o dia dentro do prazo de 24h para não perder o conteúdo.
+      </p>
       <div className="space-y-2">
         {days.length === 0 && <p className="text-sm text-muted-foreground">Os 33 dias serão carregados pelo administrador. Aguarde.</p>}
         {days.map((d) => {
-          const done = completedDays.includes(d.day_number);
-          const isCurrent = d.day_number === current && progress?.status !== 'concluida';
-          const busy = toggling.has(d.day_number);
-          return (
-            <div
-              key={d.id}
-              className={`flex items-center gap-3 rounded-xl border p-3 transition ${
-                isCurrent ? 'border-gold bg-gold/5' : done ? 'border-gold/30 bg-card' : 'border-border bg-card hover:border-gold/40'
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => toggleDay(d.day_number)}
-                disabled={!progress || busy}
-                aria-label={done ? `Desmarcar dia ${d.day_number}` : `Concluir dia ${d.day_number}`}
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition ${
-                  done ? 'bg-gold/15 text-gold' : isCurrent ? 'bg-marian text-white' : 'border border-border text-muted-foreground hover:border-gold/50 hover:text-foreground'
-                } ${!progress || busy ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-              >
-                {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : done ? <Flower2 className="h-5 w-5" /> : d.day_number}
-              </button>
-              <Link to={`/caminho/dia/${d.day_number}`} className="flex flex-1 items-center gap-3">
-                <div className="flex-1">
-                  <p className="font-medium leading-tight">{d.title || `Dia ${d.day_number}`}</p>
-                  <p className="text-xs text-muted-foreground">{PHASES[phaseForDay(d.day_number)].name}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </Link>
+          const status = getDayStatus(d.day_number);
+          const canView = status !== 'locked' && status !== 'missed';
+          const inner = (
+            <>
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition ${
+                status === 'completed' ? 'bg-gold/15 text-gold' :
+                status === 'current' ? 'bg-marian text-white' :
+                status === 'missed' ? 'bg-muted text-muted-foreground' :
+                status === 'locked' ? 'bg-muted/50 text-muted-foreground/50' :
+                'border border-border text-muted-foreground'
+              }`}>
+                {status === 'completed' ? <Check className="h-5 w-5" /> :
+                 status === 'locked' ? <Lock className="h-4 w-4" /> :
+                 status === 'missed' ? <Clock className="h-4 w-4" /> :
+                 d.day_number}
+              </div>
+              <div className="flex-1">
+                <p className={`font-medium leading-tight ${status === 'locked' || status === 'missed' ? 'text-muted-foreground' : ''}`}>
+                  {d.title || `Dia ${d.day_number}`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {phaseName(d.phase)}
+                  {status === 'missed' && ' · Dia perdido'}
+                  {status === 'locked' && ' · Bloqueado'}
+                </p>
+              </div>
+              {canView && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+            </>
+          );
+          return canView ? (
+            <Link key={d.id} to={`/caminho/dia/${d.day_number}`} className={`flex items-center gap-3 rounded-xl border p-3 transition ${
+              status === 'current' ? 'border-gold bg-gold/5' : 'border-border bg-card hover:border-gold/40'
+            }`}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={d.id} className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/20 p-3">
+              {inner}
             </div>
           );
         })}
@@ -203,15 +217,12 @@ export default function Caminho() {
 }
 
 function SetupPreparation({ user, update, onDone, onCancel }) {
-  const [mode, setMode] = useState('target'); // 'target' or 'soon'
+  const [mode, setMode] = useState('target');
   const [targetDate, setTargetDate] = useState('');
   const [saving, setSaving] = useState(false);
 
   const computeStart = () => {
-    if (mode === 'soon') {
-      const today = new Date();
-      return today;
-    }
+    if (mode === 'soon') return new Date();
     const target = parseDate(targetDate);
     if (!target) return null;
     const start = new Date(target);

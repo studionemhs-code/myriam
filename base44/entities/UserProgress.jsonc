@@ -1,4 +1,6 @@
 {
+  "name": "UserProgress",
+  "type": "object",
   "properties": {
     "current_day": {
       "type": "integer",
@@ -32,13 +34,28 @@
         "pausada"
       ],
       "default": "ativa"
+    },
+    "day_opened_at": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "integer"
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "default": [],
+      "description": "Registra quando cada dia foi aberto pela primeira vez"
     }
   },
   "required": [
     "current_day"
   ],
-  "name": "UserProgress",
-  "type": "object",
   "rls": {
     "read": {
       "$or": [

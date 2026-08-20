@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Flower2, Check, ChevronLeft, ChevronRight, Play, BookOpen, Heart, FileText, PenLine } from 'lucide-react';
+import { Flower2, Check, ChevronLeft, ChevronRight, BookOpen, FileText, PenLine, Link2, Lock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { Ornament } from '@/components/ui/marian';
 import ReactMarkdown from 'react-markdown';
+import { parseDate, daysBetween } from '@/lib/marianDates';
 
 export default function DayDetail() {
   const { day } = useParams();
@@ -17,6 +17,7 @@ export default function DayDetail() {
   const [reflection, setReflection] = useState('');
   const [showReflection, setShowReflection] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -24,38 +25,92 @@ export default function DayDetail() {
       const all = await base44.entities.PreparationDay.filter({ day_number: dayNum });
       setDayData(all[0] || null);
       const prog = await base44.entities.UserProgress.filter({ created_by_id: user.id });
-      const p = prog[0];
-      setProgress(p);
+      setProgress(prog[0] || null);
       const refl = await base44.entities.Reflection.filter({ created_by_id: user.id, day_number: dayNum });
       if (refl[0]) setReflection(refl[0].content);
       if (all[0]?.related_content_ids?.length) {
         const contents = await base44.entities.ACAMFContent.list();
         setRelated(contents.filter((c) => all[0].related_content_ids.includes(c.id)));
       }
+      setLoaded(true);
     })();
   }, [user, dayNum]);
 
-  if (dayData === null && progress === null) {
+  // Registra quando o dia foi aberto pela primeira vez
+  useEffect(() => {
+    if (!user || !progress || !dayData || !loaded) return;
+    const openedAt = progress.day_opened_at || [];
+    if (!openedAt.find((d) => d.day === dayNum)) {
+      const updated = [...openedAt, { day: dayNum, opened_at: new Date().toISOString() }];
+      base44.entities.UserProgress.update(progress.id, { day_opened_at: updated }).catch(() => {});
+      setProgress((p) => ({ ...p, day_opened_at: updated }));
+    }
+  }, [user, dayData, dayNum, progress, loaded]);
+
+  if (!loaded) {
     return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
   }
 
-  const isCompleted = progress?.completed_days?.includes(dayNum);
-  const isCurrent = progress?.current_day === dayNum;
+  if (!progress) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => navigate('/caminho')} className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+          <ChevronLeft className="h-4 w-4" /> Caminho
+        </button>
+        <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          <p className="text-sm text-muted-foreground">Você ainda não iniciou sua preparação.</p>
+          <Link to="/caminho" className="mt-4 inline-block rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">Ir para o Caminho</Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Verifica acessibilidade baseada em tempo
+  const startedDate = progress.started_date ? parseDate(progress.started_date) : null;
+  const now = new Date();
+  const daysElapsed = startedDate ? daysBetween(startedDate, now) : 0;
+  const currentUnlocked = Math.min(33, Math.max(1, daysElapsed + 1));
+  const isUnlocked = dayNum <= currentUnlocked;
+  const isExpired = startedDate ? daysElapsed >= dayNum : false;
+  const openedEntry = (progress.day_opened_at || []).find((d) => d.day === dayNum);
+  const wasOpenedInTime = openedEntry && startedDate && daysBetween(startedDate, new Date(openedEntry.opened_at)) < dayNum;
+  const canView = isUnlocked && (!isExpired || wasOpenedInTime);
+
+  if (!canView) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => navigate('/caminho')} className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+          <ChevronLeft className="h-4 w-4" /> Caminho
+        </button>
+        <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          <Lock className="mx-auto h-10 w-10 text-muted-foreground" />
+          <h2 className="mt-3 font-display text-xl">Dia {dayNum} indisponível</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {isExpired && !wasOpenedInTime
+              ? 'O prazo de 24h para acessar as meditações deste dia se encerrou. Continue sua jornada pelo dia atual.'
+              : 'Este dia ainda não foi desbloqueado. Aguarde o desbloqueio automático à meia-noite.'}
+          </p>
+          <Link to="/caminho" className="mt-4 inline-block rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">Voltar ao Caminho</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const isCompleted = progress.completed_days?.includes(dayNum);
 
   const completeDay = async () => {
     setSaving(true);
     try {
       const completed = Array.from(new Set([...(progress?.completed_days || []), dayNum]));
-      const nextDay = dayNum < 33 ? dayNum + 1 : 33;
-      const status = completed.length >= 33 ? 'concluida' : 'ativa';
+      const allDone = completed.length >= 33;
       const updated = await base44.entities.UserProgress.update(progress.id, {
         completed_days: completed,
-        current_day: Math.max(progress.current_day, nextDay),
+        current_day: currentUnlocked,
         last_access_date: new Date().toISOString(),
-        status
+        status: allDone ? 'concluida' : 'ativa'
       });
       setProgress(updated);
-      if (status === 'concluida') {
+      if (allDone) {
         await refresh();
         navigate('/consagracao');
       } else {
@@ -141,6 +196,9 @@ export default function DayDetail() {
             />
           </div>
         )}
+        {dayData?.video_url && (
+          <video controls src={dayData.video_url} className="w-full rounded-2xl" />
+        )}
         {dayData?.audio_url && (
           <audio controls src={dayData.audio_url} className="w-full" />
         )}
@@ -150,6 +208,22 @@ export default function DayDetail() {
           </a>
         )}
       </div>
+
+      {/* Links externos */}
+      {dayData?.links?.length > 0 && (
+        <section>
+          <p className="mb-2 flex items-center gap-2 text-sm font-medium"><Link2 className="h-4 w-4 text-gold" /> Links</p>
+          <div className="space-y-2">
+            {dayData.links.map((l, i) => (
+              <a key={i} href={l.url} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-gold/40">
+                <Link2 className="h-4 w-4 text-primary" />
+                <span className="flex-1 text-sm">{l.label || l.url}</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       {dayData?.reflection_prompt && (
         <section className="rounded-2xl bg-muted/40 p-5">
@@ -200,7 +274,7 @@ export default function DayDetail() {
           <div className="flex items-center justify-center gap-2 py-2 text-gold">
             <Check className="h-5 w-5" /> <span className="font-medium">Dia concluído</span>
           </div>
-        ) : isCurrent ? (
+        ) : (
           <button
             onClick={completeDay}
             disabled={saving}
@@ -208,8 +282,6 @@ export default function DayDetail() {
           >
             {saving ? 'Concluindo...' : `Concluir Dia ${dayNum}`}
           </button>
-        ) : (
-          <p className="py-2 text-center text-sm text-muted-foreground">Conclua os dias anteriores para desbloquear.</p>
         )}
       </div>
     </div>

@@ -1,4 +1,6 @@
 {
+  "name": "PreparationDay",
+  "type": "object",
   "properties": {
     "day_number": {
       "type": "integer",
@@ -16,13 +18,7 @@
     },
     "phase": {
       "type": "string",
-      "enum": [
-        "desejo",
-        "conhecimento",
-        "ilumina\u00e7\u00e3o",
-        "entrega"
-      ],
-      "description": "Fase da prepara\u00e7\u00e3o de S\u00e3o Lu\u00eds Maria Grignion de Montfort"
+      "description": "Nome da fase (referencia uma PreparationPhase)"
     },
     "text": {
       "type": "string",
@@ -59,6 +55,21 @@
       "type": "string",
       "format": "uri"
     },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
     "related_content_ids": {
       "type": "array",
       "items": {
@@ -75,8 +86,6 @@
     "day_number",
     "title"
   ],
-  "name": "PreparationDay",
-  "type": "object",
   "rls": {
     "read": {
       "$or": [
