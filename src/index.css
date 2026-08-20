@@ -49,37 +49,37 @@
   }
 
   .dark {
-    --background: 262 35% 10%;
-    --foreground: 262 20% 96%;
-    --card: 262 32% 14%;
-    --card-foreground: 262 20% 96%;
-    --popover: 262 32% 14%;
-    --popover-foreground: 262 20% 96%;
-    --primary: 262 55% 65%;
-    --primary-foreground: 262 45% 12%;
-    --secondary: 262 25% 22%;
-    --secondary-foreground: 262 20% 96%;
-    --muted: 262 25% 22%;
-    --muted-foreground: 262 14% 65%;
-    --accent: 262 30% 26%;
-    --accent-foreground: 262 20% 96%;
+    --background: 262 22% 22%;
+    --foreground: 262 15% 92%;
+    --card: 262 20% 27%;
+    --card-foreground: 262 15% 92%;
+    --popover: 262 20% 27%;
+    --popover-foreground: 262 15% 92%;
+    --primary: 262 52% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 262 18% 33%;
+    --secondary-foreground: 262 15% 92%;
+    --muted: 262 18% 32%;
+    --muted-foreground: 262 12% 68%;
+    --accent: 262 22% 36%;
+    --accent-foreground: 262 15% 92%;
     --gold: 41 55% 60%;
-    --gold-soft: 41 40% 32%;
-    --marian: 262 55% 65%;
-    --marian-light: 262 50% 72%;
-    --deep: 262 42% 12%;
-    --destructive: 0 60% 45%;
+    --gold-soft: 41 40% 40%;
+    --marian: 262 52% 55%;
+    --marian-light: 262 45% 68%;
+    --deep: 262 30% 18%;
+    --destructive: 0 55% 50%;
     --destructive-foreground: 0 0% 98%;
-    --border: 262 25% 26%;
-    --input: 262 25% 26%;
-    --ring: 262 55% 65%;
-    --sidebar-background: 262 42% 8%;
-    --sidebar-foreground: 262 20% 88%;
+    --border: 262 18% 35%;
+    --input: 262 18% 35%;
+    --ring: 262 52% 55%;
+    --sidebar-background: 262 25% 20%;
+    --sidebar-foreground: 262 15% 88%;
     --sidebar-primary: 41 55% 60%;
-    --sidebar-primary-foreground: 262 45% 12%;
-    --sidebar-accent: 262 30% 18%;
-    --sidebar-accent-foreground: 262 20% 96%;
-    --sidebar-border: 262 25% 22%;
+    --sidebar-primary-foreground: 262 45% 14%;
+    --sidebar-accent: 262 20% 30%;
+    --sidebar-accent-foreground: 262 15% 92%;
+    --sidebar-border: 262 18% 30%;
     --sidebar-ring: 41 55% 60%;
   }
 }
