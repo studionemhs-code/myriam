@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Flower2, Calendar, BookOpen, Heart, Settings, ShoppingBag, ChevronRight, LogOut, Camera, Shield } from 'lucide-react';
+import { User, Flower2, Calendar, BookOpen, Heart, Settings, ShoppingBag, ChevronRight, LogOut, Camera, Shield, Award } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, StatPill, GoldDivider } from '@/components/ui/marian';
@@ -107,6 +107,7 @@ export default function Perfil() {
       {/* Menu */}
       <div className="space-y-1">
         <MenuItem to="/minha-consagracao" icon={Flower2} label="Minha Consagração" />
+        <MenuItem to="/historico" icon={Award} label="Histórico de Jornadas" />
         <MenuItem to="/caminho" icon={Flower2} label="Ver minha caminhada" />
         <MenuItem to="/calendario" icon={Calendar} label="Calendário Mariano" />
         <MenuItem to="/intencoes" icon={Heart} label="Intenções de Oração" />

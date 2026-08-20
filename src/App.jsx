@@ -47,6 +47,7 @@ import MyriamAdmin from '@/pages/admin/MyriamAdmin';
 import CategoriesAdmin from '@/pages/admin/CategoriesAdmin';
 import CertificatesAdmin from '@/pages/admin/CertificatesAdmin';
 import Certificado from '@/pages/Certificado';
+import Historico from '@/pages/Historico';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
           <Route path="/perfil/:userId" element={<PublicProfile />} />
           <Route path="/jornadas/:id" element={<JourneyDetail />} />
           <Route path="/certificado" element={<Certificado />} />
+          <Route path="/historico" element={<Historico />} />
         </Route>
       </Route>
 
