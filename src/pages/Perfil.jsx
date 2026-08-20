@@ -4,8 +4,9 @@ import { User, Flower2, Calendar, BookOpen, Heart, Settings, ShoppingBag, Chevro
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, StatPill, GoldDivider } from '@/components/ui/marian';
-import { formatDate, formatDuration, daysSince, nextRenewal } from '@/lib/marianDates';
+import { formatDate } from '@/lib/marianDates';
 import ExportJourneyPdf from '@/components/ExportJourneyPdf';
+import SpiritualStatus from '@/components/perfil/SpiritualStatus';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -35,10 +36,7 @@ export default function Perfil() {
     return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
   }
 
-  const isConsagrado = user.status === 'consagrado';
   const statusLabel = { interessado: 'Interessado', preparacao: 'Em Preparação', consagrado: 'Consagrado' }[user.status];
-  const since = user.consecration_date ? daysSince(user.consecration_date) : 0;
-  const renewal = user.consecration_date ? nextRenewal(user.consecration_date, user.last_renewal_date) : null;
 
   const save = async () => {
     setSaving(true);
@@ -98,15 +96,7 @@ export default function Perfil() {
         )}
       </section>
 
-      {/* Estatísticas de caminhada */}
-      {isConsagrado && user.consecration_date && (
-        <section className="mt-4 rounded-2xl border border-gold/30 bg-gradient-to-br from-card to-accent p-5">
-          <div className="flex items-center gap-2 text-gold"><Flower2 className="h-4 w-4" /><span className="text-xs uppercase tracking-wider">Sua Consagração</span></div>
-          <p className="mt-2 font-display text-lg">Consagrado há {formatDuration(user.consecration_date)}</p>
-          <p className="text-xs text-muted-foreground">{formatDate(user.consecration_date)} · {since.toLocaleString('pt-BR')} dias</p>
-          {renewal && <p className="mt-1 text-xs text-muted-foreground">Próxima renovação: <span className="text-gold">{formatDate(renewal)}</span></p>}
-        </section>
-      )}
+      <SpiritualStatus user={user} />
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <StatPill value={stats.reflections} label="reflexões" />
