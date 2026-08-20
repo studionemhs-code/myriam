@@ -17,6 +17,7 @@ export default function Hoje() {
   const [progress, setProgress] = useState(null);
   const [recommended, setRecommended] = useState([]);
   const [intentions, setIntentions] = useState([]);
+  const [dayContent, setDayContent] = useState([]);
 
   const status = user?.status || 'interessado';
 
@@ -28,12 +29,17 @@ export default function Hoje() {
     if (!user) return;
     (async () => {
       try {
+        let dayNum = null;
         if (status === 'preparacao') {
           const list = await base44.entities.UserProgress.filter({ created_by_id: user.id });
-          if (list[0]) setProgress(list[0]);
+          if (list[0]) { setProgress(list[0]); dayNum = list[0].current_day; }
         }
         const rec = await base44.entities.ACAMFContent.filter({ status: 'publicado', recommended: true }, '-published_date', 3);
         setRecommended(rec);
+        if (dayNum) {
+          const dayCont = await base44.entities.ACAMFContent.filter({ status: 'publicado', related_day_number: dayNum }, '-published_date', 3);
+          setDayContent(dayCont);
+        }
         const intents = await base44.entities.PrayerIntention.filter({ status: 'ativo' }, '-created_date', 3);
         setIntentions(intents);
       } catch (e) { /* ignore */ }
@@ -70,7 +76,7 @@ export default function Hoje() {
 
       {/* Bloco de status */}
       {status === 'consagrado' && <ConsecratedBlock user={user} />}
-      {status === 'preparacao' && <PreparationBlock user={user} progress={progress} />}
+      {status === 'preparacao' && <PreparationBlock user={user} progress={progress} dayContent={dayContent} />}
       {status === 'interessado' && <DiscoverBlock />}
 
       <GoldDivider />
@@ -162,7 +168,7 @@ export default function Hoje() {
   );
 }
 
-function PreparationBlock({ user, progress }) {
+function PreparationBlock({ user, progress, dayContent }) {
   const current = progress?.current_day || 1;
   const completed = progress?.completed_days?.length || 0;
   const total = 33;
@@ -188,6 +194,20 @@ function PreparationBlock({ user, progress }) {
         <Link to={`/caminho/dia/${current}`} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">
           <Play className="h-4 w-4" /> Continuar pelo Dia {current}
         </Link>
+        {dayContent?.length > 0 && (
+          <div className="mt-4 border-t border-border pt-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Para o seu dia de hoje</p>
+            <div className="space-y-2">
+              {dayContent.map((c) => (
+                <Link key={c.id} to={`/acamf/${c.id}`} className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-muted/50">
+                  {c.cover_url ? <img src={c.cover_url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <BookOpen className="h-5 w-5 text-primary" />}
+                  <p className="flex-1 text-sm leading-tight">{c.title}</p>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </SectionCard>
     </div>
   );

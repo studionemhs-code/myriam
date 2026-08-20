@@ -21,7 +21,7 @@
         "grato",
         "esperan\u00e7oso",
         "inquieto",
-        "pacifico",
+        "pac\u00edfico",
         "outros"
       ]
     }
@@ -31,5 +31,19 @@
     "content"
   ],
   "name": "Reflection",
-  "type": "object"
+  "type": "object",
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
 }

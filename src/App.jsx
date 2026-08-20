@@ -29,6 +29,10 @@ import Perfil from '@/pages/Perfil';
 import Configuracoes from '@/pages/Configuracoes';
 import Myriam from '@/pages/Myriam';
 import Notificacoes from '@/pages/Notificacoes';
+import Chat from '@/pages/Chat';
+import ChatConversation from '@/pages/ChatConversation';
+import PublicProfile from '@/pages/PublicProfile';
+import JourneyDetail from '@/pages/JourneyDetail';
 import AdminLayout from '@/components/AdminLayout';
 import AdminRoute from '@/components/AdminRoute';
 import AdminDashboard from '@/pages/admin/Dashboard';
@@ -40,6 +44,8 @@ import PreparationDaysAdmin from '@/pages/admin/PreparationDaysAdmin';
 import CalendarAdmin from '@/pages/admin/CalendarAdmin';
 import JourneysAdmin from '@/pages/admin/JourneysAdmin';
 import FeaturesAdmin from '@/pages/admin/Features';
+import MyriamAdmin from '@/pages/admin/MyriamAdmin';
+import CategoriesAdmin from '@/pages/admin/CategoriesAdmin';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -93,6 +99,10 @@ const AuthenticatedApp = () => {
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/myriam" element={<Myriam />} />
           <Route path="/notificacoes" element={<Notificacoes />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/chat/:id" element={<ChatConversation />} />
+          <Route path="/perfil/:userId" element={<PublicProfile />} />
+          <Route path="/jornadas/:id" element={<JourneyDetail />} />
         </Route>
       </Route>
 
@@ -105,6 +115,8 @@ const AuthenticatedApp = () => {
           <Route path="/admin/midias" element={<MediaManager />} />
           <Route path="/admin/jornadas" element={<JourneysAdmin />} />
           <Route path="/admin/funcionalidades" element={<FeaturesAdmin />} />
+          <Route path="/admin/myriam" element={<MyriamAdmin />} />
+          <Route path="/admin/categorias" element={<CategoriesAdmin />} />
           <Route path="/admin/relatorios" element={<Reports />} />
           <Route path="/admin/usuarios" element={<UsersAdmin />} />
         </Route>

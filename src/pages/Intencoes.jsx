@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader } from '@/components/ui/marian';
 import { formatDate } from '@/lib/marianDates';
+import { notifyUser } from '@/lib/notify';
 
 const CATEGORIES = {
   saude: 'Saúde', familia: 'Família', trabalho: 'Trabalho', conversao: 'Conversão', gratidao: 'Gratidão', outros: 'Outros'
@@ -41,6 +42,9 @@ export default function Intencoes() {
     if (existing[0]) return; // já rezou
     await base44.entities.PrayerInteraction.create({ intention_id: intention.id, prayed: true });
     await base44.entities.PrayerIntention.update(intention.id, { prayer_count: (intention.prayer_count || 0) + 1 });
+    if (intention.created_by_id !== user.id) {
+      await notifyUser({ user_id: intention.created_by_id, category: 'intencoes', title: 'Alguém rezou pela sua intenção', body: intention.text.slice(0, 100), link: '/intencoes', related_id: intention.id });
+    }
     load();
   };
 

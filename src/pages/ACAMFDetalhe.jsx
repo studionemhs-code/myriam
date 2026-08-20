@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, BookOpen, FileText, Headphones, Play, Clock, ChevronRight } from 'lucide-react';
+import { ChevronLeft, BookOpen, FileText, Headphones, Play, Clock, ChevronRight, Flag } from 'lucide-react';
+import ReportDialog from '@/components/myriam/ReportDialog';
 import { base44 } from '@/api/base44Client';
 import { Ornament, GoldDivider } from '@/components/ui/marian';
 import ReactMarkdown from 'react-markdown';
@@ -13,6 +14,7 @@ export default function ACAMFDetalhe() {
   const [content, setContent] = useState(null);
   const [related, setRelated] = useState([]);
   const [category, setCategory] = useState(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -54,6 +56,7 @@ export default function ACAMFDetalhe() {
         <h1 className="mt-2 font-display text-3xl">{content.title}</h1>
         {content.subtitle && <p className="font-display text-lg italic text-muted-foreground">{content.subtitle}</p>}
         {content.author && <p className="mt-1 text-sm text-muted-foreground">por {content.author}</p>}
+        <button onClick={() => setReportOpen(true)} className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"><Flag className="h-3 w-3" /> Denunciar conteúdo</button>
       </header>
 
       {content.description && <p className="text-sm leading-relaxed text-muted-foreground">{content.description}</p>}
@@ -124,6 +127,8 @@ export default function ACAMFDetalhe() {
 
       <GoldDivider />
       <Ornament className="text-gold" />
+
+      <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} targetType="conteudo" targetId={content.id} />
     </div>
   );
 }

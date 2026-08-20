@@ -5,6 +5,14 @@
     "post_id": {
       "type": "string"
     },
+    "parent_id": {
+      "type": "string",
+      "description": "ID do coment\u00e1rio pai (para respostas aninhadas)"
+    },
+    "author_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio autor"
+    },
     "text": {
       "type": "string"
     },
@@ -19,5 +27,35 @@
   "required": [
     "post_id",
     "text"
-  ]
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

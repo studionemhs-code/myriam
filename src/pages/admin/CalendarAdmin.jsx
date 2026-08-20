@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/admin/ui';
 
-const empty = { title: '', description: '', event_date: '', image_url: '', type: 'festa', is_featured: false, is_system: true };
+const empty = { title: '', description: '', event_date: '', image_url: '', type: 'festa', is_featured: false, is_system: true, related_content_ids: [], related_journey_id: '' };
 const typeLabels = { solenidade: 'Solenidade', festa: 'Festa', memoria: 'Memória', jornada: 'Jornada', pessoal: 'Pessoal', evento: 'Evento' };
 
 export default function CalendarAdmin() {
@@ -11,11 +11,19 @@ export default function CalendarAdmin() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [contents, setContents] = useState([]);
+  const [journeys, setJourneys] = useState([]);
 
   const load = async () => {
     setLoading(true);
-    const list = await base44.entities.MarianCalendarEvent.list('-event_date', 200);
+    const [list, c, j] = await Promise.all([
+      base44.entities.MarianCalendarEvent.list('-event_date', 200),
+      base44.entities.ACAMFContent.filter({ status: 'publicado' }, '-published_date', 200),
+      base44.entities.CollectiveJourney.filter({ status: 'ativa' }, '-start_date', 50)
+    ]);
     setItems(list);
+    setContents(c);
+    setJourneys(j);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -88,6 +96,27 @@ export default function CalendarAdmin() {
               </Field>
               <div className="col-span-2"><Field label="Descrição"><textarea className={inputCls} rows={3} value={editing.description} onChange={(e) => set('description', e.target.value)} /></Field></div>
               <div className="col-span-2"><Field label="Imagem URL"><input className={inputCls} value={editing.image_url} onChange={(e) => set('image_url', e.target.value)} /></Field></div>
+              <Field label="Jornada relacionada">
+                <select className={inputCls} value={editing.related_journey_id || ''} onChange={(e) => set('related_journey_id', e.target.value)}>
+                  <option value="">—</option>
+                  {journeys.map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
+                </select>
+              </Field>
+              <div className="col-span-2">
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Conteúdos relacionados</span>
+                <div className="mt-1 max-h-32 space-y-1 overflow-y-auto rounded-lg border border-input p-2">
+                  {contents.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum conteúdo publicado.</p> : contents.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={(editing.related_content_ids || []).includes(c.id)} onChange={(e) => {
+                        const ids = new Set(editing.related_content_ids || []);
+                        if (e.target.checked) ids.add(c.id); else ids.delete(c.id);
+                        set('related_content_ids', [...ids]);
+                      }} />
+                      {c.title}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <label className="col-span-2 flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={editing.is_featured} onChange={(e) => set('is_featured', e.target.checked)} /> Destaque
               </label>

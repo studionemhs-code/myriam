@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Users, Calendar, Check, Sparkles, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
@@ -35,6 +36,7 @@ export default function Jornadas() {
       joined_date: new Date().toISOString().slice(0, 10),
       progress: 0
     });
+    await base44.entities.CollectiveJourney.update(journey.id, { participant_count: (journey.participant_count || 0) + 1 });
     const parts = await base44.entities.JourneyParticipant.filter({ created_by_id: user.id });
     setParticipations(parts);
   };
@@ -59,6 +61,7 @@ export default function Jornadas() {
                 {j.description && <p className="mt-1 text-sm text-muted-foreground">{j.description}</p>}
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {formatDate(j.start_date)} — {formatDate(j.end_date)}</span>
+                  {j.participant_count > 0 && <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {j.participant_count} participantes</span>}
                 </div>
                 {j.notices?.length > 0 && (
                   <div className="mt-3 rounded-xl bg-gold/10 p-3">
@@ -67,9 +70,9 @@ export default function Jornadas() {
                   </div>
                 )}
                 {isParticipating(j.id) ? (
-                  <div className="mt-4 flex items-center gap-2 rounded-xl bg-gold/15 px-4 py-2.5 text-sm font-medium text-gold">
-                    <Check className="h-4 w-4" /> Você está participando
-                  </div>
+                  <Link to={`/jornadas/${j.id}`} className="mt-4 flex items-center gap-2 rounded-xl bg-gold/15 px-4 py-2.5 text-sm font-medium text-gold">
+                    <Check className="h-4 w-4" /> Você está participando · Ver detalhes
+                  </Link>
                 ) : (
                   <button
                     onClick={() => join(j)}

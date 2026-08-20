@@ -144,6 +144,7 @@ export default function ACAMFAdmin() {
                 </select>
               </Field>
               <Field label="Duração"><input className={inputCls} placeholder="ex.: 12 min" value={editing.duration} onChange={(e) => set('duration', e.target.value)} /></Field>
+              <Field label="Dia recomendado (1-33)"><input type="number" min="1" max="33" className={inputCls} value={editing.related_day_number || ''} onChange={(e) => set('related_day_number', e.target.value ? parseInt(e.target.value) : null)} placeholder="Ex.: 12" /></Field>
               <Field label="Data de Publicação"><input type="date" className={inputCls} value={editing.published_date} onChange={(e) => set('published_date', e.target.value)} /></Field>
               <Field label="YouTube ID"><input className={inputCls} value={editing.youtube_id} onChange={(e) => set('youtube_id', e.target.value)} /></Field>
               <Field label="URL do Arquivo"><input className={inputCls} value={editing.file_url} onChange={(e) => set('file_url', e.target.value)} /></Field>

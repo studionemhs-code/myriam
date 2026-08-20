@@ -38,5 +38,16 @@
     "title"
   ],
   "name": "Notification",
-  "type": "object"
+  "type": "object",
+  "rls": {
+    "read": {
+      "data.user_id": "{{user.id}}"
+    },
+    "update": {
+      "data.user_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.user_id": "{{user.id}}"
+    }
+  }
 }

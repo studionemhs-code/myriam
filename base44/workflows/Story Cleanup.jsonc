@@ -1,0 +1,44 @@
+{
+  "name": "Limpeza de Stories",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "story_cleanup",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "cleanup": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "cleanupStories"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Limpar stories expirados",
+            "description": "Remove stories com mais de 24h"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Remove stories com mais de 24h do banco periodicamente",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 * * * *",
+      "one_time_date": null,
+      "timezone": "America/Sao_Paulo",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   Home, Flower2, BookOpen, Leaf, User, ShoppingBag,
-  Bell, Calendar, Settings, LogOut, ChevronRight, Sparkles
+  Bell, Calendar, Settings, LogOut, ChevronRight, Sparkles, MessageCircle
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -85,6 +85,9 @@ export default function AppLayout() {
         </Link>
         <Link to="/jornadas" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
           <Sparkles className="h-[18px] w-[18px]" /> Jornadas Coletivas
+        </Link>
+        <Link to="/chat" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+          <MessageCircle className="h-[18px] w-[18px]" /> Conversas
         </Link>
         <Link to="/configuracoes" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
           <Settings className="h-[18px] w-[18px]" /> Configurações

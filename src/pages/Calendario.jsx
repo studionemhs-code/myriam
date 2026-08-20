@@ -24,11 +24,19 @@ export default function Calendario() {
   const [cursor, setCursor] = useState({ year: today.getFullYear(), month: today.getMonth() });
   const [selected, setSelected] = useState(null);
   const [events, setEvents] = useState([]);
+  const [allContent, setAllContent] = useState([]);
+  const [allJourneys, setAllJourneys] = useState([]);
 
   const loadEvents = async () => {
     try {
-      const list = await base44.entities.MarianCalendarEvent.list('-event_date', 200);
+      const [list, content, journeys] = await Promise.all([
+        base44.entities.MarianCalendarEvent.list('-event_date', 200),
+        base44.entities.ACAMFContent.filter({ status: 'publicado' }, '-published_date', 200),
+        base44.entities.CollectiveJourney.filter({ status: 'ativa' }, '-start_date', 50)
+      ]);
       setEvents(list);
+      setAllContent(content);
+      setAllJourneys(journeys);
     } catch (e) { /* ignore */ }
   };
   useEffect(() => { loadEvents(); }, []);
@@ -148,6 +156,19 @@ export default function Calendario() {
                     <span className="font-medium">{e.title}</span>
                   </div>
                   {e.description && <p className="mt-1 text-sm text-muted-foreground">{e.description}</p>}
+                  {e.related_content_ids?.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {e.related_content_ids.map((cid) => {
+                        const c = allContent.find((x) => x.id === cid);
+                        if (!c) return null;
+                        return <Link key={cid} to={`/acamf/${cid}`} className="block text-xs text-primary hover:underline">📖 {c.title}</Link>;
+                      })}
+                    </div>
+                  )}
+                  {e.related_journey_id && (() => {
+                    const j = allJourneys.find((x) => x.id === e.related_journey_id);
+                    return j ? <Link to={`/jornadas/${j.id}`} className="mt-1 block text-xs text-gold hover:underline">✦ {j.title}</Link> : null;
+                  })()}
                   <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] uppercase ${TYPE_COLORS[e.type] || 'bg-muted'}`}>{e.type}</span>
                 </div>
               ))}

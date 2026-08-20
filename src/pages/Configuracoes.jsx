@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Bell, ShoppingBag, ChevronRight, Shield, Heart } from 'lucide-react';
 import { PageHeader, GoldDivider, Ornament } from '@/components/ui/marian';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -14,9 +15,24 @@ const PREFS = [
 ];
 
 export default function Configuracoes() {
+  const { user, update } = useCurrentUser();
   const [prefs, setPrefs] = useState(Object.fromEntries(PREFS.map((p) => [p.key, true])));
+  const [saving, setSaving] = useState(false);
 
-  const toggle = (k) => setPrefs((p) => ({ ...p, [k]: !p[k] }));
+  useEffect(() => {
+    if (user?.notification_prefs) {
+      setPrefs({ ...Object.fromEntries(PREFS.map((p) => [p.key, true])), ...user.notification_prefs });
+    }
+  }, [user]);
+
+  const toggle = async (k) => {
+    const newPrefs = { ...prefs, [k]: !prefs[k] };
+    setPrefs(newPrefs);
+    setSaving(true);
+    try {
+      await update({ notification_prefs: newPrefs });
+    } finally { setSaving(false); }
+  };
 
   return (
     <div>
@@ -37,6 +53,7 @@ export default function Configuracoes() {
             </div>
           ))}
         </div>
+        {saving && <p className="mt-2 text-xs text-muted-foreground">Salvando...</p>}
       </section>
 
       <section className="mt-4 rounded-2xl border border-border bg-card p-4">

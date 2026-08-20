@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
 import Composer from '@/components/myriam/Composer';
 import PostCard from '@/components/myriam/PostCard';
+import StoriesBar from '@/components/myriam/StoriesBar';
 
 export default function Myriam() {
   const { user, loading } = useCurrentUser();
@@ -39,6 +40,10 @@ export default function Myriam() {
         <p className="font-display italic text-sm text-muted-foreground">
           "Eis aqui a serva do Senhor." — Um espaço para partilhar a caminhada, testemunhos e intenções com seus irmãos e irmãs em Maria.
         </p>
+      </div>
+
+      <div className="mb-5">
+        <StoriesBar />
       </div>
 
       <div className="mb-5">
