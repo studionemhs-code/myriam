@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { X, Minus, Plus } from 'lucide-react';
+import { X, Minus, Plus, Headphones } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import AudioPlayer from '@/components/oracao/AudioPlayer';
 
-const SIZES = ['text-xl', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl'];
+const SIZES = ['text-lg', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl'];
 
 export default function ModoOracao() {
   const { day } = useParams();
@@ -61,24 +62,55 @@ export default function ModoOracao() {
         </div>
       </div>
 
-      {/* Oração centralizada */}
-      <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 pb-16">
+      {/* Player de áudio (se houver) */}
+      {dayData?.audio_url && (
+        <div className="px-6 pb-2">
+          <div className="mx-auto max-w-2xl">
+            <div className="mb-1.5 flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-gold">
+              <Headphones className="h-3.5 w-3.5" /> Áudio do dia
+            </div>
+            <AudioPlayer src={dayData.audio_url} />
+          </div>
+        </div>
+      )}
+
+      {/* Conteúdo formativo centralizado */}
+      <div className="flex flex-1 flex-col items-center overflow-y-auto px-6 pb-16">
         <div className="w-full max-w-2xl text-center">
           <div className="ornament text-gold">✦</div>
-          <p className="mt-3 text-xs uppercase tracking-[0.3em] text-gold">Oração do Dia {dayNum}</p>
+          <p className="mt-3 text-xs uppercase tracking-[0.3em] text-gold">Dia {dayNum}</p>
           {dayData?.title && (
             <h1 className="mt-2 font-display text-2xl text-primary-foreground/90">{dayData.title}</h1>
           )}
           <div className="mx-auto my-6 h-px w-16 bg-gold/50" />
 
           {!loaded ? (
-            <p className="font-display italic text-primary-foreground/60">Carregando a oração...</p>
-          ) : dayData?.prayer ? (
-            <p className={`whitespace-pre-line font-display italic leading-loose text-primary-foreground/95 ${SIZES[sizeIdx]}`}>
-              {dayData.prayer}
-            </p>
+            <p className="font-display italic text-primary-foreground/60">Carregando...</p>
           ) : (
-            <p className="font-display italic text-primary-foreground/60">Não há oração específica cadastrada para este dia.</p>
+            <div className="space-y-8">
+              {/* Texto formativo */}
+              {dayData?.text && (
+                <div
+                  className={`prose-invert max-w-none text-left leading-relaxed text-primary-foreground/90 ${SIZES[sizeIdx]}`}
+                  dangerouslySetInnerHTML={{ __html: dayData.text }}
+                />
+              )}
+
+              {/* Oração */}
+              {dayData?.prayer && (
+                <div>
+                  <div className="mx-auto mb-4 h-px w-12 bg-gold/40" />
+                  <p className="text-xs uppercase tracking-[0.25em] text-gold">Oração</p>
+                  <p className={`mt-3 whitespace-pre-line font-display italic leading-loose text-primary-foreground/95 ${SIZES[sizeIdx]}`}>
+                    {dayData.prayer}
+                  </p>
+                </div>
+              )}
+
+              {!dayData?.text && !dayData?.prayer && (
+                <p className="font-display italic text-primary-foreground/60">Não há conteúdo formativo cadastrado para este dia.</p>
+              )}
+            </div>
           )}
 
           <div className="mt-10 ornament text-gold/60">✦</div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, Upload, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -8,6 +8,21 @@ import { Field, inputCls } from '@/components/admin/ui';
 export default function PreparationDayEditor({ day, phases, onClose, onSaved }) {
   const [form, setForm] = useState(day || { day_number: 1, title: '', phase: '', is_published: true, links: [] });
   const [saving, setSaving] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+
+  const onAudioUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAudio(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      set('audio_url', file_url);
+    } catch (err) {
+      alert('Erro ao enviar áudio.');
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -93,8 +108,15 @@ export default function PreparationDayEditor({ day, phases, onClose, onSaved }) 
           <Field label="Vídeo URL (arquivo)">
             <input className={inputCls} value={form.video_url || ''} onChange={(e) => set('video_url', e.target.value)} placeholder="URL direta do vídeo" />
           </Field>
-          <Field label="Áudio URL">
-            <input className={inputCls} value={form.audio_url || ''} onChange={(e) => set('audio_url', e.target.value)} />
+          <Field label="Áudio (URL ou upload)">
+            <div className="flex gap-2">
+              <input className={`${inputCls} flex-1`} value={form.audio_url || ''} onChange={(e) => set('audio_url', e.target.value)} placeholder="URL do áudio" />
+              <label className="flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-input bg-muted px-3 text-sm hover:bg-accent">
+                {uploadingAudio ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Upload
+                <input type="file" accept="audio/*" className="hidden" onChange={onAudioUpload} disabled={uploadingAudio} />
+              </label>
+            </div>
           </Field>
           <Field label="Imagem URL">
             <input className={inputCls} value={form.image_url || ''} onChange={(e) => set('image_url', e.target.value)} />
