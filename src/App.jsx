@@ -36,7 +36,6 @@ import AdminLayout from '@/components/AdminLayout';
 import AdminRoute from '@/components/AdminRoute';
 import AdminDashboard from '@/pages/admin/Dashboard';
 import ACAMFAdmin from '@/pages/admin/ACAMFAdmin';
-import MediaManager from '@/pages/admin/MediaManager';
 import Reports from '@/pages/admin/Reports';
 import UsersAdmin from '@/pages/admin/Users';
 import PreparationDaysAdmin from '@/pages/admin/PreparationDaysAdmin';
@@ -111,7 +110,6 @@ const AuthenticatedApp = () => {
           <Route path="/admin/acamf" element={<ACAMFAdmin />} />
           <Route path="/admin/dias" element={<PreparationDaysAdmin />} />
           <Route path="/admin/calendario" element={<CalendarAdmin />} />
-          <Route path="/admin/midias" element={<MediaManager />} />
           <Route path="/admin/jornadas" element={<JourneysAdmin />} />
           <Route path="/admin/funcionalidades" element={<FeaturesAdmin />} />
           <Route path="/admin/myriam" element={<MyriamAdmin />} />

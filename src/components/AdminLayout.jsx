@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
-  LayoutDashboard, BookOpen, CalendarDays, Film, Sparkles,
+  LayoutDashboard, BookOpen, CalendarDays, Sparkles,
   Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -14,7 +14,6 @@ const items = [
   { to: '/admin/myriam', label: 'Myriam', icon: MessageCircle },
   { to: '/admin/dias', label: 'Dias de Preparação', icon: Sparkles },
   { to: '/admin/calendario', label: 'Calendário Mariano', icon: CalendarDays },
-  { to: '/admin/midias', label: 'Gestor de Mídias', icon: Film },
   { to: '/admin/jornadas', label: 'Jornadas Coletivas', icon: Sparkles },
   { to: '/admin/relatorios', label: 'Moderação', icon: Flag },
   { to: '/admin/funcionalidades', label: 'Funcionalidades', icon: ToggleLeft },
