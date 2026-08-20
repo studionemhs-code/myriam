@@ -1,0 +1,90 @@
+{
+  "name": "CertificateTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome identificador interno do modelo"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo exibido no certificado"
+    },
+    "subtitle": {
+      "type": "string"
+    },
+    "body_text": {
+      "type": "string",
+      "description": "Texto principal. Placeholders: {nome}, {data}, {tipo}, {jornada}"
+    },
+    "agreement_text": {
+      "type": "string",
+      "description": "Conte\u00fado exibido para o usu\u00e1rio concordar antes de emitir"
+    },
+    "footer_text": {
+      "type": "string"
+    },
+    "primary_color": {
+      "type": "string",
+      "default": "#673ab7"
+    },
+    "accent_color": {
+      "type": "string",
+      "default": "#c9a14a"
+    },
+    "border_style": {
+      "type": "string",
+      "enum": [
+        "classic",
+        "modern",
+        "minimal"
+      ],
+      "default": "classic"
+    },
+    "issuer_name": {
+      "type": "string",
+      "default": "Theotokos"
+    },
+    "issuer_signature_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "certificate_type": {
+      "type": "string",
+      "enum": [
+        "preparacao",
+        "jornada",
+        "renovacao"
+      ],
+      "default": "preparacao"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "title",
+    "body_text",
+    "certificate_type"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Calendar, Users, BookOpen, Bell, Check, Play, Lock, Sparkles, Flower2, Target } from 'lucide-react';
+import { ChevronLeft, Calendar, Users, BookOpen, Bell, Check, Play, Lock, Sparkles, Flower2, Target, Award } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { formatDate } from '@/lib/marianDates';
@@ -170,6 +170,9 @@ export default function JourneyDetail() {
               <p className="mt-1 text-sm text-muted-foreground">Você completou todas as etapas. Que sua {typeLabel.toLowerCase()} seja abençoada.</p>
               <Link to={isRenewal ? '/minha-consagracao' : '/consagracao'} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">
                 <Flower2 className="h-4 w-4" /> {isRenewal ? 'Realizar renovação' : 'Registrar consagração'}
+              </Link>
+              <Link to={`/certificado?type=jornada&journeyId=${journey.id}`} className="mt-2 inline-flex items-center gap-2 rounded-xl border border-gold/40 px-5 py-2.5 text-sm font-medium text-gold">
+                <Award className="h-4 w-4" /> Emitir Certificado
               </Link>
             </div>
           )}

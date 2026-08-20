@@ -188,6 +188,11 @@ export default function Caminho() {
             <Flower2 className="h-4 w-4" /> Registrar minha Consagração
           </Link>
         )}
+        {progress?.status === 'concluida' && (
+          <Link to="/certificado?type=preparacao" className="mt-2 inline-flex items-center gap-2 rounded-xl border border-gold/40 px-5 py-2.5 text-sm font-medium text-gold">
+            <Award className="h-4 w-4" /> Emitir Certificado
+          </Link>
+        )}
       </section>
 
       {incentiveMessage && (

@@ -45,6 +45,8 @@ import JourneysAdmin from '@/pages/admin/JourneysAdmin';
 import FeaturesAdmin from '@/pages/admin/Features';
 import MyriamAdmin from '@/pages/admin/MyriamAdmin';
 import CategoriesAdmin from '@/pages/admin/CategoriesAdmin';
+import CertificatesAdmin from '@/pages/admin/CertificatesAdmin';
+import Certificado from '@/pages/Certificado';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -102,6 +104,7 @@ const AuthenticatedApp = () => {
           <Route path="/chat/:id" element={<ChatConversation />} />
           <Route path="/perfil/:userId" element={<PublicProfile />} />
           <Route path="/jornadas/:id" element={<JourneyDetail />} />
+          <Route path="/certificado" element={<Certificado />} />
         </Route>
       </Route>
 
@@ -116,6 +119,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/funcionalidades" element={<FeaturesAdmin />} />
           <Route path="/admin/myriam" element={<MyriamAdmin />} />
           <Route path="/admin/categorias" element={<CategoriesAdmin />} />
+          <Route path="/admin/certificados" element={<CertificatesAdmin />} />
           <Route path="/admin/relatorios" element={<Reports />} />
           <Route path="/admin/usuarios" element={<UsersAdmin />} />
         </Route>
