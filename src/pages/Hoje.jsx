@@ -70,7 +70,7 @@ export default function Hoje() {
       {/* Saudação */}
       <header className="rounded-2xl bg-deep p-6 text-primary-foreground">
         <p className="text-sm text-primary-foreground/70">{greeting},</p>
-        <h1 className="mt-1 font-display text-2xl capitalize text-[hsl(var(--popover))] bg-[hsl(var(--popover))]">{firstName}</h1>
+        <h1 className="mt-1 font-display text-2xl capitalize bg-[hsl(var(--popover))] text-[hsl(var(--primary-foreground))]">{firstName}</h1>
         <p className="mt-2 font-display italic text-primary-foreground/70">{quote}</p>
       </header>
 
