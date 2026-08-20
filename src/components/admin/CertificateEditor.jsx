@@ -42,9 +42,18 @@ export default function CertificateEditor({ template, onClose, onSaved }) {
     if (!form.name?.trim() || !form.title?.trim() || !form.body_text?.trim()) return;
     setSaving(true);
     try {
-      if (form.id) await base44.entities.CertificateTemplate.update(form.id, form);
-      else await base44.entities.CertificateTemplate.create(form);
+      const payload = { ...form };
+      delete payload.id;
+      delete payload.created_date;
+      delete payload.updated_date;
+      delete payload.created_by_id;
+      if (form.id) await base44.entities.CertificateTemplate.update(form.id, payload);
+      else await base44.entities.CertificateTemplate.create(payload);
       onSaved();
+      onClose();
+    } catch (e) {
+      alert('Erro ao salvar o modelo. Verifique os campos e tente novamente.');
+      console.error(e);
     } finally { setSaving(false); }
   };
 
