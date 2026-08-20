@@ -16,7 +16,27 @@ export default function Onboarding() {
       await update({ status: 'interessado', onboarding_completed: true });
       navigate('/acamf');
     } else if (path === 'preparar') {
-      await update({ status: 'preparacao', onboarding_completed: true });
+      const today = new Date();
+      const startStr = today.toISOString().slice(0, 10);
+      const target = new Date(today);
+      target.setDate(target.getDate() + 33);
+      const targetStr = target.toISOString().slice(0, 10);
+      await update({
+        status: 'preparacao',
+        onboarding_completed: true,
+        preparation_start_date: startStr,
+        target_consecration_date: targetStr
+      });
+      const existing = await base44.entities.UserProgress.filter({ created_by_id: user.id });
+      if (!existing[0]) {
+        await base44.entities.UserProgress.create({
+          current_day: 1,
+          completed_days: [],
+          started_date: startStr,
+          last_access_date: new Date().toISOString(),
+          status: 'ativa'
+        });
+      }
       navigate('/caminho');
     } else if (path === 'consagrado') {
       setStep(1);
