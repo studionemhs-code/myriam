@@ -77,18 +77,26 @@ export default function AppLayout() {
           </span>
           Notificações
         </Link>
-        <Link to="/calendario" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
-          <Calendar className="h-[18px] w-[18px]" /> Calendário Mariano
-        </Link>
-        <Link to="/intencoes" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
-          <Leaf className="h-[18px] w-[18px]" /> Intenções de Oração
-        </Link>
-        <Link to="/jornadas" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
-          <Sparkles className="h-[18px] w-[18px]" /> Jornadas Coletivas
-        </Link>
-        <Link to="/chat" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
-          <MessageCircle className="h-[18px] w-[18px]" /> Conversas
-        </Link>
+        {isVisible('calendario') && (
+          <Link to="/calendario" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+            <Calendar className="h-[18px] w-[18px]" /> Calendário Mariano
+          </Link>
+        )}
+        {isVisible('intencoes') && (
+          <Link to="/intencoes" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+            <Leaf className="h-[18px] w-[18px]" /> Intenções de Oração
+          </Link>
+        )}
+        {isVisible('jornadas') && (
+          <Link to="/jornadas" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+            <Sparkles className="h-[18px] w-[18px]" /> Jornadas Coletivas
+          </Link>
+        )}
+        {isVisible('chat') && (
+          <Link to="/chat" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+            <MessageCircle className="h-[18px] w-[18px]" /> Conversas
+          </Link>
+        )}
         <Link to="/configuracoes" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
           <Settings className="h-[18px] w-[18px]" /> Configurações
         </Link>
@@ -137,7 +145,7 @@ export default function AppLayout() {
               </span>
             )}
           </Link>
-          <Link to="/calendario" className="text-muted-foreground"><Calendar className="h-5 w-5" /></Link>
+          {isVisible('calendario') && <Link to="/calendario" className="text-muted-foreground"><Calendar className="h-5 w-5" /></Link>}
           <Link to="/perfil" className="text-muted-foreground"><User className="h-5 w-5" /></Link>
         </div>
       </header>

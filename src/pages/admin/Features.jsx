@@ -4,6 +4,15 @@ import { base44 } from '@/api/base44Client';
 import { clearFeatureFlagsCache } from '@/hooks/useFeatureFlags';
 import { AdminPageTitle } from '@/components/admin/ui';
 
+const DEFAULT_FLAGS = [
+  { feature: 'acamf', label: 'ACAMF (Formação)' },
+  { feature: 'myriam', label: 'Myriam (Comunidade)' },
+  { feature: 'intencoes', label: 'Intenções de Oração' },
+  { feature: 'jornadas', label: 'Jornadas Coletivas' },
+  { feature: 'chat', label: 'Conversas (Chat)' },
+  { feature: 'calendario', label: 'Calendário Mariano' },
+];
+
 export default function Features() {
   const [flags, setFlags] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +21,14 @@ export default function Features() {
   const load = async () => {
     setLoading(true);
     try {
-      const list = await base44.entities.FeatureFlag.list('feature');
+      let list = await base44.entities.FeatureFlag.list('feature');
+      const existing = new Set(list.map((f) => f.feature));
+      const missing = DEFAULT_FLAGS.filter((d) => !existing.has(d.feature));
+      if (missing.length > 0) {
+        await base44.entities.FeatureFlag.bulkCreate(missing.map((d) => ({ ...d, visible: true })));
+        clearFeatureFlagsCache();
+        list = await base44.entities.FeatureFlag.list('feature');
+      }
       setFlags(list);
     } finally {
       setLoading(false);
