@@ -17,6 +17,18 @@
     "color": {
       "type": "string",
       "description": "Cor hexadecimal da fase"
+    },
+    "start_message": {
+      "type": "string",
+      "description": "Mensagem de incentivo exibida ao iniciar a fase"
+    },
+    "midway_message": {
+      "type": "string",
+      "description": "Mensagem de incentivo exibida no meio da fase"
+    },
+    "completion_message": {
+      "type": "string",
+      "description": "Mensagem de incentivo exibida ao concluir a fase"
     }
   },
   "required": [

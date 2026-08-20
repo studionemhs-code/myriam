@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { formatDate } from '@/lib/marianDates';
 import confetti from 'canvas-confetti';
+import MedalGrid from '@/components/caminho/MedalGrid';
 
 export default function JourneyDetail() {
   const { id } = useParams();
@@ -151,6 +152,15 @@ export default function JourneyDetail() {
             <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-primary-foreground/15">
               <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${participant.progress || 0}%` }} />
             </div>
+          </div>
+
+          <div className="mb-4">
+            <MedalGrid medals={[
+              { label: 'Primeiro Passo', earned: completedSteps.length >= 1 },
+              { label: 'Em Caminho', earned: completedSteps.length >= Math.ceil(steps.length / 2) },
+              { label: 'Dedicado', earned: completedSteps.length >= Math.max(1, steps.length - 1) },
+              { label: 'Concluído', earned: allDone }
+            ]} />
           </div>
 
           {allDone && (

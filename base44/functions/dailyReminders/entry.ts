@@ -5,6 +5,11 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
+    const allProgress = await base44.asServiceRole.entities.UserProgress.list('-created_date', 500);
+    const progressByUser = {};
+    for (const p of allProgress) {
+      progressByUser[p.created_by_id] = p;
+    }
     const today = new Date();
     const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     let created = 0;
@@ -52,6 +57,18 @@ export default async function(req) {
           await notifyUser(base44, u.id, 'caminho', 'Hoje é o dia da sua Consagração',
             'Que Maria te conduza hoje ao ato de Consagração.', '/consagracao');
           created++;
+        }
+      }
+      // Lembrete diário de oração (em preparação, dia atual não concluído)
+      if (u.status === 'preparacao') {
+        const progress = progressByUser[u.id];
+        if (progress && progress.status === 'ativa' && progress.current_day <= 33) {
+          const completedDays = progress.completed_days || [];
+          if (!completedDays.includes(progress.current_day)) {
+            await notifyUser(base44, u.id, 'caminho', 'Não esqueça sua oração de hoje',
+              `Você ainda não concluiu o Dia ${progress.current_day} da sua preparação. Reserve um momento para rezar.`, '/caminho');
+            created++;
+          }
         }
       }
     }

@@ -89,6 +89,23 @@ export default function PhaseManager() {
                   <input type="color" className="mt-1 h-10 w-full rounded-lg border border-input bg-background" value={editing.color || '#C5A069'} onChange={(e) => setEditing({ ...editing, color: e.target.value })} />
                 </div>
               </div>
+              <div className="mt-3 border-t border-border pt-3">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gold">Mensagens de incentivo</p>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Início da fase</label>
+                    <textarea className={`mt-1 ${inputCls}`} rows={2} value={editing.start_message || ''} onChange={(e) => setEditing({ ...editing, start_message: e.target.value })} placeholder="Ex: Que comece sua jornada de conhecimento..." />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Meio da fase</label>
+                    <textarea className={`mt-1 ${inputCls}`} rows={2} value={editing.midway_message || ''} onChange={(e) => setEditing({ ...editing, midway_message: e.target.value })} placeholder="Ex: Você está no meio do caminho, continue firme..." />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Conclusão da fase</label>
+                    <textarea className={`mt-1 ${inputCls}`} rows={2} value={editing.completion_message || ''} onChange={(e) => setEditing({ ...editing, completion_message: e.target.value })} placeholder="Ex: Você concluiu esta fase. Que alegria!" />
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setEditing(null)} className="rounded-lg px-4 py-2 text-sm text-muted-foreground">Cancelar</button>

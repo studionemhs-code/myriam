@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Flower2, ChevronRight, Calendar, Sparkles, Play, Lock, Check, Clock } from 'lucide-react';
+import { Flower2, ChevronRight, Calendar, Sparkles, Play, Lock, Check, Clock, Award } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, GoldDivider } from '@/components/ui/marian';
+import MedalGrid from '@/components/caminho/MedalGrid';
 import { formatDate, daysUntil, parseDate, daysBetween } from '@/lib/marianDates';
 
 const DEFAULT_PHASES = {
@@ -100,6 +101,30 @@ export default function Caminho() {
     return found?.name || DEFAULT_PHASES[phase] || phase;
   };
 
+  // Fase atual e mensagem de incentivo
+  const phasesWithDays = phases.map((phase) => {
+    const phaseDays = days.filter((d) => d.phase === phase.name).map((d) => d.day_number).sort((a, b) => a - b);
+    return { ...phase, dayRange: phaseDays.length > 0 ? [phaseDays[0], phaseDays[phaseDays.length - 1]] : null, dayCount: phaseDays.length };
+  });
+  const currentPhase = phasesWithDays.find((p) => p.dayRange && currentUnlocked >= p.dayRange[0] && currentUnlocked <= p.dayRange[1]);
+  const phaseProgress = currentPhase && currentPhase.dayCount > 0
+    ? (currentUnlocked - currentPhase.dayRange[0] + 1) / currentPhase.dayCount
+    : 0;
+  let incentiveMessage = null;
+  if (currentPhase) {
+    if (phaseProgress <= 0.4 && currentPhase.start_message) incentiveMessage = currentPhase.start_message;
+    else if (phaseProgress > 0.4 && phaseProgress <= 0.8 && currentPhase.midway_message) incentiveMessage = currentPhase.midway_message;
+    else if (phaseProgress > 0.8 && currentPhase.completion_message) incentiveMessage = currentPhase.completion_message;
+  }
+
+  // Medalhas de gamificação
+  const medals = [
+    { label: '1ª Semana', earned: completed >= 7 },
+    { label: 'Metade', earned: completed >= 17 },
+    { label: 'Quase Lá', earned: completed >= 25 },
+    { label: 'Consagrado', earned: completed >= 33 }
+  ];
+
   const getDayStatus = (dayNum) => {
     if (!startedDate) return 'locked';
     if (dayNum > currentUnlocked) return 'locked'; // ainda não chegou o dia
@@ -122,8 +147,11 @@ export default function Caminho() {
           <p className="font-display text-2xl">{pct}% concluído</p>
           <p className="text-sm text-primary-foreground/60">{completed}/33 dias</p>
         </div>
-        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-primary-foreground/15">
+        <div className="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-primary-foreground/15">
           <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${pct}%` }} />
+          <div className="absolute top-0 h-full w-px bg-primary-foreground/25" style={{ left: '25%' }} />
+          <div className="absolute top-0 h-full w-px bg-primary-foreground/25" style={{ left: '50%' }} />
+          <div className="absolute top-0 h-full w-px bg-primary-foreground/25" style={{ left: '75%' }} />
         </div>
 
         <div className="mt-5 flex items-center gap-4 rounded-xl bg-primary-foreground/5 p-4">
@@ -160,6 +188,18 @@ export default function Caminho() {
           </Link>
         )}
       </section>
+
+      {incentiveMessage && (
+        <div className="mt-4 rounded-2xl border border-gold/30 bg-gold/5 p-4">
+          <p className="text-xs font-medium uppercase tracking-wider text-gold">Mensagem da fase</p>
+          <p className="mt-1 text-sm italic text-foreground">{incentiveMessage}</p>
+        </div>
+      )}
+
+      <div className="mt-4">
+        <h2 className="mb-3 flex items-center gap-2 font-display text-lg"><Award className="h-4 w-4 text-gold" /> Medalhas</h2>
+        <MedalGrid medals={medals} />
+      </div>
 
       <GoldDivider />
 
