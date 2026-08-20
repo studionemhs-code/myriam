@@ -5,13 +5,18 @@ import { inputCls } from '@/components/admin/ui';
 
 export default function PhaseManager() {
   const [phases, setPhases] = useState([]);
+  const [days, setDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
 
   const load = async () => {
     setLoading(true);
-    const list = await base44.entities.PreparationPhase.list('sort_order', 50);
-    setPhases(list);
+    const [phaseList, dayList] = await Promise.all([
+      base44.entities.PreparationPhase.list('sort_order', 50),
+      base44.entities.PreparationDay.list('day_number', 50)
+    ]);
+    setPhases(phaseList);
+    setDays(dayList);
     setLoading(false);
   };
 
@@ -20,7 +25,12 @@ export default function PhaseManager() {
   const save = async () => {
     if (!editing.name?.trim()) return;
     if (editing.id) {
+      const oldPhase = phases.find((p) => p.id === editing.id);
+      const oldName = oldPhase?.name;
       await base44.entities.PreparationPhase.update(editing.id, editing);
+      if (oldName && oldName !== editing.name) {
+        await base44.entities.PreparationDay.updateMany({ phase: oldName }, { $set: { phase: editing.name } });
+      }
     } else {
       await base44.entities.PreparationPhase.create(editing);
     }
@@ -29,7 +39,16 @@ export default function PhaseManager() {
   };
 
   const remove = async (id) => {
+    const phase = phases.find((p) => p.id === id);
+    const affected = days.filter((d) => d.phase === phase?.name);
+    if (affected.length > 0) {
+      const ok = window.confirm(`Esta fase está associada a ${affected.length} dia(s). Ao excluir, esses dias ficarão sem fase. Deseja continuar?`);
+      if (!ok) return;
+    }
     await base44.entities.PreparationPhase.delete(id);
+    if (phase?.name) {
+      await base44.entities.PreparationDay.updateMany({ phase: phase.name }, { $set: { phase: '' } });
+    }
     await load();
   };
 
@@ -55,7 +74,9 @@ export default function PhaseManager() {
               <div className="h-4 w-4 shrink-0 rounded-full" style={{ background: p.color || '#C5A069' }} />
               <div className="flex-1">
                 <p className="text-sm font-medium">{p.name}</p>
-                {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
+                <p className="text-xs text-muted-foreground">
+                  {days.filter((d) => d.phase === p.name).length} dia(s){p.description ? ` · ${p.description}` : ''}
+                </p>
               </div>
               <button onClick={() => setEditing({ ...p })} className="text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
               <button onClick={() => remove(p.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
