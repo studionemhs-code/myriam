@@ -1,3 +1,13 @@
+@font-face {
+  font-family: "Above the Beyond Script";
+  src: url("https://db.onlinewebfonts.com/t/16adc037a7d47f49df37bbd82cb056ec.woff2") format("woff2"),
+       url("https://db.onlinewebfonts.com/t/16adc037a7d47f49df37bbd82cb056ec.woff") format("woff"),
+       url("https://db.onlinewebfonts.com/t/16adc037a7d47f49df37bbd82cb056ec.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -38,6 +48,7 @@
     --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-script: 'Above the Beyond Script', cursive;
     --sidebar-background: 262 52% 47%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 41 60% 62%;

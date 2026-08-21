@@ -36,9 +36,9 @@ export default function AppLayout() {
 
   const SidebarContent = (
     <div className="flex h-full flex-col">
-      <div className="flex items-start justify-between px-6 py-8">
+      <div className="relative flex items-center justify-center px-6 py-8">
         <Logo size="lg" variant="dark" subtitle stacked />
-        <ThemeToggle className="text-sidebar-foreground/70 hover:text-sidebar-foreground" />
+        <ThemeToggle className="absolute right-6 top-8 text-sidebar-foreground/70 hover:text-sidebar-foreground" />
       </div>
       <div className="gold-line mx-6 opacity-40" />
       <nav className="mt-4 flex-1 px-3">

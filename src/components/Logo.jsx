@@ -16,12 +16,12 @@ export default function Logo({ size = 'md', to, variant = 'dark', subtitle = tru
     <div className={`flex ${stacked ? 'flex-col items-center text-center' : 'items-center'} gap-2.5`}>
       <img src={LOGO_URL} alt="Theotokos" className={`${dims.box} shrink-0 rounded-xl object-cover`} />
       <div className="leading-none">
-        <p className={`font-display font-bold uppercase ${dims.title} ${titleColor}`} style={{ letterSpacing: '0.08em' }}>
-          MYRIAM
+        <p className={`font-script ${dims.title} ${titleColor}`} style={{ letterSpacing: '0.02em' }}>
+          Myriam
         </p>
         {subtitle && (
-          <p className={`mt-0.5 uppercase ${dims.sub} ${subColor}`} style={{ letterSpacing: '0.3em' }}>
-            Mãe de Deus
+          <p className={`mt-1 ${dims.sub} ${subColor}`} style={{ letterSpacing: '0.05em' }}>
+            comunidade theotokos | consagração a nossa senhora
           </p>
         )}
       </div>
