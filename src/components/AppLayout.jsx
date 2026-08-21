@@ -133,7 +133,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
-      <aside className={`fixed inset-y-0 left-0 hidden bg-deep transition-all duration-300 lg:block ${collapsed ? 'w-0 overflow-hidden' : 'w-64'}`}>
+      <aside className={`fixed inset-y-0 left-0 hidden bg-deep transition-all duration-300 lg:block ${collapsed ? 'w-0 overflow-hidden' : 'w-64 overflow-y-auto'}`}>
         {SidebarContent}
       </aside>
 
@@ -167,7 +167,7 @@ export default function AppLayout() {
       {menuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMenuOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-72 bg-deep">{SidebarContent}</div>
+          <div className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-deep">{SidebarContent}</div>
         </div>
       )}
 
