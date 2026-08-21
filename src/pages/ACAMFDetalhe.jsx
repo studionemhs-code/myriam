@@ -58,6 +58,20 @@ export default function ACAMFDetalhe() {
     setLessonProgress(updated);
   };
 
+  const handleVideoComplete = async () => {
+    if (!content?.course_id) return;
+    if (lessonProgress) {
+      if (lessonProgress.completed) return;
+      const updated = await base44.entities.LessonProgress.update(lessonProgress.id, { completed: true, last_watched_date: new Date().toISOString() });
+      setLessonProgress(updated);
+    } else {
+      const created = await base44.entities.LessonProgress.create({
+        lesson_id: id, course_id: content.course_id, completed: true, last_watched_date: new Date().toISOString()
+      }).catch(() => null);
+      if (created) setLessonProgress(created);
+    }
+  };
+
   const currentIndex = courseLessons.findIndex((l) => l.id === id);
   const prevLesson = currentIndex > 0 ? courseLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex >= 0 && currentIndex < courseLessons.length - 1 ? courseLessons[currentIndex + 1] : null;
@@ -94,10 +108,10 @@ export default function ACAMFDetalhe() {
       {content.content_type === 'video' && (
         content.youtube_id ? (
           <div className="rounded-2xl border-2 border-marian/50 bg-deep p-2">
-            <PrivacyVideoPlayer videoId={content.youtube_id} title={content.title} />
+            <PrivacyVideoPlayer videoId={content.youtube_id} title={content.title} onComplete={handleVideoComplete} />
           </div>
         ) : content.file_url ? (
-          <video controls src={content.file_url} className="w-full rounded-2xl" />
+          <video controls src={content.file_url} className="w-full rounded-2xl" onEnded={handleVideoComplete} />
         ) : null
       )}
 

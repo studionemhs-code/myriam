@@ -24,7 +24,7 @@ function loadYouTubeAPI() {
   return apiPromise;
 }
 
-export default function PrivacyVideoPlayer({ videoId, title }) {
+export default function PrivacyVideoPlayer({ videoId, title, onComplete }) {
   const containerRef = useRef(null);
   const playerRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -35,6 +35,7 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
   const [showSpeed, setShowSpeed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const wrapperRef = useRef(null);
+  const completedRef = useRef(false);
 
   const rates = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -46,6 +47,8 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
 
   useEffect(() => {
     let cancelled = false;
+
+    completedRef.current = false;
 
     const createPlayer = () => {
       if (cancelled || !containerRef.current || !window.YT?.Player) return;
@@ -77,6 +80,10 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
           },
           onStateChange: (e) => {
             setPlaying(e.data === window.YT.PlayerState.PLAYING);
+            if (e.data === 0 && onComplete && !completedRef.current) {
+              completedRef.current = true;
+              onComplete();
+            }
           },
         },
       });
@@ -88,7 +95,14 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
       if (playerRef.current?.getCurrentTime) {
         const cur = playerRef.current.getCurrentTime();
         const dur = playerRef.current.getDuration();
-        if (dur > 0) setProgress((cur / dur) * 100);
+        if (dur > 0) {
+          const pct = (cur / dur) * 100;
+          setProgress(pct);
+          if (pct >= 95 && onComplete && !completedRef.current) {
+            completedRef.current = true;
+            onComplete();
+          }
+        }
       }
     }, 500);
 
