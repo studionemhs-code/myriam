@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Plus, Pencil, Trash2, Star, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/admin/ui';
@@ -8,6 +9,7 @@ import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/ad
 const empty = {
   title: '', subtitle: '', description: '', category_id: '', author: '',
   content_type: 'texto', level: 'iniciante', content: '', youtube_id: '',
+  use_alternative_player: false,
   file_url: '', cover_url: '', status: 'rascunho', recommended: false,
   duration: '', published_date: ''
 };
@@ -22,7 +24,7 @@ function extractYouTubeId(value) {
   // Se já é um ID bruto (11 chars, sem barras), mantém
   if (!v.includes('/') && !v.includes('=') && v.length === 11) return v;
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/,
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/live\/)([A-Za-z0-9_-]{11})/,
     /[?&]v=([A-Za-z0-9_-]{11})/
   ];
   for (const p of patterns) {
@@ -163,10 +165,34 @@ export default function ACAMFAdmin() {
               <Field label="Duração"><input className={inputCls} placeholder="ex.: 12 min" value={editing.duration} onChange={(e) => set('duration', e.target.value)} /></Field>
               <Field label="Dia recomendado (1-33)"><input type="number" min="1" max="33" className={inputCls} value={editing.related_day_number || ''} onChange={(e) => set('related_day_number', e.target.value ? parseInt(e.target.value) : null)} placeholder="Ex.: 12" /></Field>
               <Field label="Data de Publicação"><input type="date" className={inputCls} value={editing.published_date} onChange={(e) => set('published_date', e.target.value)} /></Field>
-              <Field label="URL do YouTube" hint="Cole o link do vídeo (ex: https://youtu.be/abc123 ou https://youtube.com/watch?v=abc123)">
-                <input className={inputCls} placeholder="https://youtube.com/watch?v=..." value={editing.youtube_id} onChange={(e) => set('youtube_id', extractYouTubeId(e.target.value))} />
-              </Field>
               <Field label="URL do Arquivo"><input className={inputCls} value={editing.file_url} onChange={(e) => set('file_url', e.target.value)} /></Field>
+              {editing.content_type === 'video' && (
+                <div className="col-span-2 space-y-4 rounded-xl border border-border bg-muted/30 p-4">
+                  <Field label="Qual fornecedor de vídeos você utiliza?">
+                    <select className={inputCls} defaultValue="youtube" disabled>
+                      <option value="youtube">Youtube</option>
+                    </select>
+                  </Field>
+                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-4">
+                    <div className="flex gap-3">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-bold">i</div>
+                      <div className="space-y-1.5 text-sm text-muted-foreground">
+                        <p className="font-medium text-foreground">Temos dois players disponíveis:</p>
+                        <p>Caso deseje o original do Youtube, deixe a opção abaixo desmarcada.</p>
+                        <p>Caso deseje o player alternativo, ideal para vídeos não listados (não deixa o usuário ir para a página do Youtube e personalizado com a cor do portal) marque a opção abaixo.</p>
+                        <p>Você também pode inserir lives do Youtube!</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Deseja usar o player alternativo?</label>
+                    <Switch checked={!!editing.use_alternative_player} onCheckedChange={(v) => set('use_alternative_player', v)} />
+                  </div>
+                  <Field label="URL do vídeo" hint="Cole o link do YouTube — o ID é extraído automaticamente">
+                    <input className={inputCls} placeholder="https://youtube.com/watch?v=... ou https://youtu.be/..." value={editing.youtube_id} onChange={(e) => set('youtube_id', extractYouTubeId(e.target.value))} />
+                  </Field>
+                </div>
+              )}
               <Field label="URL da Capa"><input className={inputCls} value={editing.cover_url} onChange={(e) => set('cover_url', e.target.value)} /></Field>
               <div className="col-span-2">
                 <Field label="Descrição curta"><textarea className={inputCls} rows={2} value={editing.description} onChange={(e) => set('description', e.target.value)} /></Field>

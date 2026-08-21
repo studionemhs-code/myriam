@@ -42,6 +42,11 @@
     "youtube_id": {
       "type": "string"
     },
+    "use_alternative_player": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se true, usa player alternativo (youtube-nocookie, privacy-enhanced, sem redirecionamento)"
+    },
     "tags": {
       "type": "array",
       "items": {

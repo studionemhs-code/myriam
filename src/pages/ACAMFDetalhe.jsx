@@ -67,15 +67,28 @@ export default function ACAMFDetalhe() {
       {/* Mídia */}
       {content.content_type === 'video' && (
         content.youtube_id ? (
-          <div className="aspect-video overflow-hidden rounded-2xl">
-            <iframe
-              className="h-full w-full"
-              src={`https://www.youtube.com/embed/${content.youtube_id}`}
-              title={content.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
+          content.use_alternative_player ? (
+            <div className="rounded-2xl border-2 border-marian/50 bg-deep p-2">
+              <div className="aspect-video overflow-hidden rounded-xl">
+                <iframe
+                  className="h-full w-full"
+                  src={`https://www.youtube-nocookie.com/embed/${content.youtube_id}`}
+                  title={content.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="aspect-video overflow-hidden rounded-2xl">
+              <iframe
+                className="h-full w-full"
+                src={`https://www.youtube.com/embed/${content.youtube_id}`}
+                title={content.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )
         ) : content.file_url ? (
           <video controls src={content.file_url} className="w-full rounded-2xl" />
         ) : null
