@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import ProductGrid from '@/components/cadeiazinha/ProductGrid';
 import { fetchCep, buildWhatsAppMessage, newChain } from '@/lib/quoteUtils';
 import { ChevronLeft, ChevronRight, Check, Search, Loader2, Plus, Trash2, MessageCircle } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 const inputCls = 'w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-primary';
 
@@ -37,6 +38,9 @@ export default function QuoteForm({ catalog, settings }) {
     setCepLoading(false);
     if (data) {
       set({ street: data.street, neighborhood: data.neighborhood, city: data.city, state: data.state });
+      toast({ title: 'CEP encontrado', description: `${data.city}/${data.state}` });
+    } else {
+      toast({ title: 'CEP não encontrado', description: 'Verifique o CEP e tente novamente.', variant: 'destructive' });
     }
   };
 
@@ -112,7 +116,7 @@ export default function QuoteForm({ catalog, settings }) {
       setSubmitted(true);
     } catch (e) {
       console.error(e);
-      alert('Não foi possível enviar sua solicitação. Tente novamente.');
+      toast({ title: 'Erro ao enviar', description: 'Não foi possível enviar sua solicitação. Tente novamente.', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
