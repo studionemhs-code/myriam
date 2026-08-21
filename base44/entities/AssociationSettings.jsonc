@@ -1,0 +1,86 @@
+{
+  "name": "AssociationSettings",
+  "type": "object",
+  "properties": {
+    "reading_document_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Documento (PDF) enviado pelo admin para leitura obrigat\u00f3ria antes da solicita\u00e7\u00e3o"
+    },
+    "reading_document_label": {
+      "type": "string",
+      "default": "Estatuto da Associa\u00e7\u00e3o",
+      "description": "Nome exibido para o documento de leitura"
+    },
+    "request_title": {
+      "type": "string",
+      "default": "Solicita\u00e7\u00e3o de Ingresso"
+    },
+    "request_subtitle": {
+      "type": "string",
+      "default": "Associa\u00e7\u00e3o Maria Rainha dos Cora\u00e7\u00f5es"
+    },
+    "request_body_text": {
+      "type": "string",
+      "description": "Texto da solicita\u00e7\u00e3o. Placeholders: {nome}, {email}, {data}, {cidade}, {estado}, {telefone}, {consagracao_data}"
+    },
+    "declaration_text": {
+      "type": "string",
+      "description": "Texto do termo declarat\u00f3rio. Placeholders: {nome}, {email}, {data}, {cidade}, {estado}, {telefone}, {consagracao_data}"
+    },
+    "footer_text": {
+      "type": "string"
+    },
+    "primary_color": {
+      "type": "string",
+      "default": "#673ab7"
+    },
+    "accent_color": {
+      "type": "string",
+      "default": "#c9a14a"
+    },
+    "border_style": {
+      "type": "string",
+      "enum": [
+        "classic",
+        "modern",
+        "minimal"
+      ],
+      "default": "classic"
+    },
+    "issuer_name": {
+      "type": "string",
+      "default": "Associa\u00e7\u00e3o Maria Rainha dos Cora\u00e7\u00f5es"
+    },
+    "issuer_signature_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "request_title",
+    "request_body_text"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "name": "AssociationRequest",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_data": {
+      "type": "object",
+      "description": "Snapshot dos dados do consagrado no momento da solicita\u00e7\u00e3o"
+    },
+    "settings_snapshot": {
+      "type": "object",
+      "description": "C\u00f3pia das configura\u00e7\u00f5es no momento da solicita\u00e7\u00e3o"
+    },
+    "document_read": {
+      "type": "boolean",
+      "default": false
+    },
+    "document_read_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "personal_data": {
+      "type": "object",
+      "description": "Dados adicionais preenchidos pelo usu\u00e1rio (cidade, estado, telefone, etc.)"
+    },
+    "signature_type": {
+      "type": "string",
+      "enum": [
+        "typed",
+        "drawn",
+        "uploaded"
+      ]
+    },
+    "signature_data": {
+      "type": "string",
+      "description": "Nome digitado, data URL do desenho, ou URL da imagem enviada"
+    },
+    "pdf_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "aprovado",
+        "rejeitado"
+      ],
+      "default": "pendente"
+    },
+    "request_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "admin_note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_name",
+    "request_date"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

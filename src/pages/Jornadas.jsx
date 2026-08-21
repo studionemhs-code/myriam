@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
+import AssociationRequestButton from '@/components/associacao/AssociationRequestButton';
 import { formatDate, parseDate } from '@/lib/marianDates';
 
 export default function Jornadas() {
@@ -48,6 +49,10 @@ export default function Jornadas() {
       <p className="mb-4 rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
         As jornadas são organizadas pela equipe Theotokos. Participe da que ressoa em seu coração.
       </p>
+
+      <div className="mb-4">
+        <AssociationRequestButton />
+      </div>
 
       {journeys.length === 0 ? (
         <EmptyState icon={Sparkles} title="Nenhuma jornada ativa" subtitle="Em breve novas jornadas coletivas serão abertas." />

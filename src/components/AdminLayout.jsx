@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, CalendarDays, Sparkles,
-  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award
+  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Logo from '@/components/Logo';
@@ -17,6 +17,7 @@ const items = [
   { to: '/admin/calendario', label: 'Calendário Mariano', icon: CalendarDays },
   { to: '/admin/jornadas', label: 'Jornadas Coletivas', icon: Sparkles },
   { to: '/admin/certificados', label: 'Certificados', icon: Award },
+  { to: '/admin/associacao', label: 'Associação', icon: Crown },
   { to: '/admin/relatorios', label: 'Moderação', icon: Flag },
   { to: '/admin/funcionalidades', label: 'Funcionalidades', icon: ToggleLeft },
   { to: '/admin/usuarios', label: 'Usuários', icon: Users }

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, CheckCheck, Flower2, RefreshCw, Leaf, Heart, BookOpen, Sparkles } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
+import AssociationRequestButton from '@/components/associacao/AssociationRequestButton';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
 import { formatDate } from '@/lib/marianDates';
 
@@ -33,6 +34,10 @@ export default function Notificacoes() {
           <CheckCheck className="h-3.5 w-3.5" /> Marcar todas como lidas
         </button>
       )}
+
+      <div className="mb-4">
+        <AssociationRequestButton />
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center py-10">

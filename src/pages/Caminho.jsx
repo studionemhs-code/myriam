@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, GoldDivider } from '@/components/ui/marian';
 import MedalGrid from '@/components/caminho/MedalGrid';
 import ExportJourneyPdf from '@/components/ExportJourneyPdf';
+import AssociationRequestButton from '@/components/associacao/AssociationRequestButton';
 import { formatDate, daysUntil, parseDate, daysBetween } from '@/lib/marianDates';
 
 const DEFAULT_PHASES = {
@@ -263,6 +264,8 @@ export default function Caminho() {
       <div className="flex justify-center">
         <ExportJourneyPdf />
       </div>
+
+      <AssociationRequestButton className="mt-4" />
     </div>
   );
 }
