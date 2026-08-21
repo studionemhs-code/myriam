@@ -37,10 +37,7 @@ export default function AppLayout() {
   const SidebarContent = (
     <div className="flex h-full flex-col">
       <div className="flex items-start justify-between px-6 py-8">
-        <div>
-          <Logo size="md" variant="dark" subtitle={false} />
-          <p className="mt-1 pl-1 text-[10px] uppercase tracking-[0.3em] text-sidebar-foreground/55">Mãe de Deus</p>
-        </div>
+        <Logo size="lg" variant="dark" subtitle stacked />
         <ThemeToggle className="text-sidebar-foreground/70 hover:text-sidebar-foreground" />
       </div>
       <div className="gold-line mx-6 opacity-40" />
