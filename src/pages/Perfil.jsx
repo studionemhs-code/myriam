@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, StatPill, GoldDivider } from '@/components/ui/marian';
 import { formatDate } from '@/lib/marianDates';
 import SpiritualStatus from '@/components/perfil/SpiritualStatus';
+import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -117,6 +118,9 @@ export default function Perfil() {
         <a href={STORE_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm hover:bg-muted">
           <ShoppingBag className="h-5 w-5 text-gold" /> Conheça os Produtos Theotokos <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
         </a>
+        <div className="py-1">
+          <PwaInstallPrompt />
+        </div>
         <button onClick={() => base44.auth.logout()} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-muted-foreground hover:bg-muted">
           <LogOut className="h-5 w-5" /> Sair
         </button>

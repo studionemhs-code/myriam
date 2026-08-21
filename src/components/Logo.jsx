@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { LOGO_URL } from '@/lib/logoUrl';
 
 export default function Logo({ size = 'md', to, variant = 'dark', subtitle = true }) {
   const dims = {
-    sm: { box: 'h-8 w-8', icon: 'h-4 w-4', title: 'text-sm', sub: 'text-[8px]' },
-    md: { box: 'h-10 w-10', icon: 'h-5 w-5', title: 'text-lg', sub: 'text-[10px]' },
-    lg: { box: 'h-14 w-14', icon: 'h-7 w-7', title: 'text-2xl', sub: 'text-[11px]' }
+    sm: { box: 'h-8 w-8', title: 'text-sm', sub: 'text-[8px]' },
+    md: { box: 'h-10 w-10', title: 'text-lg', sub: 'text-[10px]' },
+    lg: { box: 'h-14 w-14', title: 'text-2xl', sub: 'text-[11px]' }
   }[size];
 
   const titleColor = variant === 'dark' ? 'text-sidebar-foreground' : 'text-foreground';
@@ -13,10 +14,7 @@ export default function Logo({ size = 'md', to, variant = 'dark', subtitle = tru
 
   const content = (
     <div className="flex items-center gap-2.5">
-      <div className={`relative flex ${dims.box} items-center justify-center rounded-full bg-gradient-to-br from-primary to-[hsl(272_60%_24%)] ring-1 ring-gold/40`}>
-        <span className={`font-display font-bold ${dims.icon} text-primary-foreground`} style={{ letterSpacing: '0.02em' }}>M</span>
-        <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/10" />
-      </div>
+      <img src={LOGO_URL} alt="Theotokos" className={`${dims.box} shrink-0 rounded-xl object-cover`} />
       <div className="leading-none">
         <p className={`font-display font-bold uppercase ${dims.title} ${titleColor}`} style={{ letterSpacing: '0.08em' }}>
           MYRIAM
