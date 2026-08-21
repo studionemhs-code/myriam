@@ -28,7 +28,7 @@ export default function ACAMF() {
   const [lockedCourse, setLockedCourse] = useState(null);
   const { user } = useCurrentUser();
 
-  const userAccess = user?.role === 'admin'
+  const userAccess = (user?.role === 'admin' || user?.exclusive_access)
     ? ['iniciante', 'intermediario', 'aprofundamento']
     : (ACCESS[user?.status] || ACCESS.interessado);
   const isLocked = (course) => !userAccess.includes(course.level);

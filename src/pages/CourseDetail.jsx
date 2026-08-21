@@ -47,7 +47,7 @@ export default function CourseDetail() {
     return <div className="py-20 text-center text-muted-foreground">Curso não encontrado.</div>;
   }
 
-  const userAccess = user?.role === 'admin'
+  const userAccess = (user?.role === 'admin' || user?.exclusive_access)
     ? ['iniciante', 'intermediario', 'aprofundamento']
     : (ACCESS[user?.status] || ACCESS.interessado);
 

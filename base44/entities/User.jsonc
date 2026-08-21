@@ -29,6 +29,11 @@
       ],
       "default": "interessado"
     },
+    "exclusive_access": {
+      "type": "boolean",
+      "default": false,
+      "description": "Concede acesso a todas as funcionalidades exclusivas (ACAMF, etc.), independente do n\u00edvel espiritual"
+    },
     "consecration_date": {
       "type": "string",
       "format": "date",
