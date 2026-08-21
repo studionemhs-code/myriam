@@ -18,6 +18,7 @@ export default function Hoje() {
   const [recommended, setRecommended] = useState([]);
   const [intentions, setIntentions] = useState([]);
   const [dayContent, setDayContent] = useState([]);
+  const [aiGreeting, setAiGreeting] = useState(null);
 
   const status = user?.status || 'interessado';
 
@@ -42,6 +43,10 @@ export default function Hoje() {
         }
         const intents = await base44.entities.PrayerIntention.filter({ status: 'ativo' }, '-created_date', 3);
         setIntentions(intents);
+        try {
+          const res = await base44.functions.invoke('generateGreeting', {});
+          if (res.data?.greeting) setAiGreeting(res.data.greeting);
+        } catch (e) { /* use default */ }
       } catch (e) {/* ignore */}
     })();
   }, [user, status]);
@@ -58,12 +63,7 @@ export default function Hoje() {
   const greeting = getGreeting();
   const nextEvent = getNextMarianEvent();
 
-  const quote =
-  status === 'consagrado' ?
-  'Que Maria te conduza hoje a Jesus.' :
-  status === 'preparacao' ?
-  'Um dia de cada vez, Maria te prepara.' :
-  'Um novo passo na tua caminhada mariana começa hoje.';
+  const quote = aiGreeting || 'Para que venha vosso reino Jesus, venha o reino de Maria';
 
   return (
     <div>

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   Home, Flower2, BookOpen, Leaf, User, ShoppingBag,
-  Bell, Calendar, Settings, LogOut, ChevronRight, Sparkles, Bot
+  Bell, Calendar, Settings, LogOut, ChevronRight, ChevronLeft, Sparkles, Bot
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -25,6 +25,11 @@ export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('appbar_collapsed') === 'true');
+
+  useEffect(() => {
+    localStorage.setItem('appbar_collapsed', String(collapsed));
+  }, [collapsed]);
   const { isVisible } = useFeatureFlags();
   const { unreadCount } = useNotifications();
 
@@ -122,7 +127,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 bg-deep lg:block">
+      <aside className={`fixed inset-y-0 left-0 hidden bg-deep transition-all duration-300 lg:block ${collapsed ? 'w-0 overflow-hidden' : 'w-64'}`}>
         {SidebarContent}
       </aside>
 
@@ -160,9 +165,16 @@ export default function AppLayout() {
         </div>
       )}
 
-      <main className="lg:pl-64">
-        <div className="sticky top-0 z-20 hidden border-b border-gold/20 bg-card/80 px-8 py-3 backdrop-blur lg:block">
-          <div className="mx-auto max-w-2xl">
+      <main className={`transition-all duration-300 ${collapsed ? 'lg:pl-0' : 'lg:pl-64'}`}>
+        <div className="sticky top-0 z-20 hidden items-center gap-3 border-b border-border/60 bg-card/80 px-4 py-3 backdrop-blur lg:flex">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+            title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+          >
+            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </button>
+          <div className="flex-1">
             <GlobalSearch />
           </div>
         </div>
