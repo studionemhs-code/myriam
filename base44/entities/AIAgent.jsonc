@@ -1,0 +1,83 @@
+{
+  "name": "AIAgent",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do agente"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o curta exibida aos usu\u00e1rios"
+    },
+    "instructions": {
+      "type": "string",
+      "description": "System prompt / instru\u00e7\u00f5es de comportamento do agente"
+    },
+    "knowledge_content": {
+      "type": "string",
+      "description": "Texto extra\u00eddo das fontes de conhecimento"
+    },
+    "knowledge_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "model": {
+      "type": "string",
+      "enum": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "gpt-3.5-turbo"
+      ],
+      "default": "gpt-4o-mini"
+    },
+    "welcome_message": {
+      "type": "string",
+      "description": "Mensagem exibida ao iniciar conversa"
+    },
+    "temperature": {
+      "type": "number",
+      "default": 0.7,
+      "description": "Criatividade das respostas (0-1)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "instructions",
+    "model"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

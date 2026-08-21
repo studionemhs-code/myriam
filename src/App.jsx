@@ -47,9 +47,11 @@ import MyriamAdmin from '@/pages/admin/MyriamAdmin';
 import CategoriesAdmin from '@/pages/admin/CategoriesAdmin';
 import CertificatesAdmin from '@/pages/admin/CertificatesAdmin';
 import AssociacaoAdmin from '@/pages/admin/AssociacaoAdmin';
+import AgentsAdmin from '@/pages/admin/AgentsAdmin';
 import Certificado from '@/pages/Certificado';
 import Historico from '@/pages/Historico';
 import Associacao from '@/pages/Associacao';
+import AgentChat from '@/pages/AgentChat';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -110,6 +112,7 @@ const AuthenticatedApp = () => {
           <Route path="/certificado" element={<Certificado />} />
           <Route path="/historico" element={<Historico />} />
           <Route path="/associacao" element={<Associacao />} />
+          <Route path="/agentes" element={<AgentChat />} />
         </Route>
       </Route>
 
@@ -126,6 +129,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/categorias" element={<CategoriesAdmin />} />
           <Route path="/admin/certificados" element={<CertificatesAdmin />} />
           <Route path="/admin/associacao" element={<AssociacaoAdmin />} />
+          <Route path="/admin/agentes" element={<AgentsAdmin />} />
           <Route path="/admin/relatorios" element={<Reports />} />
           <Route path="/admin/usuarios" element={<UsersAdmin />} />
         </Route>
