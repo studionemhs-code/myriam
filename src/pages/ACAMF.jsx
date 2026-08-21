@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, ChevronRight, BookOpen, Sparkles } from 'lucide-react';
+import { Play, ChevronRight, BookOpen, Sparkles, Info } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
@@ -43,6 +43,10 @@ export default function ACAMF() {
     return stats.completed > 0 && stats.completed < stats.total;
   });
   const notStarted = courses.filter((c) => courseStats(c.id).completed === 0);
+  const completedCourses = courses.filter((c) => {
+    const stats = courseStats(c.id);
+    return stats.total > 0 && stats.completed === stats.total;
+  });
 
   const byCategory = categories
     .map((cat) => ({ category: cat, courses: notStarted.filter((c) => c.category_id === cat.id) }))
@@ -69,33 +73,39 @@ export default function ACAMF() {
 
   return (
     <div className="-mx-4 lg:-mx-8">
-      {/* Hero */}
+      {/* Hero cinematográfico */}
       {featured && (
-        <div className="relative h-[55vh] min-h-[380px] w-full overflow-hidden">
+        <div className="relative h-[60vh] min-h-[420px] w-full overflow-hidden">
           {featured.cover_url ? (
             <img src={featured.cover_url} alt="" className="h-full w-full object-cover" />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-primary/40 via-deep to-deep" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-10">
-            <div className="mx-auto max-w-3xl lg:max-w-4xl">
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/40 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-12">
+            <div className="mx-auto max-w-3xl lg:max-w-5xl">
               {featured.featured && (
-                <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-gold/20 px-3 py-1 text-xs font-medium text-gold">
-                  <Sparkles className="h-3 w-3" /> Destaque
+                <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold">
+                  <Sparkles className="h-3 w-3" /> Curso em destaque
                 </span>
               )}
-              <h1 className="font-display text-3xl text-foreground lg:text-5xl">{featured.title}</h1>
+              <h1 className="font-display text-4xl text-foreground drop-shadow-lg lg:text-6xl">{featured.title}</h1>
               {featured.description && (
-                <p className="mt-2 max-w-xl text-sm text-muted-foreground lg:text-base">{featured.description}</p>
+                <p className="mt-3 max-w-xl text-sm text-muted-foreground line-clamp-2 lg:text-lg">{featured.description}</p>
               )}
-              <div className="mt-4 flex items-center gap-3">
+              <div className="mt-5 flex items-center gap-3">
                 <Link
                   to={`/acamf/curso/${featured.id}`}
-                  className="inline-flex items-center gap-2 rounded-lg bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition hover:opacity-90"
+                  className="inline-flex items-center gap-2 rounded-lg bg-foreground px-6 py-3 text-sm font-semibold text-background shadow-lg transition hover:scale-105"
                 >
-                  <Play className="h-4 w-4 fill-background" /> Assistir
+                  <Play className="h-4 w-4 fill-background" /> Assistir agora
+                </Link>
+                <Link
+                  to={`/acamf/curso/${featured.id}`}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-5 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition hover:bg-card/70"
+                >
+                  <Info className="h-4 w-4" /> Detalhes
                 </Link>
                 {courseStats(featured.id).total > 0 && (
                   <span className="text-sm text-muted-foreground">
@@ -108,10 +118,10 @@ export default function ACAMF() {
         </div>
       )}
 
-      <div className="space-y-8 px-4 py-8 lg:px-8">
+      <div className="space-y-10 px-4 py-8 lg:px-8 lg:py-10">
         {/* Continue assistindo */}
         {inProgress.length > 0 && (
-          <Section title="Continue assistindo">
+          <Section title="Continue assistindo" accent="#663399">
             <Carousel>
               {inProgress.map((c) => (
                 <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
@@ -122,7 +132,7 @@ export default function ACAMF() {
 
         {/* Por categoria */}
         {byCategory.map((g) => (
-          <Section key={g.category.id} title={g.category.name}>
+          <Section key={g.category.id} title={g.category.name} accent={g.category.color || '#663399'}>
             <Carousel>
               {g.courses.map((c) => (
                 <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
@@ -131,9 +141,20 @@ export default function ACAMF() {
           </Section>
         ))}
 
+        {/* Cursos concluídos */}
+        {completedCourses.length > 0 && (
+          <Section title="Concluídos por você" accent="#10b981">
+            <Carousel>
+              {completedCourses.map((c) => (
+                <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
+              ))}
+            </Carousel>
+          </Section>
+        )}
+
         {/* Sem categoria */}
         {uncategorized.length > 0 && (
-          <Section title="Todos os cursos">
+          <Section title="Todos os cursos" accent="#663399">
             <Carousel>
               {uncategorized.map((c) => (
                 <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
@@ -146,10 +167,13 @@ export default function ACAMF() {
   );
 }
 
-function Section({ title, children }) {
+function Section({ title, accent = '#663399', children }) {
   return (
     <div>
-      <h2 className="mb-3 font-display text-xl text-foreground">{title}</h2>
+      <div className="mb-4 flex items-center gap-3">
+        <div className="h-7 w-1 rounded-full" style={{ backgroundColor: accent }} />
+        <h2 className="font-display text-xl text-foreground lg:text-2xl">{title}</h2>
+      </div>
       {children}
     </div>
   );
@@ -157,7 +181,7 @@ function Section({ title, children }) {
 
 function Carousel({ children }) {
   return (
-    <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 lg:-mx-8 lg:px-8">
+    <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-4 lg:-mx-8 lg:px-8">
       {children}
     </div>
   );
@@ -167,27 +191,35 @@ function CourseCard({ course, stats }) {
   return (
     <Link
       to={`/acamf/curso/${course.id}`}
-      className="group block w-40 shrink-0 sm:w-44"
+      className="group relative block w-44 shrink-0 sm:w-48 lg:w-52"
     >
-      <div className="relative aspect-[9/16] overflow-hidden rounded-lg bg-muted">
+      <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-muted shadow-md transition duration-300 group-hover:scale-[1.03] group-hover:shadow-xl">
         {(course.poster_url || course.cover_url) ? (
           <img
             src={course.poster_url || course.cover_url}
             alt=""
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover"
           />
         ) : (
           <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-deep">
-            <BookOpen className="h-8 w-8 text-muted-foreground/40" />
+            <BookOpen className="h-10 w-10 text-muted-foreground/40" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        {/* Gradiente inferior sempre visível */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+
+        {/* Info na base */}
         <div className="absolute bottom-0 left-0 right-0 p-3">
-          <p className="font-display text-sm leading-tight text-white">{course.title}</p>
-          {course.level && (
-            <p className="mt-0.5 text-[10px] uppercase tracking-wider text-white/60">{LEVEL_LABEL[course.level]}</p>
-          )}
-          {stats.total > 0 && (
+          <p className="font-display text-sm font-semibold leading-tight text-white drop-shadow line-clamp-2">{course.title}</p>
+          <div className="mt-1 flex items-center gap-2">
+            {course.level && (
+              <span className="text-[10px] uppercase tracking-wider text-white/70">{LEVEL_LABEL[course.level]}</span>
+            )}
+            {stats.total > 0 && (
+              <span className="text-[10px] text-white/50">• {stats.total} aulas</span>
+            )}
+          </div>
+          {stats.total > 0 && stats.completed > 0 && (
             <div className="mt-2">
               <div className="h-1 w-full rounded-full bg-white/20">
                 <div
@@ -195,15 +227,24 @@ function CourseCard({ course, stats }) {
                   style={{ width: `${stats.pct}%` }}
                 />
               </div>
-              <p className="mt-1 text-[10px] text-white/60">{stats.completed}/{stats.total} aulas</p>
+              <p className="mt-1 text-[10px] text-white/60">{stats.completed}/{stats.total} concluídas</p>
             </div>
           )}
         </div>
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-            <Play className="h-4 w-4 fill-white text-white" />
+
+        {/* Overlay com play no hover */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition duration-300 group-hover:opacity-100">
+          <div className="flex h-12 w-12 scale-90 items-center justify-center rounded-full bg-white/25 backdrop-blur-md transition duration-300 group-hover:scale-100">
+            <Play className="h-5 w-5 fill-white text-white" />
           </div>
         </div>
+
+        {/* Badge de conclusão */}
+        {stats.total > 0 && stats.completed === stats.total && (
+          <div className="absolute right-2 top-2 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+            ✓ Concluído
+          </div>
+        )}
       </div>
     </Link>
   );
