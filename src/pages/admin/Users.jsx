@@ -14,7 +14,10 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState('user');
+  const [inviteStatus, setInviteStatus] = useState('interessado');
+  const [inviteExclusive, setInviteExclusive] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -32,11 +35,22 @@ export default function Users() {
     setMsg('');
     try {
       await base44.users.inviteUser(inviteEmail, inviteRole);
-      setMsg(`Convite enviado para ${inviteEmail}`);
+      // Após o convite, localiza o usuário recém-criado e aplica os campos extras
+      const all = await base44.entities.User.list('-created_date', 200);
+      const created = all.find((u) => u.email === inviteEmail);
+      if (created) {
+        const updates = { status: inviteStatus, exclusive_access: inviteExclusive };
+        if (inviteName) updates.full_name = inviteName;
+        await base44.entities.User.update(created.id, updates);
+      }
+      setMsg(`Usuário criado e convite enviado para ${inviteEmail}`);
       setInviteEmail('');
+      setInviteName('');
+      setInviteStatus('interessado');
+      setInviteExclusive(false);
       await load();
     } catch (e) {
-      setMsg('Não foi possível convidar: ' + (e.message || 'erro'));
+      setMsg('Não foi possível criar: ' + (e.message || 'erro'));
     } finally { setInviting(false); }
   };
 
@@ -93,15 +107,25 @@ export default function Users() {
       <AdminPageTitle title="Usuários" subtitle={`${users.length} membros cadastrados`} />
 
       <div className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <p className="mb-3 flex items-center gap-2 text-sm font-medium"><UserPlus className="h-4 w-4 text-gold" /> Convidar novo usuário</p>
-        <div className="flex flex-wrap gap-3">
-          <input className={inputCls + ' max-w-xs'} type="email" placeholder="email@exemplo.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
-          <select className={inputCls + ' w-32'} value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
-            <option value="user">Usuário</option>
-            <option value="admin">Admin</option>
+        <p className="mb-3 flex items-center gap-2 text-sm font-medium"><UserPlus className="h-4 w-4 text-gold" /> Criar novo usuário</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <input className={inputCls} type="text" placeholder="Nome completo" value={inviteName} onChange={(e) => setInviteName(e.target.value)} />
+          <input className={inputCls} type="email" placeholder="email@exemplo.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
+          <select className={inputCls} value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
+            <option value="user">Função: Usuário</option>
+            <option value="admin">Função: Admin</option>
           </select>
+          <select className={inputCls} value={inviteStatus} onChange={(e) => setInviteStatus(e.target.value)}>
+            <option value="interessado">Nível: Interessado</option>
+            <option value="preparacao">Nível: Em Preparação</option>
+            <option value="consagrado">Nível: Consagrado</option>
+          </select>
+          <label className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            <input type="checkbox" checked={inviteExclusive} onChange={(e) => setInviteExclusive(e.target.checked)} className="accent-primary" />
+            <Sparkles className="h-3.5 w-3.5 text-gold" /> Acesso exclusivo
+          </label>
           <button onClick={invite} disabled={inviting} className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">
-            {inviting ? 'Enviando...' : 'Enviar convite'}
+            {inviting ? 'Criando...' : 'Criar usuário'}
           </button>
         </div>
         {msg && <p className="mt-2 text-xs text-muted-foreground">{msg}</p>}
