@@ -15,6 +15,7 @@ const DEFAULT_FLAGS = [
   { feature: 'certificados', label: 'Certificados' },
   { feature: 'associacao', label: 'Associação Maria Rainha dos Corações' },
   { feature: 'historico', label: 'Histórico de Consagrações' },
+  { feature: 'cadeiazinha', label: 'Solicite sua cadeiazinha' },
 ];
 
 export default function Features() {
