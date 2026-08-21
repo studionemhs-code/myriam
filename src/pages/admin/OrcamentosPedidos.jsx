@@ -1,0 +1,158 @@
+import React, { useState, useMemo } from 'react';
+import { base44 } from '@/api/base44Client';
+import { AdminPageTitle, Loading, Badge } from '@/components/admin/ui';
+import { STATUS_LABEL, STATUS_TONE, ORDER_STATUSES, exportOrdersCsv } from '@/lib/quoteUtils';
+import { Download, Eye, ExternalLink, Trash2 } from 'lucide-react';
+
+export default function OrcamentosPedidos() {
+  const [orders, setOrders] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [q, setQ] = useState('');
+  const [selected, setSelected] = useState(null);
+
+  React.useEffect(() => {
+    base44.entities.QuoteRequest.list('-created_date', 200).then(setOrders).catch(() => setOrders([]));
+  }, []);
+
+  const reload = () => base44.entities.QuoteRequest.list('-created_date', 200).then(setOrders);
+
+  const filtered = useMemo(() => {
+    if (!orders) return [];
+    return orders.filter((o) => {
+      if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+      if (q) {
+        const s = q.toLowerCase();
+        return o.customer_name?.toLowerCase().includes(s) || o.whatsapp?.includes(s) || o.city?.toLowerCase().includes(s);
+      }
+      return true;
+    });
+  }, [orders, statusFilter, q]);
+
+  const updateStatus = async (id, status) => {
+    await base44.entities.QuoteRequest.update(id, { status });
+    setSelected({ ...selected, status });
+    reload();
+  };
+
+  const deleteOrder = async (id) => {
+    if (!confirm('Remover este pedido?')) return;
+    await base44.entities.QuoteRequest.delete(id);
+    setSelected(null);
+    reload();
+  };
+
+  if (!orders) return <Loading />;
+
+  return (
+    <div>
+      <AdminPageTitle title="Pedidos" subtitle={`${filtered.length} pedido(s)`} action={
+        <button onClick={() => exportOrdersCsv(filtered)} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted">
+          <Download className="h-4 w-4" /> Exportar CSV
+        </button>
+      } />
+
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
+        <input
+          placeholder="Buscar por nome, whatsapp ou cidade…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="max-w-xs rounded-lg border border-input bg-background px-3 py-2 text-sm"
+        />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+          <option value="all">Todos os status</option>
+          {ORDER_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+        </select>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="p-3">Data</th>
+                <th className="p-3">Cliente</th>
+                <th className="p-3">WhatsApp</th>
+                <th className="p-3">Cidade</th>
+                <th className="p-3">Status</th>
+                <th className="p-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((o) => (
+                <tr key={o.id} className="border-t border-border">
+                  <td className="whitespace-nowrap p-3 text-xs text-muted-foreground">{new Date(o.created_date).toLocaleString('pt-BR')}</td>
+                  <td className="p-3 font-medium">{o.customer_name}</td>
+                  <td className="p-3">{o.whatsapp}</td>
+                  <td className="p-3">{o.city ? `${o.city}/${o.state}` : '—'}</td>
+                  <td className="p-3"><Badge tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status] || o.status}</Badge></td>
+                  <td className="p-3">
+                    <div className="flex justify-end gap-1">
+                      <button onClick={() => setSelected(o)} className="rounded-lg p-2 hover:bg-muted"><Eye className="h-4 w-4" /></button>
+                      <a href={`https://wa.me/${o.whatsapp?.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="rounded-lg p-2 hover:bg-muted"><ExternalLink className="h-4 w-4" /></a>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!filtered.length && <tr><td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">Nenhum pedido encontrado.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelected(null)}>
+          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-lg">Pedido de {selected.customer_name}</h3>
+              <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <select value={selected.status} onChange={(e) => updateStatus(selected.id, e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                {ORDER_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+              </select>
+              <span className="text-xs text-muted-foreground">{new Date(selected.created_date).toLocaleString('pt-BR')}</span>
+            </div>
+
+            <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
+              <Info label="WhatsApp" value={selected.whatsapp} />
+              <Info label="CEP" value={selected.cep} />
+              <Info label="Endereço" value={`${selected.street || ''}, ${selected.number || ''}${selected.complement ? ' - ' + selected.complement : ''}`} />
+              <Info label="Bairro / Cidade" value={`${selected.neighborhood || '—'} · ${selected.city || '—'}/${selected.state || '—'}`} />
+            </div>
+
+            <details className="mb-4 rounded-lg border border-border p-3">
+              <summary className="cursor-pointer font-medium">Itens do pedido</summary>
+              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-xs">{JSON.stringify({ chains: selected.chains, medallions: selected.medallions, scapulars: selected.scapulars }, null, 2)}</pre>
+            </details>
+
+            {selected.notes && (
+              <div className="mb-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Observações</p>
+                <p className="mt-1 text-sm">{selected.notes}</p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <a href={`https://wa.me/${selected.whatsapp?.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
+                <ExternalLink className="h-4 w-4" /> WhatsApp
+              </a>
+              <button onClick={() => deleteOrder(selected.id)} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-4 w-4" /> Remover
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Info({ label, value }) {
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-0.5">{value}</p>
+    </div>
+  );
+}

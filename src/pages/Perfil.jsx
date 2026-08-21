@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Flower2, Calendar, BookOpen, Heart, Settings, ShoppingBag, ChevronRight, LogOut, Camera, Shield, Award } from 'lucide-react';
+import { User, Flower2, Calendar, BookOpen, Heart, Settings, ShoppingBag, ChevronRight, LogOut, Camera, Shield, Award, Gift } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, StatPill, GoldDivider } from '@/components/ui/marian';
@@ -113,6 +113,7 @@ export default function Perfil() {
         <MenuItem to="/calendario" icon={Calendar} label="Calendário Mariano" />
         <MenuItem to="/intencoes" icon={Heart} label="Intenções de Oração" />
         <MenuItem to="/jornadas" icon={BookOpen} label="Jornadas Coletivas" />
+        <MenuItem to="/solicitar-cadeiazinha" icon={Gift} label="Solicite sua cadeiazinha" />
         <MenuItem to="/configuracoes" icon={Settings} label="Configurações" />
         {user.role === 'admin' && <MenuItem to="/admin" icon={Shield} label="Painel Administrativo" />}
         <a href={STORE_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm hover:bg-muted">

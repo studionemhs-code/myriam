@@ -1,0 +1,71 @@
+{
+  "name": "CatalogProduct",
+  "type": "object",
+  "properties": {
+    "slug": {
+      "type": "string",
+      "description": "Identificador \u00fanico do produto (ex: aparecida-inox)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "chain",
+        "marian",
+        "inox",
+        "saint",
+        "pendant",
+        "medallion",
+        "scapular"
+      ]
+    },
+    "label": {
+      "type": "string",
+      "description": "Nome exibido do produto"
+    },
+    "image_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "in_stock": {
+      "type": "boolean",
+      "default": true
+    },
+    "stock_quantity": {
+      "type": "integer",
+      "minimum": 0,
+      "default": null,
+      "description": "Null = estoque ilimitado"
+    }
+  },
+  "required": [
+    "slug",
+    "category",
+    "label"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "ShareLink",
+  "type": "object",
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "Token \u00fanico do link compartilh\u00e1vel"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "message": {
+      "type": "string",
+      "description": "Mensagem de compartilhamento. Vari\u00e1vel: {url}"
+    },
+    "visits": {
+      "type": "integer",
+      "default": 0
+    },
+    "shares": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "token",
+    "active"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

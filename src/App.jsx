@@ -52,6 +52,13 @@ import Certificado from '@/pages/Certificado';
 import Historico from '@/pages/Historico';
 import Associacao from '@/pages/Associacao';
 import AgentChat from '@/pages/AgentChat';
+import SolicitarCadeiazinha from '@/pages/SolicitarCadeiazinha';
+import OrcamentosDashboard from '@/pages/admin/OrcamentosDashboard';
+import OrcamentosPedidos from '@/pages/admin/OrcamentosPedidos';
+import OrcamentosCatalogo from '@/pages/admin/OrcamentosCatalogo';
+import OrcamentosMensagens from '@/pages/admin/OrcamentosMensagens';
+import OrcamentosConfiguracoes from '@/pages/admin/OrcamentosConfiguracoes';
+import OrcamentosLink from '@/pages/admin/OrcamentosLink';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -113,6 +120,7 @@ const AuthenticatedApp = () => {
           <Route path="/historico" element={<Historico />} />
           <Route path="/associacao" element={<Associacao />} />
           <Route path="/agentes" element={<AgentChat />} />
+          <Route path="/solicitar-cadeiazinha" element={<SolicitarCadeiazinha />} />
         </Route>
       </Route>
 
@@ -132,6 +140,12 @@ const AuthenticatedApp = () => {
           <Route path="/admin/agentes" element={<AgentsAdmin />} />
           <Route path="/admin/relatorios" element={<Reports />} />
           <Route path="/admin/usuarios" element={<UsersAdmin />} />
+          <Route path="/admin/orcamentos" element={<OrcamentosDashboard />} />
+          <Route path="/admin/orcamentos/pedidos" element={<OrcamentosPedidos />} />
+          <Route path="/admin/orcamentos/catalogo" element={<OrcamentosCatalogo />} />
+          <Route path="/admin/orcamentos/mensagens" element={<OrcamentosMensagens />} />
+          <Route path="/admin/orcamentos/configuracoes" element={<OrcamentosConfiguracoes />} />
+          <Route path="/admin/orcamentos/link" element={<OrcamentosLink />} />
         </Route>
       </Route>
 

@@ -1,0 +1,155 @@
+{
+  "name": "QuoteRequest",
+  "type": "object",
+  "properties": {
+    "customer_name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "whatsapp": {
+      "type": "string",
+      "description": "WhatsApp do cliente (somente d\u00edgitos)"
+    },
+    "cep": {
+      "type": "string"
+    },
+    "street": {
+      "type": "string"
+    },
+    "number": {
+      "type": "string"
+    },
+    "complement": {
+      "type": "string"
+    },
+    "neighborhood": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "chains": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "freeMedal": {
+            "type": "string"
+          },
+          "marianMedals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "inoxMedals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "saintMedals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "pendants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          }
+        }
+      },
+      "default": []
+    },
+    "medallions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "withChain": {
+            "type": "string",
+            "enum": [
+              "com",
+              "sem"
+            ]
+          }
+        }
+      },
+      "default": []
+    },
+    "scapulars": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        }
+      },
+      "default": []
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "novo",
+        "em_andamento",
+        "atendido",
+        "fechado",
+        "cancelado"
+      ],
+      "default": "novo"
+    }
+  },
+  "required": [
+    "customer_name",
+    "whatsapp",
+    "cep",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
