@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Maximize, Gauge } from 'lucide-react';
 
 let apiPromise = null;
 
@@ -31,6 +31,18 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
   const [ready, setReady] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [rate, setRate] = useState(1);
+  const [showSpeed, setShowSpeed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  const rates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +112,22 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
     if (dur > 0) playerRef.current.seekTo(pct * dur, true);
   }, []);
 
+  const toggleFullscreen = useCallback(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      el.requestFullscreen();
+    }
+  }, []);
+
+  const changeRate = useCallback((r) => {
+    setRate(r);
+    playerRef.current?.setPlaybackRate?.(r);
+    setShowSpeed(false);
+  }, []);
+
   const fmtTime = (s) => {
     if (!s || isNaN(s)) return '0:00';
     const m = Math.floor(s / 60);
@@ -108,7 +136,7 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
   };
 
   return (
-    <div className="relative aspect-video overflow-hidden rounded-xl bg-black select-none">
+    <div ref={wrapperRef} className="relative aspect-video overflow-hidden rounded-xl bg-black select-none">
       {/* YouTube iframe (API replaces this div) */}
       <div className="absolute inset-0">
         <div ref={containerRef} className="h-full w-full" />
@@ -145,6 +173,35 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
               </div>
             </div>
             <span className="text-[10px] text-white/70 tabular-nums">{fmtTime(duration)}</span>
+
+            {/* Speed control */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSpeed((v) => !v)}
+                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-white hover:bg-white/20"
+              >
+                <Gauge className="h-3.5 w-3.5" />
+                {rate}x
+              </button>
+              {showSpeed && (
+                <div className="absolute bottom-6 right-0 w-20 rounded-lg bg-black/90 py-1 shadow-xl">
+                  {rates.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => changeRate(r)}
+                      className={`block w-full px-3 py-1 text-left text-[11px] hover:bg-white/20 ${r === rate ? 'text-gold' : 'text-white'}`}
+                    >
+                      {r}x
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Fullscreen */}
+            <button onClick={toggleFullscreen} className="text-white hover:text-white/80" aria-label="Tela cheia">
+              <Maximize className="h-5 w-5" />
+            </button>
           </div>
         </div>
       )}
