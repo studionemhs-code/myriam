@@ -15,9 +15,15 @@ export default async function(req) {
       return Response.json({ error: 'agent_id e message são obrigatórios' }, { status: 400 });
     }
 
-    const agent = await base44.entities.AIAgent.get(agent_id);
+    // Service role: AIAgent read é admin-only (contém a chave API do agente).
+    const agent = await base44.asServiceRole.entities.AIAgent.get(agent_id);
     if (!agent || !agent.is_active) {
       return Response.json({ error: 'Agente não disponível' }, { status: 404 });
+    }
+
+    const apiKey = agent.openai_api_key || secrets.get('OPENAI_API_KEY');
+    if (!apiKey) {
+      return Response.json({ error: 'Nenhuma chave API da OpenAI configurada. Adicione uma chave no painel de agentes.' }, { status: 500 });
     }
 
     let systemPrompt = agent.instructions || 'Você é um assistente útil.';
@@ -42,7 +48,7 @@ export default async function(req) {
       { role: 'user', content: message }
     ];
 
-    const openai = new OpenAI({ apiKey: secrets.get('OPENAI_API_KEY') });
+    const openai = new OpenAI({ apiKey });
     const response = await openai.chat.completions.create({
       model: agent.model || 'gpt-4o-mini',
       messages,

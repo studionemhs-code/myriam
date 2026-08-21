@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Field, inputCls } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2, X, FileText } from 'lucide-react';
+import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound } from 'lucide-react';
 
 export default function AgentEditor({ agent, onSave, onCancel }) {
   const [form, setForm] = useState({
@@ -14,10 +14,12 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     temperature: agent?.temperature ?? 0.7,
     knowledge_content: agent?.knowledge_content || '',
     knowledge_files: agent?.knowledge_files || [],
+    openai_api_key: agent?.openai_api_key || '',
     is_active: agent?.is_active ?? true
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showKey, setShowKey] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -85,6 +87,23 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
           </select>
         </Field>
       </div>
+
+      <Field label="Chave API OpenAI" hint="Chave pessoal do admin. Se vazio, usa a chave padrão do backend. Assim o app não depende do backend ao clonar.">
+        <div className="relative">
+          <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type={showKey ? 'text' : 'password'}
+            className={inputCls + ' pl-9 pr-10'}
+            value={form.openai_api_key}
+            onChange={e => set('openai_api_key', e.target.value)}
+            placeholder="sk-..."
+            autoComplete="off"
+          />
+          <button type="button" onClick={() => setShowKey(s => !s)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </Field>
 
       <Field label="Descrição" hint="Texto curto exibido aos usuários">
         <input className={inputCls} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Ex: Tire dúvidas sobre a consagração" />

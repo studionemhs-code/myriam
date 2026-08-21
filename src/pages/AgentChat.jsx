@@ -17,8 +17,8 @@ export default function AgentChat() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await base44.entities.AIAgent.filter({ is_active: true });
-        setAgents(data);
+        const res = await base44.functions.invoke('listActiveAgents', {});
+        setAgents(res.data.agents || []);
       } catch { setAgents([]); }
     })();
   }, []);
