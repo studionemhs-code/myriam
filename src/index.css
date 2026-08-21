@@ -28,8 +28,8 @@
     --muted-foreground: 270 10% 42%;
     --accent: 270 30% 90%;
     --accent-foreground: 270 40% 18%;
-    --gold: 41 50% 52%;
-    --gold-soft: 41 60% 88%;
+    --gold: 269 48% 58%;
+    --gold-soft: 270 35% 90%;
     --marian: 270 50% 40%;
     --marian-light: 269 48% 55%;
     --deep: 270 45% 16%;
@@ -51,12 +51,12 @@
     --font-script: 'Above the Beyond Script', cursive;
     --sidebar-background: 270 45% 16%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 41 60% 62%;
+    --sidebar-primary: 269 48% 65%;
     --sidebar-primary-foreground: 270 45% 14%;
     --sidebar-accent: 270 38% 24%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 270 35% 22%;
-    --sidebar-ring: 41 60% 62%;
+    --sidebar-ring: 269 48% 65%;
   }
 
   .dark {
@@ -74,8 +74,8 @@
     --muted-foreground: 270 12% 62%;
     --accent: 270 25% 18%;
     --accent-foreground: 270 15% 92%;
-    --gold: 41 55% 60%;
-    --gold-soft: 41 40% 40%;
+    --gold: 269 45% 65%;
+    --gold-soft: 270 25% 25%;
     --marian: 270 48% 55%;
     --marian-light: 269 45% 65%;
     --deep: 270 30% 5%;
@@ -86,12 +86,12 @@
     --ring: 270 48% 55%;
     --sidebar-background: 270 30% 5%;
     --sidebar-foreground: 270 15% 88%;
-    --sidebar-primary: 41 55% 60%;
+    --sidebar-primary: 269 45% 65%;
     --sidebar-primary-foreground: 270 45% 14%;
     --sidebar-accent: 270 25% 14%;
     --sidebar-accent-foreground: 270 15% 92%;
     --sidebar-border: 270 22% 10%;
-    --sidebar-ring: 41 55% 60%;
+    --sidebar-ring: 269 45% 65%;
   }
 }
 
