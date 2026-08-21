@@ -15,6 +15,23 @@ const empty = {
 const typeLabels = { texto: 'Texto', pdf: 'PDF', ebook: 'E-book', audio: 'Áudio', video: 'Vídeo', imagem: 'Imagem' };
 const levelLabels = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
 
+// Extrai o ID do YouTube de URLs comuns (youtube.com/watch?v=, youtu.be/, /embed/, /shorts/)
+function extractYouTubeId(value) {
+  if (!value) return '';
+  const v = value.trim();
+  // Se já é um ID bruto (11 chars, sem barras), mantém
+  if (!v.includes('/') && !v.includes('=') && v.length === 11) return v;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/,
+    /[?&]v=([A-Za-z0-9_-]{11})/
+  ];
+  for (const p of patterns) {
+    const m = v.match(p);
+    if (m) return m[1];
+  }
+  return v;
+}
+
 export default function ACAMFAdmin() {
   const [items, setItems] = useState([]);
   const [cats, setCats] = useState([]);
@@ -146,7 +163,9 @@ export default function ACAMFAdmin() {
               <Field label="Duração"><input className={inputCls} placeholder="ex.: 12 min" value={editing.duration} onChange={(e) => set('duration', e.target.value)} /></Field>
               <Field label="Dia recomendado (1-33)"><input type="number" min="1" max="33" className={inputCls} value={editing.related_day_number || ''} onChange={(e) => set('related_day_number', e.target.value ? parseInt(e.target.value) : null)} placeholder="Ex.: 12" /></Field>
               <Field label="Data de Publicação"><input type="date" className={inputCls} value={editing.published_date} onChange={(e) => set('published_date', e.target.value)} /></Field>
-              <Field label="YouTube ID"><input className={inputCls} value={editing.youtube_id} onChange={(e) => set('youtube_id', e.target.value)} /></Field>
+              <Field label="URL do YouTube" hint="Cole o link do vídeo (ex: https://youtu.be/abc123 ou https://youtube.com/watch?v=abc123)">
+                <input className={inputCls} placeholder="https://youtube.com/watch?v=..." value={editing.youtube_id} onChange={(e) => set('youtube_id', extractYouTubeId(e.target.value))} />
+              </Field>
               <Field label="URL do Arquivo"><input className={inputCls} value={editing.file_url} onChange={(e) => set('file_url', e.target.value)} /></Field>
               <Field label="URL da Capa"><input className={inputCls} value={editing.cover_url} onChange={(e) => set('cover_url', e.target.value)} /></Field>
               <div className="col-span-2">
