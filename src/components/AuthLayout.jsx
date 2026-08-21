@@ -9,7 +9,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           <div className="flex justify-center mb-4">
             <Logo size="lg" variant="light" subtitle={false} />
           </div>
-          <p className="mt-2 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Mãe de Deus</p>
+          <p className="mt-2 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Consagrar, Conectar e Conscientizar</p>
           <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground mt-2">{subtitle}</p>}
         </div>
