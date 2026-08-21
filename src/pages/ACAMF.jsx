@@ -1,9 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, ChevronRight, BookOpen, Sparkles, Info } from 'lucide-react';
+import { Play, ChevronRight, BookOpen, Sparkles, Info, Lock, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
+
+// Matriz de acesso: qual nível do usuário libera quais níveis de curso
+const ACCESS = {
+  interessado: ['iniciante'],
+  preparacao: ['iniciante', 'intermediario'],
+  consagrado: ['iniciante', 'intermediario', 'aprofundamento']
+};
+
+const LOCK_MESSAGE = {
+  intermediario: 'Este curso é destinado a membros em preparação ou já consagrados. Continue sua caminhada para liberá-lo.',
+  aprofundamento: 'Este curso está disponível apenas para usuários já consagrados. Conclua sua Consagração Total para acessar conteúdos de aprofundamento.'
+};
 
 export default function ACAMF() {
   const [courses, setCourses] = useState([]);
@@ -12,6 +25,13 @@ export default function ACAMF() {
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState(null);
+  const [lockedCourse, setLockedCourse] = useState(null);
+  const { user } = useCurrentUser();
+
+  const userAccess = user?.role === 'admin'
+    ? ['iniciante', 'intermediario', 'aprofundamento']
+    : (ACCESS[user?.status] || ACCESS.interessado);
+  const isLocked = (course) => !userAccess.includes(course.level);
 
   useEffect(() => {
     (async () => {
@@ -146,7 +166,7 @@ export default function ACAMF() {
             {filteredCourses.length > 0 ? (
               <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
                 {filteredCourses.map((c) => (
-                  <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
+                  <CourseCard key={c.id} course={c} stats={courseStats(c.id)} locked={isLocked(c)} onLockedClick={() => setLockedCourse(c)} />
                 ))}
               </div>
             ) : (
@@ -166,7 +186,7 @@ export default function ACAMF() {
           <Section title="Continue assistindo" accent="#663399">
             <Carousel>
               {inProgress.map((c) => (
-                <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
+                <CourseCard key={c.id} course={c} stats={courseStats(c.id)} locked={isLocked(c)} onLockedClick={() => setLockedCourse(c)} />
               ))}
             </Carousel>
           </Section>
@@ -177,7 +197,7 @@ export default function ACAMF() {
           <Section key={g.category.id} title={g.category.name} accent={g.category.color || '#663399'}>
             <Carousel>
               {g.courses.map((c) => (
-                <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
+                <CourseCard key={c.id} course={c} stats={courseStats(c.id)} locked={isLocked(c)} onLockedClick={() => setLockedCourse(c)} />
               ))}
             </Carousel>
           </Section>
@@ -188,7 +208,7 @@ export default function ACAMF() {
           <Section title="Concluídos por você" accent="#10b981">
             <Carousel>
               {completedCourses.map((c) => (
-                <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
+                <CourseCard key={c.id} course={c} stats={courseStats(c.id)} locked={isLocked(c)} onLockedClick={() => setLockedCourse(c)} />
               ))}
             </Carousel>
           </Section>
@@ -199,7 +219,7 @@ export default function ACAMF() {
           <Section title="Todos os cursos" accent="#663399">
             <Carousel>
               {uncategorized.map((c) => (
-                <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
+                <CourseCard key={c.id} course={c} stats={courseStats(c.id)} locked={isLocked(c)} onLockedClick={() => setLockedCourse(c)} />
               ))}
             </Carousel>
           </Section>
@@ -207,6 +227,32 @@ export default function ACAMF() {
           </>
         )}
       </div>
+
+      {/* Pop-up de curso bloqueado */}
+      {lockedCourse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setLockedCourse(null)}>
+          <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setLockedCourse(null)} className="absolute right-4 top-4 text-muted-foreground hover:text-foreground">
+              <X className="h-5 w-5" />
+            </button>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <Lock className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <h3 className="mt-4 font-display text-lg">{lockedCourse.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {LOCK_MESSAGE[lockedCourse.level] || 'Este curso ainda não está disponível para o seu nível na caminhada.'}
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <Link to="/caminho" className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground">
+                Continuar minha caminhada
+              </Link>
+              <button onClick={() => setLockedCourse(null)} className="w-full rounded-lg px-4 py-2 text-sm text-muted-foreground hover:text-foreground">
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -274,65 +320,88 @@ function Carousel({ children }) {
   );
 }
 
-function CourseCard({ course, stats }) {
-  return (
-    <Link
-      to={`/acamf/curso/${course.id}`}
-      className="group relative z-0 block w-44 shrink-0 transition-all duration-300 hover:z-20 sm:w-48 lg:w-52"
-    >
-      <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-muted shadow-md transition duration-300 group-hover:scale-[1.08] group-hover:shadow-2xl">
-        {(course.poster_url || course.cover_url) ? (
-          <img
-            src={course.poster_url || course.cover_url}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-deep">
-            <BookOpen className="h-10 w-10 text-muted-foreground/40" />
-          </div>
-        )}
-        {/* Gradiente inferior sempre visível */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+function CourseCard({ course, stats, locked, onLockedClick }) {
+  const cardInner = (
+    <div className={`relative aspect-[9/16] overflow-hidden rounded-xl bg-muted shadow-md transition duration-300 group-hover:scale-[1.08] group-hover:shadow-2xl ${locked ? 'grayscale' : ''}`}>
+      {(course.poster_url || course.cover_url) ? (
+        <img
+          src={course.poster_url || course.cover_url}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-deep">
+          <BookOpen className="h-10 w-10 text-muted-foreground/40" />
+        </div>
+      )}
+      {/* Gradiente inferior sempre visível */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
 
-        {/* Info na base */}
-        <div className="absolute bottom-0 left-0 right-0 p-3">
-          <p className="font-display text-sm font-semibold leading-tight text-white drop-shadow line-clamp-2">{course.title}</p>
-          <div className="mt-1 flex items-center gap-2">
-            {course.level && (
-              <span className="text-[10px] uppercase tracking-wider text-white/70">{LEVEL_LABEL[course.level]}</span>
-            )}
-            {stats.total > 0 && (
-              <span className="text-[10px] text-white/50">• {stats.total} aulas</span>
-            )}
-          </div>
-          {stats.total > 0 && stats.completed > 0 && (
-            <div className="mt-2">
-              <div className="h-1 w-full rounded-full bg-white/20">
-                <div
-                  className="h-1 rounded-full bg-gold transition-all"
-                  style={{ width: `${stats.pct}%` }}
-                />
-              </div>
-              <p className="mt-1 text-[10px] text-white/60">{stats.completed}/{stats.total} concluídas</p>
-            </div>
+      {/* Info na base */}
+      <div className="absolute bottom-0 left-0 right-0 p-3">
+        <p className="font-display text-sm font-semibold leading-tight text-white drop-shadow line-clamp-2">{course.title}</p>
+        <div className="mt-1 flex items-center gap-2">
+          {course.level && (
+            <span className="text-[10px] uppercase tracking-wider text-white/70">{LEVEL_LABEL[course.level]}</span>
+          )}
+          {stats.total > 0 && (
+            <span className="text-[10px] text-white/50">• {stats.total} aulas</span>
           )}
         </div>
+        {stats.total > 0 && stats.completed > 0 && (
+          <div className="mt-2">
+            <div className="h-1 w-full rounded-full bg-white/20">
+              <div
+                className="h-1 rounded-full bg-gold transition-all"
+                style={{ width: `${stats.pct}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[10px] text-white/60">{stats.completed}/{stats.total} concluídas</p>
+          </div>
+        )}
+      </div>
 
-        {/* Overlay com play no hover */}
+      {/* Overlay com play OU cadeado */}
+      {locked ? (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
+            <Lock className="h-6 w-6 text-white" />
+          </div>
+        </div>
+      ) : (
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition duration-300 group-hover:opacity-100">
           <div className="flex h-12 w-12 scale-90 items-center justify-center rounded-full bg-white/25 backdrop-blur-md transition duration-300 group-hover:scale-100">
             <Play className="h-5 w-5 fill-white text-white" />
           </div>
         </div>
+      )}
 
-        {/* Badge de conclusão */}
-        {stats.total > 0 && stats.completed === stats.total && (
-          <div className="absolute right-2 top-2 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
-            ✓ Concluído
-          </div>
-        )}
-      </div>
+      {/* Badge de conclusão */}
+      {stats.total > 0 && stats.completed === stats.total && (
+        <div className="absolute right-2 top-2 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+          ✓ Concluído
+        </div>
+      )}
+    </div>
+  );
+
+  if (locked) {
+    return (
+      <button
+        onClick={onLockedClick}
+        className="group relative z-0 block w-44 shrink-0 text-left transition-all duration-300 hover:z-20 sm:w-48 lg:w-52"
+      >
+        {cardInner}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      to={`/acamf/curso/${course.id}`}
+      className="group relative z-0 block w-44 shrink-0 transition-all duration-300 hover:z-20 sm:w-48 lg:w-52"
+    >
+      {cardInner}
     </Link>
   );
 }

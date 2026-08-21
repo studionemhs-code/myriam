@@ -3,9 +3,16 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Play, Check, ChevronLeft, Clock, BookOpen, FileText, Headphones, Lock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Ornament, GoldDivider } from '@/components/ui/marian';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
 const TYPE_ICON = { texto: FileText, pdf: FileText, ebook: BookOpen, audio: Headphones, video: Play, imagem: BookOpen };
+
+const ACCESS = {
+  interessado: ['iniciante'],
+  preparacao: ['iniciante', 'intermediario'],
+  consagrado: ['iniciante', 'intermediario', 'aprofundamento']
+};
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -14,6 +21,7 @@ export default function CourseDetail() {
   const [lessons, setLessons] = useState([]);
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useCurrentUser();
 
   useEffect(() => {
     (async () => {
@@ -37,6 +45,32 @@ export default function CourseDetail() {
 
   if (!course) {
     return <div className="py-20 text-center text-muted-foreground">Curso não encontrado.</div>;
+  }
+
+  const userAccess = user?.role === 'admin'
+    ? ['iniciante', 'intermediario', 'aprofundamento']
+    : (ACCESS[user?.status] || ACCESS.interessado);
+
+  if (!userAccess.includes(course.level)) {
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+          <Lock className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <h1 className="mt-5 font-display text-2xl">{course.title}</h1>
+        <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+          {course.level === 'aprofundamento'
+            ? 'Este curso está disponível apenas para usuários já consagrados. Conclua sua Consagração Total para acessar conteúdos de aprofundamento.'
+            : 'Este curso é destinado a membros em preparação ou já consagrados. Continue sua caminhada para liberá-lo.'}
+        </p>
+        <Link to="/caminho" className="mt-5 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground">
+          Continuar minha caminhada
+        </Link>
+        <button onClick={() => navigate('/acamf')} className="mt-3 text-sm text-muted-foreground hover:text-foreground">
+          Voltar para ACAMF
+        </button>
+      </div>
+    );
   }
 
   const completedCount = progress.filter((p) => p.completed).length;
