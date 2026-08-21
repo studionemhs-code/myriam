@@ -43,6 +43,10 @@
       ],
       "default": "gpt-4o-mini"
     },
+    "openai_api_key": {
+      "type": "string",
+      "description": "Chave API OpenAI fornecida pelo admin. Se vazio, usa a chave padr\u00e3o do backend."
+    },
     "welcome_message": {
       "type": "string",
       "description": "Mensagem exibida ao iniciar conversa"
@@ -63,7 +67,11 @@
     "model"
   ],
   "rls": {
-    "read": {},
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "create": {
       "user_condition": {
         "role": "admin"
