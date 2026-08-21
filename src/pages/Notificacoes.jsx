@@ -99,7 +99,6 @@ export default function Notificacoes() {
               </div>
             );
             const hasVid = hasVideo(n);
-            const clickable = hasVid || !n.link;
             return n.link && !hasVid ? (
               <Link key={n.id} to={n.link} onClick={() => !n.read && markRead(n.id)} className="block">
                 {inner}
