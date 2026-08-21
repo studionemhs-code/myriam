@@ -59,12 +59,7 @@ export default function ACAMF() {
 
   // Cursos filtrados quando há filtro ativo
   const filteredCourses = activeFilter
-    ? courses.filter((c) => {
-        if (activeFilter.type === 'level') return c.level === activeFilter.value;
-        if (activeFilter.type === 'category') return c.category_id === activeFilter.value;
-        if (activeFilter.type === 'tag') return lessonsByCourse(c.id).some((l) => (l.tags || []).includes(activeFilter.value));
-        return true;
-      })
+    ? courses.filter((c) => c.level === activeFilter.value)
     : null;
 
   if (loading) {
@@ -135,8 +130,6 @@ export default function ACAMF() {
       <div className="space-y-10 px-4 py-8 lg:px-8 lg:py-10">
         {/* Barra de filtros */}
         <FilterBar
-          categories={categories}
-          tags={allTags}
           activeFilter={activeFilter}
           onFilter={setActiveFilter}
         />
@@ -218,16 +211,15 @@ export default function ACAMF() {
   );
 }
 
-function FilterBar({ categories, tags, activeFilter, onFilter }) {
+function FilterBar({ activeFilter, onFilter }) {
   const levels = [
     { value: 'iniciante', label: 'Iniciante' },
     { value: 'intermediario', label: 'Intermediário' },
     { value: 'aprofundamento', label: 'Aprofundamento' }
   ];
 
-  const isActive = (type, value) => activeFilter?.type === type && activeFilter?.value === value;
-  const toggle = (type, value) =>
-    onFilter(isActive(type, value) ? null : { type, value });
+  const isActive = (value) => activeFilter?.value === value;
+  const toggle = (value) => onFilter(isActive(value) ? null : { type: 'level', value });
 
   const chipCls = (active) =>
     `shrink-0 rounded-full border px-4 py-1.5 text-xs font-medium transition ${
@@ -239,7 +231,7 @@ function FilterBar({ categories, tags, activeFilter, onFilter }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filtrar por</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filtrar por nível</span>
         {activeFilter && (
           <button
             onClick={() => onFilter(null)}
@@ -250,37 +242,14 @@ function FilterBar({ categories, tags, activeFilter, onFilter }) {
         )}
       </div>
 
-      {/* Níveis */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
         <button className={chipCls(!activeFilter)} onClick={() => onFilter(null)}>Todos</button>
         {levels.map((l) => (
-          <button key={l.value} className={chipCls(isActive('level', l.value))} onClick={() => toggle('level', l.value)}>
+          <button key={l.value} className={chipCls(isActive(l.value))} onClick={() => toggle(l.value)}>
             {l.label}
           </button>
         ))}
       </div>
-
-      {/* Categorias */}
-      {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {categories.map((c) => (
-            <button key={c.id} className={chipCls(isActive('category', c.id))} onClick={() => toggle('category', c.id)}>
-              {c.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Tags */}
-      {tags.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {tags.map((t) => (
-            <button key={t} className={chipCls(isActive('tag', t))} onClick={() => toggle('tag', t)}>
-              #{t}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -309,9 +278,9 @@ function CourseCard({ course, stats }) {
   return (
     <Link
       to={`/acamf/curso/${course.id}`}
-      className="group relative block w-44 shrink-0 sm:w-48 lg:w-52"
+      className="group relative z-0 block w-44 shrink-0 transition-all duration-300 hover:z-20 sm:w-48 lg:w-52"
     >
-      <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-muted shadow-md transition duration-300 group-hover:scale-[1.03] group-hover:shadow-xl">
+      <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-muted shadow-md transition duration-300 group-hover:scale-[1.08] group-hover:shadow-2xl">
         {(course.poster_url || course.cover_url) ? (
           <img
             src={course.poster_url || course.cover_url}
