@@ -4,7 +4,6 @@ import { ChevronLeft, BookOpen, FileText, Headphones, Play, Clock, ChevronRight,
 import ReportDialog from '@/components/myriam/ReportDialog';
 import { base44 } from '@/api/base44Client';
 import { Ornament, GoldDivider } from '@/components/ui/marian';
-import ReactMarkdown from 'react-markdown';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
 
@@ -72,7 +71,7 @@ export default function ACAMFDetalhe() {
               <div className="aspect-video overflow-hidden rounded-xl">
                 <iframe
                   className="h-full w-full"
-                  src={`https://www.youtube-nocookie.com/embed/${content.youtube_id}`}
+                  src={`https://www.youtube.com/embed/${content.youtube_id}?rel=0&playsinline=1&modestbranding=1`}
                   title={content.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 />
@@ -110,9 +109,7 @@ export default function ACAMFDetalhe() {
       )}
 
       {content.content && (
-        <article className="prose prose-sm max-w-none">
-          <ReactMarkdown>{content.content}</ReactMarkdown>
-        </article>
+        <article className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: content.content }} />
       )}
 
       {/* Tags */}
