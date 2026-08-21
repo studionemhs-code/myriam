@@ -11,6 +11,7 @@ export default function ACAMF() {
   const [lessons, setLessons] = useState([]);
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -52,6 +53,19 @@ export default function ACAMF() {
     .map((cat) => ({ category: cat, courses: notStarted.filter((c) => c.category_id === cat.id) }))
     .filter((g) => g.courses.length > 0);
   const uncategorized = notStarted.filter((c) => !c.category_id);
+
+  // Tags únicas extraídas das aulas
+  const allTags = [...new Set(lessons.flatMap((l) => l.tags || []))].sort();
+
+  // Cursos filtrados quando há filtro ativo
+  const filteredCourses = activeFilter
+    ? courses.filter((c) => {
+        if (activeFilter.type === 'level') return c.level === activeFilter.value;
+        if (activeFilter.type === 'category') return c.category_id === activeFilter.value;
+        if (activeFilter.type === 'tag') return lessonsByCourse(c.id).some((l) => (l.tags || []).includes(activeFilter.value));
+        return true;
+      })
+    : null;
 
   if (loading) {
     return (
@@ -119,7 +133,42 @@ export default function ACAMF() {
       )}
 
       <div className="space-y-10 px-4 py-8 lg:px-8 lg:py-10">
-        {/* Continue assistindo */}
+        {/* Barra de filtros */}
+        <FilterBar
+          categories={categories}
+          tags={allTags}
+          activeFilter={activeFilter}
+          onFilter={setActiveFilter}
+        />
+
+        {/* Resultados filtrados */}
+        {filteredCourses ? (
+          <div>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="h-7 w-1 rounded-full bg-primary" />
+              <h2 className="font-display text-xl text-foreground lg:text-2xl">
+                {filteredCourses.length} {filteredCourses.length === 1 ? 'curso encontrado' : 'cursos encontrados'}
+              </h2>
+            </div>
+            {filteredCourses.length > 0 ? (
+              <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+                {filteredCourses.map((c) => (
+                  <CourseCard key={c.id} course={c} stats={courseStats(c.id)} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <BookOpen className="h-10 w-10 text-muted-foreground/40" />
+                <p className="mt-3 text-sm text-muted-foreground">Nenhum curso com este filtro.</p>
+                <button onClick={() => setActiveFilter(null)} className="mt-2 text-sm font-medium text-primary hover:underline">
+                  Limpar filtros
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Continue assistindo */}
         {inProgress.length > 0 && (
           <Section title="Continue assistindo" accent="#663399">
             <Carousel>
@@ -162,7 +211,76 @@ export default function ACAMF() {
             </Carousel>
           </Section>
         )}
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function FilterBar({ categories, tags, activeFilter, onFilter }) {
+  const levels = [
+    { value: 'iniciante', label: 'Iniciante' },
+    { value: 'intermediario', label: 'Intermediário' },
+    { value: 'aprofundamento', label: 'Aprofundamento' }
+  ];
+
+  const isActive = (type, value) => activeFilter?.type === type && activeFilter?.value === value;
+  const toggle = (type, value) =>
+    onFilter(isActive(type, value) ? null : { type, value });
+
+  const chipCls = (active) =>
+    `shrink-0 rounded-full border px-4 py-1.5 text-xs font-medium transition ${
+      active
+        ? 'border-primary bg-primary text-primary-foreground'
+        : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground'
+    }`;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filtrar por</span>
+        {activeFilter && (
+          <button
+            onClick={() => onFilter(null)}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Limpar
+          </button>
+        )}
+      </div>
+
+      {/* Níveis */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+        <button className={chipCls(!activeFilter)} onClick={() => onFilter(null)}>Todos</button>
+        {levels.map((l) => (
+          <button key={l.value} className={chipCls(isActive('level', l.value))} onClick={() => toggle('level', l.value)}>
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Categorias */}
+      {categories.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {categories.map((c) => (
+            <button key={c.id} className={chipCls(isActive('category', c.id))} onClick={() => toggle('category', c.id)}>
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Tags */}
+      {tags.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {tags.map((t) => (
+            <button key={t} className={chipCls(isActive('tag', t))} onClick={() => toggle('tag', t)}>
+              #{t}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
