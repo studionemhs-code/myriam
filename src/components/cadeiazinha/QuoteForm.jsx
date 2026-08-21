@@ -28,7 +28,8 @@ export default function QuoteForm({ catalog, settings }) {
     notes: ''
   });
 
-  const stepLabels = settings?.step_labels || ['Dados', 'Cadeiazinha', 'Medalhões', 'Escapulários', 'Revisão'];
+  const rawLabels = settings?.step_labels || ['Dados', 'Cadeiazinha', 'Medalhões', 'Escapulários', 'Revisão'];
+  const stepLabels = [`${rawLabels[0]} e ${rawLabels[1]}`, rawLabels[2], rawLabels[3], rawLabels[4]];
 
   const set = (patch) => setForm({ ...form, ...patch });
 
@@ -178,121 +179,127 @@ export default function QuoteForm({ catalog, settings }) {
           ))}
         </div>
         <div className="mt-2 h-1 rounded-full bg-muted">
-          <div className="h-1 rounded-full bg-primary transition-all" style={{ width: `${((step + 1) / 5) * 100}%` }} />
+          <div className="h-1 rounded-full bg-primary transition-all" style={{ width: `${((step + 1) / 4) * 100}%` }} />
         </div>
       </div>
 
-      {/* Step 0: Dados pessoais */}
+      {/* Step 0: Dados + Cadeiazinha */}
       {step === 0 && (
-        <div className="space-y-4">
-          <h3 className="font-display text-lg">Seus dados</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Nome completo *</label>
-              <input className={inputCls} value={form.customerName} onChange={(e) => set({ customerName: e.target.value })} maxLength={120} />
-            </div>
-            <div>
-              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">WhatsApp *</label>
-              <input className={inputCls} value={form.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} placeholder="(11) 99999-9999" maxLength={20} />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">CEP *</label>
-            <div className="flex gap-2">
-              <input className={inputCls} value={form.cep} onChange={(e) => set({ cep: e.target.value })} placeholder="00000-000" maxLength={10} />
-              <button type="button" onClick={lookupCep} disabled={cepLoading || form.cep.replace(/\D/g, '').length !== 8} className="flex items-center gap-1.5 rounded-lg border border-border px-3 text-sm hover:bg-muted disabled:opacity-40">
-                {cepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
-              </button>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="sm:col-span-2">
-              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Rua</label>
-              <input className={inputCls} value={form.street} onChange={(e) => set({ street: e.target.value })} />
-            </div>
-            <div>
-              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Número *</label>
-              <input className={inputCls} value={form.number} onChange={(e) => set({ number: e.target.value })} />
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Complemento</label>
-              <input className={inputCls} value={form.complement} onChange={(e) => set({ complement: e.target.value })} />
-            </div>
-            <div>
-              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Bairro</label>
-              <input className={inputCls} value={form.neighborhood} onChange={(e) => set({ neighborhood: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cidade</label>
-                <input className={inputCls} value={form.city} onChange={(e) => set({ city: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">UF</label>
-                <input className={inputCls} value={form.state} onChange={(e) => set({ state: e.target.value })} maxLength={2} />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Step 1: Cadeiazinhas */}
-      {step === 1 && (
         <div className="space-y-6">
-          <h3 className="font-display text-lg">Monte sua cadeiazinha</h3>
-          {form.chains.map((chain, idx) => (
-            <div key={idx} className="rounded-xl border border-border bg-card p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="font-display text-sm font-medium text-primary">Cadeiazinha {idx + 1}</span>
-                {form.chains.length > 1 && (
-                  <button type="button" onClick={() => removeChain(idx)} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
+          {/* Seção: Seus dados */}
+          <div className="space-y-4">
+            <h3 className="font-display text-lg">Seus dados</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Nome completo *</label>
+                <input className={inputCls} value={form.customerName} onChange={(e) => set({ customerName: e.target.value })} maxLength={120} />
               </div>
-
-              <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">WhatsApp *</label>
+                <input className={inputCls} value={form.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} placeholder="(11) 99999-9999" maxLength={20} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">CEP *</label>
+              <div className="flex gap-2">
+                <input className={inputCls} value={form.cep} onChange={(e) => set({ cep: e.target.value })} placeholder="00000-000" maxLength={10} />
+                <button type="button" onClick={lookupCep} disabled={cepLoading || form.cep.replace(/\D/g, '').length !== 8} className="flex items-center gap-1.5 rounded-lg border border-border px-3 text-sm hover:bg-muted disabled:opacity-40">
+                  {cepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="sm:col-span-2">
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Rua</label>
+                <input className={inputCls} value={form.street} onChange={(e) => set({ street: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Número *</label>
+                <input className={inputCls} value={form.number} onChange={(e) => set({ number: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Complemento</label>
+                <input className={inputCls} value={form.complement} onChange={(e) => set({ complement: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Bairro</label>
+                <input className={inputCls} value={form.neighborhood} onChange={(e) => set({ neighborhood: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Modelo da cadeia *</label>
-                  <ProductGrid products={catalog.chains} selected={chain.model} onSelect={(slug) => updateChain(idx, { model: slug })} mode="single" />
+                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Cidade</label>
+                  <input className={inputCls} value={form.city} onChange={(e) => set({ city: e.target.value })} />
                 </div>
                 <div>
-                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Tamanho</label>
-                  <input className={inputCls} value={chain.size} onChange={(e) => updateChain(idx, { size: e.target.value })} placeholder="Ex: 50cm, 60cm..." />
-                </div>
-                <div>
-                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medalha de brinde *</label>
-                  <ProductGrid products={catalog.marian} selected={chain.freeMedal} onSelect={(slug) => updateChain(idx, { freeMedal: slug })} mode="single" emptyText="Nenhuma medalha mariana disponível." />
-                </div>
-                <div>
-                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medalhas marianas adicionais</label>
-                  <ProductGrid products={catalog.marian} selected={chain.marianMedals} onSelect={(slugs) => updateChain(idx, { marianMedals: slugs })} emptyText="Nenhuma disponível." />
-                </div>
-                <div>
-                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medalhas em inox</label>
-                  <ProductGrid products={catalog.inox} selected={chain.inoxMedals} onSelect={(slugs) => updateChain(idx, { inoxMedals: slugs })} emptyText="Nenhuma disponível." />
-                </div>
-                <div>
-                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medalhas de santos</label>
-                  <ProductGrid products={catalog.saint} selected={chain.saintMedals} onSelect={(slugs) => updateChain(idx, { saintMedals: slugs })} emptyText="Nenhuma disponível." />
-                </div>
-                <div>
-                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Pingentes</label>
-                  <ProductGrid products={catalog.pendants} selected={chain.pendants} onSelect={(slugs) => updateChain(idx, { pendants: slugs })} emptyText="Nenhum disponível." />
+                  <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">UF</label>
+                  <input className={inputCls} value={form.state} onChange={(e) => set({ state: e.target.value })} maxLength={2} />
                 </div>
               </div>
             </div>
-          ))}
-          <button type="button" onClick={addChain} className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm text-muted-foreground hover:border-primary hover:text-primary">
-            <Plus className="h-4 w-4" /> Adicionar outra cadeiazinha
-          </button>
+          </div>
+
+          {/* Divisor visual entre seções */}
+          <div className="flex items-center gap-3 py-1">
+            <div className="gold-line flex-1 opacity-40" />
+          </div>
+
+          {/* Seção: Monte sua cadeiazinha */}
+          <div className="space-y-6">
+            <h3 className="font-display text-lg">Monte sua cadeiazinha</h3>
+            {form.chains.map((chain, idx) => (
+              <div key={idx} className="rounded-xl border border-border bg-card p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="font-display text-sm font-medium text-primary">Cadeiazinha {idx + 1}</span>
+                  {form.chains.length > 1 && (
+                    <button type="button" onClick={() => removeChain(idx)} className="text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Modelo da cadeia *</label>
+                    <ProductGrid products={catalog.chains} selected={chain.model} onSelect={(slug) => updateChain(idx, { model: slug })} mode="single" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Tamanho</label>
+                    <input className={inputCls} value={chain.size} onChange={(e) => updateChain(idx, { size: e.target.value })} placeholder="Ex: 50cm, 60cm..." />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medalha de brinde *</label>
+                    <ProductGrid products={catalog.marian} selected={chain.freeMedal} onSelect={(slug) => updateChain(idx, { freeMedal: slug })} mode="single" emptyText="Nenhuma medalha mariana disponível." />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medalhas marianas adicionais</label>
+                    <ProductGrid products={catalog.marian} selected={chain.marianMedals} onSelect={(slugs) => updateChain(idx, { marianMedals: slugs })} emptyText="Nenhuma disponível." />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medalhas em inox</label>
+                    <ProductGrid products={catalog.inox} selected={chain.inoxMedals} onSelect={(slugs) => updateChain(idx, { inoxMedals: slugs })} emptyText="Nenhuma disponível." />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medalhas de santos</label>
+                    <ProductGrid products={catalog.saint} selected={chain.saintMedals} onSelect={(slugs) => updateChain(idx, { saintMedals: slugs })} emptyText="Nenhuma disponível." />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Pingentes</label>
+                    <ProductGrid products={catalog.pendants} selected={chain.pendants} onSelect={(slugs) => updateChain(idx, { pendants: slugs })} emptyText="Nenhum disponível." />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button type="button" onClick={addChain} className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm text-muted-foreground hover:border-primary hover:text-primary">
+              <Plus className="h-4 w-4" /> Adicionar outra cadeiazinha
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Step 2: Medalhões */}
-      {step === 2 && (
+      {/* Step 1: Medalhões */}
+      {step === 1 && (
         <div className="space-y-4">
           <h3 className="font-display text-lg">Medalhões</h3>
           <p className="text-sm text-muted-foreground">Selecione os medalhões e informe se deseja com ou sem corrente.</p>
@@ -331,8 +338,8 @@ export default function QuoteForm({ catalog, settings }) {
         </div>
       )}
 
-      {/* Step 3: Escapulários */}
-      {step === 3 && (
+      {/* Step 2: Escapulários */}
+      {step === 2 && (
         <div className="space-y-4">
           <h3 className="font-display text-lg">Escapulários</h3>
           <p className="text-sm text-muted-foreground">Selecione os escapulários e a quantidade desejada.</p>
@@ -372,8 +379,8 @@ export default function QuoteForm({ catalog, settings }) {
         </div>
       )}
 
-      {/* Step 4: Revisão */}
-      {step === 4 && (
+      {/* Step 3: Revisão */}
+      {step === 3 && (
         <div className="space-y-4">
           <h3 className="font-display text-lg">Revisão do pedido</h3>
 
@@ -435,7 +442,7 @@ export default function QuoteForm({ catalog, settings }) {
         >
           <ChevronLeft className="h-4 w-4" /> Voltar
         </button>
-        {step < 4 ? (
+        {step < 3 ? (
           <button
             type="button"
             onClick={() => setStep(step + 1)}
