@@ -12,21 +12,21 @@ export default function Logo({ size = 'md', to, variant = 'dark', subtitle = tru
   const titleColor = variant === 'dark' ? 'text-sidebar-foreground' : 'text-foreground';
   const subColor = variant === 'dark' ? 'text-sidebar-foreground/55' : 'text-muted-foreground';
 
-  const content = (
-    <div className={`flex ${stacked ? 'flex-col items-center text-center gap-1' : 'items-center gap-2.5'}`}>
-      <img src={LOGO_URL} alt="Theotokos" className={`${dims.box} shrink-0 rounded-xl object-cover`} />
+  const content =
+  <div className={`flex ${stacked ? 'flex-col items-center text-center gap-1' : 'items-center gap-2.5'}`}>
+      <img src={LOGO_URL} alt="Theotokos" className={`${dims.box} shrink-0 rounded-xl object-cover my-3`} />
       <div className="leading-none">
         <p className={`font-script ${dims.title} ${titleColor}`} style={{ letterSpacing: '0.02em' }}>
           Myriam
         </p>
-        {subtitle && (
-          <p className={`mt-1.5 uppercase ${dims.sub} ${subColor}`} style={{ letterSpacing: '0.12em' }}>
+        {subtitle &&
+      <p className={`mt-1.5 uppercase ${dims.sub} ${subColor}`} style={{ letterSpacing: '0.12em' }}>
             Consagrar, Conectar e Conscientizar
           </p>
-        )}
+      }
       </div>
-    </div>
-  );
+    </div>;
+
 
   if (to) {
     return <Link to={to} className="inline-flex">{content}</Link>;
