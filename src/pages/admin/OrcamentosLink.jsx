@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { AdminPageTitle, Loading, Field, inputCls } from '@/components/admin/ui';
 import { generateToken } from '@/lib/quoteUtils';
 import { Copy, Check, Share2, QrCode, ExternalLink, RefreshCw, Save, Loader2, Eye, Send, RotateCcw } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+import { useConfirm } from '@/hooks/useConfirm.jsx';
 
 export default function OrcamentosLink() {
   const [link, setLink] = useState(null);
@@ -11,6 +13,7 @@ export default function OrcamentosLink() {
   const [showQr, setShowQr] = useState(false);
   const [origin, setOrigin] = useState('');
   const [saving, setSaving] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const load = () => base44.entities.ShareLink.list().then((d) => {
     if (d[0]) { setLink(d[0]); setMessage(d[0].message || ''); }
@@ -27,25 +30,28 @@ export default function OrcamentosLink() {
 
   const saveMsg = async () => {
     setSaving(true);
-    try { await base44.entities.ShareLink.update(link.id, { message }); alert('Mensagem salva!'); } catch { alert('Erro'); } finally { setSaving(false); }
+    try { await base44.entities.ShareLink.update(link.id, { message }); toast({ title: 'Salvo!', description: 'Mensagem salva com sucesso.' }); } catch { toast({ title: 'Erro', description: 'Não foi possível salvar.', variant: 'destructive' }); } finally { setSaving(false); }
   };
 
   const toggleActive = async (active) => {
     await base44.entities.ShareLink.update(link.id, { active });
     load();
+    toast({ title: active ? 'Link ativado' : 'Link desativado', description: active ? 'O link agora está acessível.' : 'O link foi desativado.' });
   };
 
   const regenerate = async () => {
-    if (!confirm('Gerar um novo link? O link atual deixará de funcionar e os contadores serão zerados.')) return;
+    if (!await confirm({ title: 'Gerar novo link?', description: 'O link atual deixará de funcionar e os contadores serão zerados.', confirmLabel: 'Gerar novo', destructive: true })) return;
     const token = generateToken();
     await base44.entities.ShareLink.update(link.id, { token, visits: 0, shares: 0 });
     load();
+    toast({ title: 'Link regenerado', description: 'Um novo link foi gerado com sucesso.' });
   };
 
   const resetStats = async () => {
-    if (!confirm('Zerar todas as estatísticas do link?')) return;
+    if (!await confirm({ title: 'Zerar contadores?', description: 'Todas as estatísticas de acesso e compartilhamento serão zeradas.', confirmLabel: 'Zerar', destructive: true })) return;
     await base44.entities.ShareLink.update(link.id, { visits: 0, shares: 0 });
     load();
+    toast({ title: 'Contadores zerados', description: 'As estatísticas foram reiniciadas.' });
   };
 
   const copyUrl = async () => {
@@ -142,6 +148,7 @@ export default function OrcamentosLink() {
           </div>
         </div>
       </div>
+      {confirmDialog}
     </div>
   );
 }

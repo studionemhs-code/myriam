@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { AdminPageTitle, Loading, Field, inputCls } from '@/components/admin/ui';
 import { Save, Loader2, Upload, X } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 export default function OrcamentosConfiguracoes() {
   const [settings, setSettings] = useState(null);
@@ -17,11 +18,11 @@ export default function OrcamentosConfiguracoes() {
   const onLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 500 * 1024) { alert('Imagem muito grande (máx. 500 KB)'); return; }
+    if (file.size > 500 * 1024) { toast({ title: 'Imagem muito grande', description: 'Tamanho máximo: 500 KB.', variant: 'destructive' }); return; }
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setForm({ ...form, logo_url: file_url });
-    } catch { alert('Falha ao enviar logo'); }
+    } catch { toast({ title: 'Erro', description: 'Falha ao enviar logo.', variant: 'destructive' }); }
   };
 
   const save = async () => {
@@ -36,9 +37,9 @@ export default function OrcamentosConfiguracoes() {
         accent_color: form.accent_color,
         logo_url: form.logo_url || null
       });
-      alert('Configurações salvas!');
+      toast({ title: 'Salvo!', description: 'Configurações salvas com sucesso.' });
     } catch (e) {
-      alert('Erro ao salvar');
+      toast({ title: 'Erro', description: 'Não foi possível salvar.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }

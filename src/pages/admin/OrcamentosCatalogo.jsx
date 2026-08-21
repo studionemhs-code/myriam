@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { AdminPageTitle, Loading, Field, inputCls } from '@/components/admin/ui';
 import { PRODUCT_CATEGORIES } from '@/lib/quoteUtils';
 import { Plus, Pencil, Trash2, Loader2, Upload } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+import { useConfirm } from '@/hooks/useConfirm.jsx';
 
 export default function OrcamentosCatalogo() {
   const [products, setProducts] = useState(null);
@@ -10,6 +12,7 @@ export default function OrcamentosCatalogo() {
   const [editing, setEditing] = useState(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const load = () => base44.entities.CatalogProduct.list().then((d) => d.sort((a, b) => (a.category || '').localeCompare(b.category || '') || (a.sort_order || 0) - (b.sort_order || 0))).then(setProducts);
   useEffect(() => { load(); }, []);
@@ -26,11 +29,11 @@ export default function OrcamentosCatalogo() {
   const onUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 800 * 1024) { alert('Imagem muito grande (máx. 800 KB)'); return; }
+    if (file.size > 800 * 1024) { toast({ title: 'Imagem muito grande', description: 'Tamanho máximo: 800 KB.', variant: 'destructive' }); return; }
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setEditing({ ...editing, image_url: file_url });
-    } catch { alert('Falha ao enviar imagem'); }
+    } catch { toast({ title: 'Erro', description: 'Falha ao enviar imagem.', variant: 'destructive' }); }
   };
 
   const save = async (e) => {
@@ -44,17 +47,19 @@ export default function OrcamentosCatalogo() {
       }
       setEditing(null);
       load();
+      toast({ title: 'Salvo!', description: isNew ? 'Produto criado com sucesso.' : 'Produto atualizado com sucesso.' });
     } catch (err) {
-      alert(err.message || 'Erro ao salvar');
+      toast({ title: 'Erro', description: err.message || 'Não foi possível salvar.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
 
   const del = async (id) => {
-    if (!confirm('Remover este produto?')) return;
+    if (!await confirm({ title: 'Remover produto?', description: 'Esta ação não pode ser desfeita.', confirmLabel: 'Remover', destructive: true })) return;
     await base44.entities.CatalogProduct.delete(id);
     load();
+    toast({ title: 'Produto removido', description: 'O produto foi excluído com sucesso.' });
   };
 
   if (!products) return <Loading />;
@@ -149,6 +154,7 @@ export default function OrcamentosCatalogo() {
           </form>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

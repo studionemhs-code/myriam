@@ -3,12 +3,15 @@ import { base44 } from '@/api/base44Client';
 import { AdminPageTitle, Loading, Badge } from '@/components/admin/ui';
 import { STATUS_LABEL, STATUS_TONE, ORDER_STATUSES, exportOrdersCsv } from '@/lib/quoteUtils';
 import { Download, Eye, ExternalLink, Trash2 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+import { useConfirm } from '@/hooks/useConfirm.jsx';
 
 export default function OrcamentosPedidos() {
   const [orders, setOrders] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [q, setQ] = useState('');
   const [selected, setSelected] = useState(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   React.useEffect(() => {
     base44.entities.QuoteRequest.list('-created_date', 200).then(setOrders).catch(() => setOrders([]));
@@ -32,13 +35,15 @@ export default function OrcamentosPedidos() {
     await base44.entities.QuoteRequest.update(id, { status });
     setSelected({ ...selected, status });
     reload();
+    toast({ title: 'Status atualizado', description: `Pedido marcado como ${STATUS_LABEL[status]}.` });
   };
 
   const deleteOrder = async (id) => {
-    if (!confirm('Remover este pedido?')) return;
+    if (!await confirm({ title: 'Remover pedido?', description: 'Esta ação não pode ser desfeita.', confirmLabel: 'Remover', destructive: true })) return;
     await base44.entities.QuoteRequest.delete(id);
     setSelected(null);
     reload();
+    toast({ title: 'Pedido removido', description: 'O pedido foi excluído com sucesso.' });
   };
 
   if (!orders) return <Loading />;
@@ -144,6 +149,7 @@ export default function OrcamentosPedidos() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

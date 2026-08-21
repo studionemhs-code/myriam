@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { AdminPageTitle, Loading, Field, inputCls } from '@/components/admin/ui';
 import { Save, Loader2 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 export default function OrcamentosMensagens() {
   const [settings, setSettings] = useState(null);
@@ -23,9 +24,9 @@ export default function OrcamentosMensagens() {
     setSaving(true);
     try {
       await base44.entities.StoreSettings.update(settings.id, { message_template: template, step_labels: labels });
-      alert('Mensagens salvas!');
+      toast({ title: 'Salvo!', description: 'Mensagens salvas com sucesso.' });
     } catch (e) {
-      alert('Erro ao salvar');
+      toast({ title: 'Erro', description: 'Não foi possível salvar.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
