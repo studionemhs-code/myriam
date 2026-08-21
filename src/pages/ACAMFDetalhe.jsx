@@ -4,6 +4,7 @@ import { ChevronLeft, BookOpen, FileText, Headphones, Play, Clock, ChevronRight,
 import ReportDialog from '@/components/myriam/ReportDialog';
 import { base44 } from '@/api/base44Client';
 import { Ornament, GoldDivider } from '@/components/ui/marian';
+import PrivacyVideoPlayer from '@/components/PrivacyVideoPlayer';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
 
@@ -68,15 +69,7 @@ export default function ACAMFDetalhe() {
         content.youtube_id ? (
           content.use_alternative_player ? (
             <div className="rounded-2xl border-2 border-marian/50 bg-deep p-2">
-              <div className="aspect-video overflow-hidden rounded-xl">
-                <iframe
-                  className="h-full w-full"
-                  src={`https://www.youtube.com/embed/${content.youtube_id}`}
-                  title={content.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
-              </div>
+              <PrivacyVideoPlayer videoId={content.youtube_id} title={content.title} />
             </div>
           ) : (
             <div className="aspect-video overflow-hidden rounded-2xl">
