@@ -124,14 +124,14 @@ export default function AppLayout() {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-card/80 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 bg-deep lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <Link to="/">
-            <Logo size="sm" variant="light" subtitle={false} />
+            <Logo size="sm" variant="dark" subtitle={false} />
           </Link>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Link to="/notificacoes" className="relative text-muted-foreground">
+            <ThemeToggle className="text-sidebar-foreground/70 hover:text-sidebar-foreground" />
+            <Link to="/notificacoes" className="relative text-sidebar-foreground/70">
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
                 <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[9px] font-bold text-deep">
@@ -139,13 +139,14 @@ export default function AppLayout() {
                 </span>
               )}
             </Link>
-            {isVisible('calendario') && <Link to="/calendario" className="text-muted-foreground"><Calendar className="h-5 w-5" /></Link>}
-            <Link to="/perfil" className="text-muted-foreground"><User className="h-5 w-5" /></Link>
+            {isVisible('calendario') && <Link to="/calendario" className="text-sidebar-foreground/70"><Calendar className="h-5 w-5" /></Link>}
+            <Link to="/perfil" className="text-sidebar-foreground/70"><User className="h-5 w-5" /></Link>
           </div>
         </div>
         <div className="px-4 pb-2">
           <GlobalSearch />
         </div>
+        <div className="gold-line opacity-40" />
       </header>
 
       {/* Mobile drawer menu */}
@@ -157,7 +158,7 @@ export default function AppLayout() {
       )}
 
       <main className="lg:pl-64">
-        <div className="sticky top-0 z-20 hidden border-b border-border/60 bg-card/80 px-8 py-3 backdrop-blur lg:block">
+        <div className="sticky top-0 z-20 hidden border-b border-gold/20 bg-card/80 px-8 py-3 backdrop-blur lg:block">
           <div className="mx-auto max-w-2xl">
             <GlobalSearch />
           </div>
