@@ -1,0 +1,46 @@
+{
+  "name": "Novo Curso Publicado",
+  "description": "Notifica todos os usu\u00e1rios quando um novo curso \u00e9 publicado na ACAMF, com o trailer do curso como v\u00eddeo",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "Course",
+      "events": [
+        "create",
+        "update"
+      ]
+    },
+    "condition": "${ .trigger.data.status == \"publicado\" and (.trigger.event_type == \"create\" or .trigger.old_data.status != \"publicado\") }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "novo_curso_publicado",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "broadcast": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "broadcastNotification",
+            "args": {
+              "category": "acamf",
+              "title": "Novo curso dispon\u00edvel: ${ .trigger.data.title }",
+              "body": "Um novo curso foi adicionado \u00e0 ACAMF. Toque para assistir o trailer e come\u00e7ar.",
+              "link": "/acamf/curso/${ .trigger.entity_id }",
+              "youtube_id": "${ .trigger.data.trailer_youtube_id }",
+              "related_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Notificar todos os usu\u00e1rios",
+            "description": "Broadcast de novo curso publicado"
+          }
+        }
+      }
+    ]
+  }
+}

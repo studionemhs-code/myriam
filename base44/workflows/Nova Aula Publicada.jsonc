@@ -1,0 +1,46 @@
+{
+  "name": "Nova Aula Publicada",
+  "description": "Notifica todos os usu\u00e1rios quando uma nova aula \u00e9 publicada na ACAMF, com o v\u00eddeo da aula",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "ACAMFContent",
+      "events": [
+        "create",
+        "update"
+      ]
+    },
+    "condition": "${ .trigger.data.status == \"publicado\" and (.trigger.event_type == \"create\" or .trigger.old_data.status != \"publicado\") }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "nova_aula_publicada",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "broadcast": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "broadcastNotification",
+            "args": {
+              "category": "acamf",
+              "title": "Nova aula dispon\u00edvel: ${ .trigger.data.title }",
+              "body": "Uma nova aula foi publicada na ACAMF. Toque para assistir agora.",
+              "link": "/acamf/${ .trigger.entity_id }",
+              "youtube_id": "${ .trigger.data.youtube_id }",
+              "related_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Notificar todos os usu\u00e1rios",
+            "description": "Broadcast de nova aula publicada"
+          }
+        }
+      }
+    ]
+  }
+}

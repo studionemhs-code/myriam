@@ -12,7 +12,8 @@
         "myriam",
         "intencoes",
         "acamf",
-        "jornadas"
+        "jornadas",
+        "novidades"
       ]
     },
     "title": {
@@ -30,6 +31,15 @@
     },
     "related_id": {
       "type": "string"
+    },
+    "video_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL de v\u00eddeo enviado pelo admin para exibir ao clicar na notifica\u00e7\u00e3o"
+    },
+    "youtube_id": {
+      "type": "string",
+      "description": "ID de v\u00eddeo do YouTube para exibir ao clicar na notifica\u00e7\u00e3o"
     }
   },
   "required": [

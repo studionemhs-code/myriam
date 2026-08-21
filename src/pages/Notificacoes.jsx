@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, CheckCheck, Flower2, RefreshCw, Leaf, Heart, BookOpen, Sparkles } from 'lucide-react';
+import { Bell, CheckCheck, Flower2, RefreshCw, Leaf, Heart, BookOpen, Sparkles, Gift } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import AssociationRequestButton from '@/components/associacao/AssociationRequestButton';
+import NotificationVideoModal from '@/components/notifications/NotificationVideoModal';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
 import { formatDate } from '@/lib/marianDates';
 
@@ -13,10 +14,21 @@ const categoryMeta = {
   intencoes: { icon: Heart, label: 'Intenções' },
   acamf: { icon: BookOpen, label: 'ACAMF' },
   jornadas: { icon: Sparkles, label: 'Jornadas' },
+  novidades: { icon: Gift, label: 'Novidades' },
 };
 
 export default function Notificacoes() {
   const { notifications, unreadCount, isLoading, markRead, markAllRead } = useNotifications();
+  const [videoNotification, setVideoNotification] = useState(null);
+
+  const hasVideo = (n) => !!(n.youtube_id || n.video_url);
+
+  const handleClick = (n) => {
+    if (!n.read) markRead(n.id);
+    if (hasVideo(n)) {
+      setVideoNotification(n);
+    }
+  };
 
   return (
     <div>
@@ -71,6 +83,11 @@ export default function Notificacoes() {
                   <div className="flex items-center gap-2">
                     <p className="font-medium leading-tight">{n.title}</p>
                     {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-gold" />}
+                    {(n.youtube_id || n.video_url) && (
+                      <span className="ml-auto shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                        ▶ Vídeo
+                      </span>
+                    )}
                   </div>
                   {n.body && <p className="mt-1 text-sm text-muted-foreground">{n.body}</p>}
                   <div className="mt-1.5 flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground/70">
@@ -81,18 +98,22 @@ export default function Notificacoes() {
                 </div>
               </div>
             );
-            return n.link ? (
+            const hasVid = hasVideo(n);
+            const clickable = hasVid || !n.link;
+            return n.link && !hasVid ? (
               <Link key={n.id} to={n.link} onClick={() => !n.read && markRead(n.id)} className="block">
                 {inner}
               </Link>
             ) : (
-              <button key={n.id} onClick={() => !n.read && markRead(n.id)} className="block w-full text-left">
+              <button key={n.id} onClick={() => handleClick(n)} className="block w-full text-left">
                 {inner}
               </button>
             );
           })}
         </div>
       )}
+
+      <NotificationVideoModal notification={videoNotification} onClose={() => setVideoNotification(null)} />
     </div>
   );
 }

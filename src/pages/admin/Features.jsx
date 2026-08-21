@@ -3,6 +3,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { clearFeatureFlagsCache } from '@/hooks/useFeatureFlags';
 import { AdminPageTitle } from '@/components/admin/ui';
+import BroadcastNews from '@/components/admin/BroadcastNews';
 
 const DEFAULT_FLAGS = [
   { feature: 'acamf', label: 'ACAMF (Formação)' },
@@ -102,6 +103,10 @@ export default function Features() {
       <p className="mt-4 text-xs text-muted-foreground">
         Alterações entram em vigor imediatamente na navegação do app.
       </p>
+
+      <div className="mt-8">
+        <BroadcastNews />
+      </div>
     </div>
   );
 }
