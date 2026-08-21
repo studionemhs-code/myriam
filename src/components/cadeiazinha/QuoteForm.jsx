@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import ProductGrid from '@/components/cadeiazinha/ProductGrid';
 import { fetchCep, buildWhatsAppMessage, newChain } from '@/lib/quoteUtils';
@@ -78,13 +78,22 @@ export default function QuoteForm({ catalog, settings }) {
     set({ scapulars: form.scapulars.map((s) => (s.id === slug ? { ...s, quantity: Math.max(1, Math.min(20, quantity)) } : s)) });
   };
 
-  const canProceed = useMemo(() => {
-    if (step === 0) return form.customerName.trim().length >= 2 && form.whatsapp.replace(/\D/g, '').length >= 10 && form.cep.trim();
-    if (step === 1) return form.chains.some((c) => c.model);
-    return true;
-  }, [step, form]);
+  const dataComplete = () =>
+    form.customerName.trim().length >= 2 &&
+    form.whatsapp.replace(/\D/g, '').length >= 10 &&
+    form.cep.trim() &&
+    form.number.trim();
 
   const submit = async () => {
+    if (!dataComplete()) {
+      setStep(0);
+      toast({
+        title: 'Preencha seus dados',
+        description: 'Para facilitar o atendimento e o envio do orçamento completo com frete, preencha nome, WhatsApp, CEP e número.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -430,8 +439,7 @@ export default function QuoteForm({ catalog, settings }) {
           <button
             type="button"
             onClick={() => setStep(step + 1)}
-            disabled={!canProceed}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm text-primary-foreground disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm text-primary-foreground"
           >
             Avançar <ChevronRight className="h-4 w-4" />
           </button>
