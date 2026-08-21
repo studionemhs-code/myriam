@@ -64,6 +64,9 @@ export default function PostCard({ post, user }) {
     setPrayerCount((c) => c + 1);
     await base44.entities.MyriamInteraction.create({ post_id: post.id, type: 'pray' });
     await base44.entities.MyriamPost.update(post.id, { prayer_count: prayerCount + 1 });
+    if (post.created_by_id !== user.id) {
+      await notifyUser({ user_id: post.created_by_id, category: 'myriam', title: 'Alguém rezou por sua publicação', body: 'Alguém ofereceu uma oração pela sua publicação.', link: '/myriam', related_id: post.id });
+    }
   };
 
   const submitComment = async (parentId = null) => {
@@ -82,6 +85,12 @@ export default function PostCard({ post, user }) {
     await base44.entities.MyriamPost.update(post.id, { comment_count: (post.comment_count || 0) + (comments.length + 1) });
     if (post.created_by_id !== user.id) {
       await notifyUser({ user_id: post.created_by_id, category: 'myriam', title: 'Novo comentário', body: commentText.trim().slice(0, 100), link: '/myriam', related_id: post.id });
+    }
+    if (parentId) {
+      const parentComment = comments.find((c) => c.id === parentId);
+      if (parentComment && parentComment.author_id && parentComment.author_id !== user.id && parentComment.author_id !== post.created_by_id) {
+        await notifyUser({ user_id: parentComment.author_id, category: 'myriam', title: 'Alguém respondeu seu comentário', body: commentText.trim().slice(0, 100), link: '/myriam', related_id: post.id });
+      }
     }
   };
 
