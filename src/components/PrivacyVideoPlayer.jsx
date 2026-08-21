@@ -58,6 +58,8 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
           playsinline: 1,
           iv_load_policy: 3,
           fs: 0,
+          cc_load_policy: 0,
+          modestbranding: 1,
           origin: window.location.origin,
         },
         events: {
@@ -144,6 +146,9 @@ export default function PrivacyVideoPlayer({ videoId, title }) {
 
       {/* Transparent overlay — blocks ALL clicks from reaching YouTube */}
       <div className="absolute inset-0 z-10" />
+
+      {/* Top gradient — masks YouTube title/channel overlay */}
+      <div className="pointer-events-none absolute top-0 left-0 right-0 z-10 h-20 bg-gradient-to-b from-black/70 to-transparent" />
 
       {/* Center play/pause */}
       <button
