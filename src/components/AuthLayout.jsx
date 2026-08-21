@@ -1,6 +1,7 @@
 import React from "react";
 import { Instagram } from "lucide-react";
 import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const BG_IMAGE = "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/74db67cd0_23a05438-04ed-418c-9255-2eb6f3b8fb7a.png";
 
@@ -11,6 +12,9 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
         className="absolute inset-0 bg-cover bg-center opacity-[0.18] pointer-events-none"
         style={{ backgroundImage: `url(${BG_IMAGE})` }}
       />
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+      </div>
       <div className="relative w-full max-w-md">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-2">
