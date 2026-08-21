@@ -104,6 +104,12 @@
     @apply bg-background text-foreground font-body antialiased;
   }
 
+  /* Hide main page scrollbar on mobile */
+  @media (max-width: 1023px) {
+    html { scrollbar-width: none; -ms-overflow-style: none; }
+    html::-webkit-scrollbar { display: none; }
+  }
+
   h1, h2, h3, h4, h5 {
     @apply font-heading tracking-tight;
   }
@@ -148,6 +154,13 @@
   }
   .sidebar-scroll::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--sidebar-ring));
+  }
+  /* Hide scrollbars on mobile, keep styled scroll on desktop */
+  @media (max-width: 1023px) {
+    .sidebar-scroll::-webkit-scrollbar { display: none; }
+    .sidebar-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+    .mobile-no-scrollbar::-webkit-scrollbar { display: none; }
+    .mobile-no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
   }
 }
 
