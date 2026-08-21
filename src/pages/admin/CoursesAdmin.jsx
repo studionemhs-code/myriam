@@ -76,9 +76,9 @@ export default function CoursesAdmin() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((it) => (
           <div key={it.id} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            <div className="relative aspect-video overflow-hidden bg-muted">
-              {it.cover_url ? (
-                <img src={it.cover_url} alt="" className="h-full w-full object-cover" />
+            <div className="relative aspect-[9/16] overflow-hidden bg-muted">
+              {(it.poster_url || it.cover_url) ? (
+                <img src={it.poster_url || it.cover_url} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/10 to-deep/30">
                   <span className="text-xs text-muted-foreground">Sem capa</span>
@@ -151,7 +151,7 @@ export default function CoursesAdmin() {
                 <ImageUpload label="Capa wide (hero)" hint="Imagem 16:9 para o banner principal" value={editing.cover_url} onChange={(v) => set('cover_url', v)} aspect="video" />
               </div>
               <div className="col-span-2">
-                <ImageUpload label="Pôster vertical (card)" hint="Imagem 2:3 para cards em listas" value={editing.poster_url} onChange={(v) => set('poster_url', v)} aspect="poster" />
+                <ImageUpload label="Pôster vertical (card)" hint="Imagem 1080×1920px (9:16) para cards" value={editing.poster_url} onChange={(v) => set('poster_url', v)} aspect="poster" />
               </div>
               <label className="col-span-2 flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={editing.featured} onChange={(e) => set('featured', e.target.checked)} />

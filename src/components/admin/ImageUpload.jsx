@@ -19,7 +19,7 @@ export default function ImageUpload({ value, onChange, label, hint, aspect = 'vi
     }
   };
 
-  const aspectCls = aspect === 'poster' ? 'aspect-[2/3]' : 'aspect-video';
+  const aspectCls = aspect === 'poster' ? 'aspect-[9/16]' : 'aspect-video';
 
   return (
     <div>

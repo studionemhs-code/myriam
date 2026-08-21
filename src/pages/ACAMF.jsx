@@ -167,12 +167,12 @@ function CourseCard({ course, stats }) {
   return (
     <Link
       to={`/acamf/curso/${course.id}`}
-      className="group block w-64 shrink-0 sm:w-72"
+      className="group block w-40 shrink-0 sm:w-44"
     >
-      <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
-        {course.cover_url ? (
+      <div className="relative aspect-[9/16] overflow-hidden rounded-lg bg-muted">
+        {(course.poster_url || course.cover_url) ? (
           <img
-            src={course.cover_url}
+            src={course.poster_url || course.cover_url}
             alt=""
             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           />
@@ -200,8 +200,8 @@ function CourseCard({ course, stats }) {
           )}
         </div>
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-            <Play className="h-5 w-5 fill-white text-white" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+            <Play className="h-4 w-4 fill-white text-white" />
           </div>
         </div>
       </div>
