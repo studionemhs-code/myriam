@@ -71,9 +71,10 @@ export default function ACAMFDetalhe() {
               <div className="aspect-video overflow-hidden rounded-xl">
                 <iframe
                   className="h-full w-full"
-                  src={`https://www.youtube.com/embed/${content.youtube_id}?rel=0&playsinline=1&modestbranding=1`}
+                  src={`https://www.youtube.com/embed/${content.youtube_id}`}
                   title={content.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
                 />
               </div>
             </div>
