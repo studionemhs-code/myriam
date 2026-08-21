@@ -11,6 +11,10 @@ const DEFAULT_FLAGS = [
   { feature: 'jornadas', label: 'Jornadas Coletivas' },
   { feature: 'chat', label: 'Conversas (no Myriam)' },
   { feature: 'calendario', label: 'Calendário Mariano' },
+  { feature: 'agentes', label: 'Assistentes IA' },
+  { feature: 'certificados', label: 'Certificados' },
+  { feature: 'associacao', label: 'Associação Maria Rainha dos Corações' },
+  { feature: 'historico', label: 'Histórico de Consagrações' },
 ];
 
 export default function Features() {
