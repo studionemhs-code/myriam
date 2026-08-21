@@ -19,7 +19,7 @@ export default function Logo({ size = 'md', to, variant = 'dark', subtitle = tru
       </div>
       <div className="leading-none">
         <p className={`font-display font-bold uppercase ${dims.title} ${titleColor}`} style={{ letterSpacing: '0.08em' }}>
-          Theotokos
+          MYRIAM
         </p>
         {subtitle && (
           <p className={`mt-0.5 uppercase ${dims.sub} ${subColor}`} style={{ letterSpacing: '0.3em' }}>
