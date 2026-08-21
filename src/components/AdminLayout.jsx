@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, CalendarDays, Sparkles,
   Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag
@@ -27,6 +27,7 @@ const items = [
 
 export default function AdminLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const Nav = (
@@ -88,6 +89,12 @@ export default function AdminLayout() {
 
       <main className="lg:pl-60">
         <div className="mx-auto max-w-6xl px-4 py-6 lg:px-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Voltar
+          </button>
           <Outlet />
         </div>
       </main>
