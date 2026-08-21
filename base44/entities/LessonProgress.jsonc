@@ -1,0 +1,52 @@
+{
+  "name": "LessonProgress",
+  "type": "object",
+  "properties": {
+    "lesson_id": {
+      "type": "string",
+      "description": "ID do conte\u00fado/aula (ACAMFContent)"
+    },
+    "course_id": {
+      "type": "string",
+      "description": "ID do curso (Course)"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "watched_seconds": {
+      "type": "integer",
+      "default": 0
+    },
+    "last_watched_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "lesson_id"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

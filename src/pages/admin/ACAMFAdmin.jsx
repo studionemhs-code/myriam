@@ -5,13 +5,14 @@ import { Switch } from '@/components/ui/switch';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/admin/ui';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 const empty = {
   title: '', subtitle: '', description: '', category_id: '', author: '',
   content_type: 'texto', level: 'iniciante', content: '', youtube_id: '',
   use_alternative_player: false,
   file_url: '', cover_url: '', status: 'rascunho', recommended: false,
-  duration: '', published_date: ''
+  duration: '', published_date: '', course_id: '', lesson_order: 0
 };
 
 const typeLabels = { texto: 'Texto', pdf: 'PDF', ebook: 'E-book', audio: 'Áudio', video: 'Vídeo', imagem: 'Imagem' };
@@ -37,18 +38,21 @@ function extractYouTubeId(value) {
 export default function ACAMFAdmin() {
   const [items, setItems] = useState([]);
   const [cats, setCats] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const [c, cc] = await Promise.all([
+    const [c, cc, crs] = await Promise.all([
       base44.entities.ACAMFContent.list('-created_date', 200),
-      base44.entities.ACAMFCategory.list('sort_order', 50)
+      base44.entities.ACAMFCategory.list('sort_order', 50),
+      base44.entities.Course.list('sort_order', 100)
     ]);
     setItems(c);
     setCats(cc);
+    setCourses(crs);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -90,6 +94,7 @@ export default function ACAMFAdmin() {
             <tr>
               <th className="px-4 py-3">Título</th>
               <th className="px-4 py-3">Categoria</th>
+              <th className="px-4 py-3">Curso</th>
               <th className="px-4 py-3">Tipo</th>
               <th className="px-4 py-3">Nível</th>
               <th className="px-4 py-3">Status</th>
@@ -107,6 +112,7 @@ export default function ACAMFAdmin() {
                   {it.subtitle && <p className="text-xs text-muted-foreground">{it.subtitle}</p>}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{catName(it.category_id)}</td>
+                <td className="px-4 py-3 text-muted-foreground">{courses.find((c) => c.id === it.course_id)?.title || '—'}</td>
                 <td className="px-4 py-3">{typeLabels[it.content_type]}</td>
                 <td className="px-4 py-3">{levelLabels[it.level]}</td>
                 <td className="px-4 py-3">
@@ -145,6 +151,13 @@ export default function ACAMFAdmin() {
                   {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </Field>
+              <Field label="Curso">
+                <select className={inputCls} value={editing.course_id} onChange={(e) => set('course_id', e.target.value)}>
+                  <option value="">—</option>
+                  {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                </select>
+              </Field>
+              <Field label="Ordem da aula"><input type="number" className={inputCls} value={editing.lesson_order} onChange={(e) => set('lesson_order', parseInt(e.target.value) || 0)} /></Field>
               <Field label="Tipo">
                 <select className={inputCls} value={editing.content_type} onChange={(e) => set('content_type', e.target.value)}>
                   {Object.entries(typeLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -193,7 +206,9 @@ export default function ACAMFAdmin() {
                   </Field>
                 </div>
               )}
-              <Field label="URL da Capa"><input className={inputCls} value={editing.cover_url} onChange={(e) => set('cover_url', e.target.value)} /></Field>
+              <div className="col-span-2">
+                <ImageUpload label="Capa" value={editing.cover_url} onChange={(v) => set('cover_url', v)} aspect="video" />
+              </div>
               <div className="col-span-2">
                 <Field label="Descrição curta"><textarea className={inputCls} rows={2} value={editing.description} onChange={(e) => set('description', e.target.value)} /></Field>
               </div>

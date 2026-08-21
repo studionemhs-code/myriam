@@ -12,6 +12,15 @@
     "category_id": {
       "type": "string"
     },
+    "course_id": {
+      "type": "string",
+      "description": "ID do curso ao qual esta aula pertence"
+    },
+    "lesson_order": {
+      "type": "integer",
+      "default": 0,
+      "description": "Ordem sequencial da aula dentro do curso"
+    },
     "author": {
       "type": "string"
     },

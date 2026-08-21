@@ -23,6 +23,7 @@ import MinhaConsagracao from '@/pages/MinhaConsagracao';
 import Calendario from '@/pages/Calendario';
 import ACAMF from '@/pages/ACAMF';
 import ACAMFDetalhe from '@/pages/ACAMFDetalhe';
+import CourseDetail from '@/pages/CourseDetail';
 import Intencoes from '@/pages/Intencoes';
 import Jornadas from '@/pages/Jornadas';
 import Perfil from '@/pages/Perfil';
@@ -37,6 +38,7 @@ import AdminRoute from '@/components/AdminRoute';
 import AdminDashboard from '@/pages/admin/Dashboard';
 import Stats from '@/pages/admin/Stats';
 import ACAMFAdmin from '@/pages/admin/ACAMFAdmin';
+import CoursesAdmin from '@/pages/admin/CoursesAdmin';
 import Reports from '@/pages/admin/Reports';
 import UsersAdmin from '@/pages/admin/Users';
 import PreparationDaysAdmin from '@/pages/admin/PreparationDaysAdmin';
@@ -105,6 +107,7 @@ const AuthenticatedApp = () => {
           <Route path="/minha-consagracao" element={<MinhaConsagracao />} />
           <Route path="/calendario" element={<Calendario />} />
           <Route path="/acamf" element={<ACAMF />} />
+          <Route path="/acamf/curso/:id" element={<CourseDetail />} />
           <Route path="/acamf/:id" element={<ACAMFDetalhe />} />
           <Route path="/intencoes" element={<Intencoes />} />
           <Route path="/jornadas" element={<Jornadas />} />
@@ -129,6 +132,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/estatisticas" element={<Stats />} />
           <Route path="/admin/acamf" element={<ACAMFAdmin />} />
+          <Route path="/admin/cursos" element={<CoursesAdmin />} />
           <Route path="/admin/dias" element={<PreparationDaysAdmin />} />
           <Route path="/admin/calendario" element={<CalendarAdmin />} />
           <Route path="/admin/jornadas" element={<JourneysAdmin />} />

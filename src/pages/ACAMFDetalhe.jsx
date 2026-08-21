@@ -14,6 +14,8 @@ export default function ACAMFDetalhe() {
   const [content, setContent] = useState(null);
   const [related, setRelated] = useState([]);
   const [category, setCategory] = useState(null);
+  const [courseLessons, setCourseLessons] = useState([]);
+  const [lessonProgress, setLessonProgress] = useState(null);
   const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
@@ -32,9 +34,33 @@ export default function ACAMFDetalhe() {
           const all = await base44.entities.ACAMFContent.list();
           setRelated(all.filter((x) => c.related_content_ids.includes(x.id) && x.id !== id).slice(0, 3));
         }
+        if (c.course_id) {
+          const cl = await base44.entities.ACAMFContent.filter({ course_id: c.course_id, status: 'publicado' });
+          setCourseLessons(cl.sort((a, b) => (a.lesson_order || 0) - (b.lesson_order || 0)));
+          const existing = await base44.entities.LessonProgress.filter({ lesson_id: id });
+          if (existing.length > 0) {
+            setLessonProgress(existing[0]);
+            base44.entities.LessonProgress.update(existing[0].id, { last_watched_date: new Date().toISOString() }).catch(() => {});
+          } else {
+            const created = await base44.entities.LessonProgress.create({
+              lesson_id: id, course_id: c.course_id, completed: false, last_watched_date: new Date().toISOString()
+            }).catch(() => null);
+            if (created) setLessonProgress(created);
+          }
+        }
       } catch (e) { /* ignore */ }
     })();
   }, [id]);
+
+  const markComplete = async () => {
+    if (!lessonProgress) return;
+    const updated = await base44.entities.LessonProgress.update(lessonProgress.id, { completed: !lessonProgress.completed });
+    setLessonProgress(updated);
+  };
+
+  const currentIndex = courseLessons.findIndex((l) => l.id === id);
+  const prevLesson = currentIndex > 0 ? courseLessons[currentIndex - 1] : null;
+  const nextLesson = currentIndex >= 0 && currentIndex < courseLessons.length - 1 ? courseLessons[currentIndex + 1] : null;
 
   if (!content) {
     return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
@@ -42,8 +68,8 @@ export default function ACAMFDetalhe() {
 
   return (
     <div className="space-y-5">
-      <button onClick={() => navigate('/acamf')} className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-        <ChevronLeft className="h-4 w-4" /> ACAMF
+      <button onClick={() => navigate(content.course_id ? `/acamf/curso/${content.course_id}` : '/acamf')} className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+        <ChevronLeft className="h-4 w-4" /> {content.course_id ? 'Curso' : 'ACAMF'}
       </button>
 
       {content.cover_url && (
@@ -100,6 +126,40 @@ export default function ACAMFDetalhe() {
           {content.tags.map((t, i) => (
             <span key={i} className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">#{t}</span>
           ))}
+        </div>
+      )}
+
+      {/* Marcar como concluído */}
+      {lessonProgress && (
+        <button
+          onClick={markComplete}
+          className={`flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition ${lessonProgress.completed ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600' : 'border-border bg-card hover:border-gold/40'}`}
+        >
+          {lessonProgress.completed ? '✓ Aula concluída' : 'Marcar como concluído'}
+        </button>
+      )}
+
+      {/* Navegação entre aulas */}
+      {(prevLesson || nextLesson) && (
+        <div className="grid grid-cols-2 gap-3">
+          {prevLesson ? (
+            <Link to={`/acamf/${prevLesson.id}`} className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 hover:border-gold/40">
+              <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 text-left">
+                <p className="text-[10px] uppercase text-muted-foreground">Aula anterior</p>
+                <p className="truncate text-sm">{prevLesson.title}</p>
+              </div>
+            </Link>
+          ) : <div />}
+          {nextLesson ? (
+            <Link to={`/acamf/${nextLesson.id}`} className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 hover:border-gold/40">
+              <div className="min-w-0 flex-1 text-right">
+                <p className="text-[10px] uppercase text-muted-foreground">Próxima aula</p>
+                <p className="truncate text-sm">{nextLesson.title}</p>
+              </div>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
+          ) : <div />}
         </div>
       )}
 

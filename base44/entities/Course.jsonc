@@ -1,0 +1,94 @@
+{
+  "name": "Course",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "cover_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Imagem wide para hero banner (16:9)"
+    },
+    "poster_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Imagem vertical para card (2:3)"
+    },
+    "trailer_youtube_id": {
+      "type": "string",
+      "description": "Trailer do curso (YouTube)"
+    },
+    "category_id": {
+      "type": "string"
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "iniciante",
+        "intermediario",
+        "aprofundamento"
+      ],
+      "default": "iniciante"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rascunho",
+        "publicado",
+        "arquivado"
+      ],
+      "default": "rascunho"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Destaque no banner principal"
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0
+    },
+    "accent_color": {
+      "type": "string",
+      "default": "#663399",
+      "description": "Cor de destaque do curso"
+    }
+  },
+  "required": [
+    "title",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.status": "publicado"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
