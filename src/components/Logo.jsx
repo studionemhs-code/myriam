@@ -6,7 +6,8 @@ export default function Logo({ size = 'md', to, variant = 'dark', subtitle = tru
   const dims = {
     sm: { box: 'h-10 w-10', title: 'text-sm', sub: 'text-[8px]' },
     md: { box: 'h-14 w-14', title: 'text-lg', sub: 'text-[10px]' },
-    lg: { box: 'h-20 w-20', title: 'text-2xl', sub: 'text-[11px]' }
+    lg: { box: 'h-20 w-20', title: 'text-2xl', sub: 'text-[11px]' },
+    xl: { box: 'h-28 w-28', title: 'text-4xl', sub: 'text-xs' }
   }[size];
 
   const titleColor = variant === 'dark' ? 'text-sidebar-foreground' : 'text-foreground';
