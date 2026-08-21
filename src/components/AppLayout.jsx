@@ -10,6 +10,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import GlobalSearch from '@/components/GlobalSearch';
+import MyriamIcon from '@/components/MyriamIcon';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -17,7 +18,7 @@ const navItems = [
   { to: '/', label: 'Hoje', icon: Home },
   { to: '/caminho', label: 'Caminho', icon: Flower2 },
   { to: '/acamf', label: 'ACAMF', icon: BookOpen, feature: 'acamf' },
-  { to: '/myriam', label: 'Myriam', icon: Leaf, feature: 'myriam' },
+  { to: '/myriam', label: 'Myriam', icon: MyriamIcon, feature: 'myriam' },
   { to: '/perfil', label: 'Perfil', icon: User },
 ];
 
