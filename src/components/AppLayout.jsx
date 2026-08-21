@@ -42,12 +42,12 @@ export default function AppLayout() {
 
   const SidebarContent = (
     <div className="flex h-full flex-col">
-      <div className="relative flex items-center justify-center px-6 py-8">
+      <div className="relative flex shrink-0 items-center justify-center px-6 py-8">
         <Logo size="lg" variant="dark" subtitle stacked />
         <ThemeToggle className="absolute right-6 top-8 text-sidebar-foreground/70 hover:text-sidebar-foreground" />
       </div>
-      <div className="gold-line mx-6 opacity-40" />
-      <nav className="mt-4 flex-1 px-3">
+      <div className="gold-line mx-6 shrink-0 opacity-40" />
+      <nav className="sidebar-scroll mt-4 flex-1 overscroll-contain overflow-y-auto px-3">
         {visibleNav.map((item) => {
           const active = location.pathname === item.to;
           const Icon = item.icon;
@@ -123,7 +123,7 @@ export default function AppLayout() {
           <LogOut className="h-[18px] w-[18px]" /> Sair
         </button>
       </nav>
-      <div className="px-6 py-4 text-[10px] text-sidebar-foreground/40">
+      <div className="shrink-0 px-6 py-4 text-[10px] text-sidebar-foreground/40">
         <p className="ornament">✦</p>
         <p className="mt-2 font-display italic">Ad Iesum per Mariam</p>
       </div>
@@ -133,7 +133,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
-      <aside className={`sidebar-scroll fixed inset-y-0 left-0 hidden bg-deep transition-all duration-300 lg:block ${collapsed ? 'w-0 overflow-hidden' : 'w-64 overflow-y-auto'}`}>
+      <aside className={`fixed inset-y-0 left-0 hidden bg-deep transition-all duration-300 lg:flex lg:flex-col ${collapsed ? 'w-0 overflow-hidden' : 'w-64'}`}>
         {SidebarContent}
       </aside>
 
@@ -167,7 +167,7 @@ export default function AppLayout() {
       {menuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMenuOpen(false)} />
-          <div className="sidebar-scroll absolute left-0 top-0 h-full w-72 overflow-y-auto bg-deep">{SidebarContent}</div>
+          <div className="absolute left-0 top-0 h-full w-72 bg-deep flex flex-col">{SidebarContent}</div>
         </div>
       )}
 
