@@ -164,8 +164,11 @@ export default function Associacao() {
     const isApproved = existing.status === 'aprovado';
     const indulgenceDays = isApproved ? getIndulgenceDays(new Date().getFullYear(), existing.approved_date) : [];
     const nextIndulgence = isApproved ? getNextIndulgenceDay(existing.approved_date) : null;
-    const waLink = settings?.montfortian_whatsapp ? `https://wa.me/${settings.montfortian_whatsapp}` : null;
-    const igLink = settings?.montfortian_instagram ? `https://instagram.com/${settings.montfortian_instagram.replace('@', '')}` : null;
+    const montfortIg = settings?.montfortian_instagram || '@missionariosmonforinosbrasil';
+    const montfortWa = settings?.montfortian_whatsapp || '5531985161127';
+    const montfortEmail = settings?.montfortian_email || 'espiritualidademonfortina@hotmail.com';
+    const waLink = `https://wa.me/${montfortWa}`;
+    const igLink = `https://instagram.com/${montfortIg.replace('@', '')}`;
     return (
       <div className="space-y-6">
         <PageHeader title="Associação Maria Rainha dos Corações" icon={Crown} />
@@ -253,24 +256,18 @@ export default function Associacao() {
                 <h3 className="font-display text-base">Contato dos Missionários Monfortinos</h3>
               </div>
               <div className="mt-3 space-y-2">
-                {igLink && (
-                  <a href={igLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50">
-                    <Instagram className="h-5 w-5 text-primary" />
-                    <span className="text-sm">{settings.montfortian_instagram}</span>
-                  </a>
-                )}
-                {waLink && (
-                  <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50">
-                    <Phone className="h-5 w-5 text-emerald-600" />
-                    <span className="text-sm">WhatsApp: +{settings.montfortian_whatsapp.replace(/^55/, '55 ')}</span>
-                  </a>
-                )}
-                {settings?.montfortian_email && (
-                  <a href={`mailto:${settings.montfortian_email}`} className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50">
-                    <Mail className="h-5 w-5 text-primary" />
-                    <span className="text-sm">{settings.montfortian_email}</span>
-                  </a>
-                )}
+                <a href={igLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50">
+                  <Instagram className="h-5 w-5 text-primary" />
+                  <span className="text-sm">{montfortIg}</span>
+                </a>
+                <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50">
+                  <Phone className="h-5 w-5 text-emerald-600" />
+                  <span className="text-sm">WhatsApp: +{montfortWa.replace(/^55/, '55 ')}</span>
+                </a>
+                <a href={`mailto:${montfortEmail}`} className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50">
+                  <Mail className="h-5 w-5 text-primary" />
+                  <span className="text-sm">{montfortEmail}</span>
+                </a>
               </div>
             </section>
           </>
