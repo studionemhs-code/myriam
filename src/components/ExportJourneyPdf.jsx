@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { daysSince, nextRenewal, formatDuration, parseDate } from '@/lib/marianDates';
+import { downloadPdf } from '@/lib/savePdf';
 
 const fmt = (d) => {
   if (!d) return '—';
@@ -175,7 +176,7 @@ export default function ExportJourneyPdf() {
       }
 
       const fileName = `minha-caminhada-theotokos-${(user.full_name || user.email || 'usuario').toLowerCase().replace(/\s+/g, '-')}.pdf`;
-      doc.save(fileName);
+      downloadPdf(doc, fileName);
     } catch (e) {
       console.error(e);
       alert('Não foi possível gerar o PDF. Tente novamente.');

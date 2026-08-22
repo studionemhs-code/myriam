@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader } from '@/components/ui/marian';
 import { generateAssociationPdf } from '@/lib/generateAssociationPdf';
+import { downloadPdf } from '@/lib/savePdf';
 import SignaturePad from '@/components/associacao/SignaturePad';
 
 const statusInfo = {
@@ -99,7 +100,7 @@ export default function Associacao() {
         request_date: requestDate,
       });
 
-      doc.save(fileName);
+      downloadPdf(doc, fileName);
       setGenerated({ url: file_url, name: fileName });
     } catch (e) {
       alert('Erro ao gerar solicitação.');

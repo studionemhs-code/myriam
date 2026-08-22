@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader } from '@/components/ui/marian';
 import { generateCertificatePdf } from '@/lib/generateCertificatePdf';
+import { downloadPdf } from '@/lib/savePdf';
 
 export default function Certificado() {
   const [params] = useSearchParams();
@@ -97,7 +98,7 @@ export default function Certificado() {
         pdf_url: file_url
       });
 
-      doc.save(fileName);
+      downloadPdf(doc, fileName);
       setGenerated({ url: file_url, name: fileName });
     } catch (e) {
       alert('Erro ao gerar certificado.');
