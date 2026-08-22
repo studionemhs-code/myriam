@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/ui/marian';
 import { generateAssociationPdf } from '@/lib/generateAssociationPdf';
 import { downloadPdf } from '@/lib/savePdf';
 import SignaturePad from '@/components/associacao/SignaturePad';
+import PdfViewer from '@/components/PdfViewer';
 
 const statusInfo = {
   pendente: { label: 'Em Análise', icon: Crown, color: 'text-gold', bg: 'bg-gold/10' },
@@ -29,6 +30,7 @@ export default function Associacao() {
   const [uploadingSig, setUploadingSig] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(null);
+  const [docOpen, setDocOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -212,12 +214,13 @@ export default function Associacao() {
             </p>
             {settings.reading_document_url ? (
               <>
-                <div className="mt-4 overflow-hidden rounded-xl border border-border">
-                  <iframe src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(settings.reading_document_url)}`} className="h-[500px] w-full" title="Documento" />
-                </div>
+                <button onClick={() => setDocOpen(true)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 py-4 text-sm font-medium hover:bg-muted">
+                  <FileText className="h-5 w-5 text-gold" /> Abrir documento de leitura
+                </button>
                 <a href={settings.reading_document_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary">
                   <FileText className="h-4 w-4" /> Abrir em nova aba
                 </a>
+                <PdfViewer url={settings.reading_document_url} open={docOpen} onClose={() => setDocOpen(false)} fileName={settings.reading_document_label || 'Documento'} />
               </>
             ) : (
               <p className="mt-4 rounded-xl bg-muted/50 p-4 text-sm text-muted-foreground">Documento não disponível.</p>
