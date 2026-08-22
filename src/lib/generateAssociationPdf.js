@@ -23,6 +23,8 @@ const stripHtml = (html) => {
 
 const loadImage = (url) => new Promise((resolve) => {
   if (!url) { resolve(null); return; }
+  // dataURL (drawn signature) — use directly without re-drawing via canvas
+  if (url.startsWith('data:')) { resolve(url); return; }
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
@@ -77,7 +79,7 @@ const drawSignature = (doc, sigImg, signature, m, sigY, pr, pg, pb) => {
   doc.text('Assinatura do Solicitante', m + 100, sigY + 14, { align: 'center' });
 };
 
-export async function generateAssociationPdf({ settings, userData, signature, requestDate }) {
+export async function generateAssociationPdf({ settings, userData, signature, requestDate, journeyData }) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
 
   const sigImg = (signature.type === 'drawn' || signature.type === 'uploaded') && signature.data
@@ -161,6 +163,52 @@ export async function generateAssociationPdf({ settings, userData, signature, re
   if (settings.footer_text) {
     doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(140, 130, 150);
     doc.text(settings.footer_text, pageW / 2, pageH - 28, { align: 'center' });
+  }
+
+  // ========== JORNADA E CAMINHADA ==========
+  if (journeyData) {
+    y += 10;
+    doc.setDrawColor(ar, ag, ab); doc.setLineWidth(0.3);
+    doc.line(m, y, pageW - m, y);
+    y += 16;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(60, 50, 70);
+    doc.text('Histórico de Caminhada', m, y);
+    y += 16;
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(50, 45, 60);
+
+    if (journeyData.progress) {
+      const { started_date, completed_date, current_day, completed_days, status } = journeyData.progress;
+      const statusMap = { ativa: 'Em andamento', concluida: 'Concluída', pausada: 'Pausada' };
+      if (started_date) { doc.text(`Início da preparação: ${formatDate(started_date)}`, m, y); y += 14; }
+      if (current_day) { doc.text(`Progresso: Dia ${current_day} de 33 (${completed_days?.length || 0} dias concluídos)`, m, y); y += 14; }
+      if (status) { doc.text(`Situação: ${statusMap[status] || status}`, m, y); y += 14; }
+      if (completed_date) { doc.text(`Conclusão: ${formatDate(completed_date)}`, m, y); y += 14; }
+    }
+
+    if (journeyData.journeys && journeyData.journeys.length > 0) {
+      y += 6;
+      doc.setFont('helvetica', 'bold'); doc.text('Jornadas Coletivas Participadas:', m, y); y += 14;
+      doc.setFont('helvetica', 'normal');
+      journeyData.journeys.forEach((j) => {
+        const line = `• ${j.title}${j.joined_date ? ` — Ingresso: ${formatDate(j.joined_date)}` : ''}${j.progress != null ? ` — Progresso: ${j.progress}%` : ''}`;
+        const wrapped = doc.splitTextToSize(line, pageW - m * 2);
+        wrapped.forEach((l) => {
+          if (y > pageH - 180) { doc.addPage('a4', 'portrait'); y = m; }
+          doc.text(l, m, y); y += 14;
+        });
+      });
+    }
+
+    y += 14;
+    // re-draw signature area if it shifted
+    const newSigY = Math.max(y, pageH - 110);
+    // only redraw if we haven't overflowed into new page territory
+    if (newSigY < pageH - 60) {
+      doc.setFillColor(255, 252, 245);
+      // re-position footer
+    }
   }
 
   // ========== PÁGINA 2: TERMO DECLARATÓRIO ==========

@@ -39,6 +39,8 @@ export default function Associacao() {
     }
   }, [user]);
 
+  const [journeyData, setJourneyData] = useState(null);
+
   useEffect(() => {
     (async () => {
       try {
@@ -50,6 +52,31 @@ export default function Associacao() {
         setExisting(reqs[0] || null);
       } catch (e) { /* ignore */ }
       setLoading(false);
+    })();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const [progressList, participants] = await Promise.all([
+          base44.entities.UserProgress.filter({ created_by_id: user.id }, '-created_date', 1),
+          base44.entities.JourneyParticipant.filter({ created_by_id: user.id }, '-joined_date', 10),
+        ]);
+        const progress = progressList[0] || null;
+        let journeys = [];
+        if (participants.length > 0) {
+          const journeyIds = participants.map((p) => p.journey_id);
+          const allJourneys = await base44.entities.CollectiveJourney.list();
+          journeys = participants.map((p) => {
+            const jrn = allJourneys.find((j) => j.id === p.journey_id);
+            return jrn ? { title: jrn.title, joined_date: p.joined_date, progress: p.progress } : null;
+          }).filter(Boolean);
+        }
+        if (progress || journeys.length > 0) {
+          setJourneyData({ progress, journeys });
+        }
+      } catch { /* ignore */ }
     })();
   }, [user]);
 
@@ -80,7 +107,7 @@ export default function Associacao() {
         ? { type: 'drawn', data: sigDrawn }
         : { type: 'uploaded', data: sigUploaded };
 
-      const doc = await generateAssociationPdf({ settings, userData, signature, requestDate });
+      const doc = await generateAssociationPdf({ settings, userData, signature, requestDate, journeyData });
       const safeName = form.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       const fileName = `solicitacao-${safeName || 'documento'}.pdf`;
       const blob = doc.output('blob');
