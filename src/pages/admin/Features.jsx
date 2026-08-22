@@ -4,20 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { clearFeatureFlagsCache } from '@/hooks/useFeatureFlags';
 import { AdminPageTitle } from '@/components/admin/ui';
 import BroadcastNews from '@/components/admin/BroadcastNews';
-
-const DEFAULT_FLAGS = [
-  { feature: 'acamf', label: 'ACAMF (Formação)' },
-  { feature: 'myriam', label: 'Myriam (Comunidade)' },
-  { feature: 'intencoes', label: 'Intenções de Oração' },
-  { feature: 'jornadas', label: 'Jornadas Coletivas' },
-  { feature: 'chat', label: 'Conversas (no Myriam)' },
-  { feature: 'calendario', label: 'Calendário Mariano' },
-  { feature: 'agentes', label: 'Assistentes IA' },
-  { feature: 'certificados', label: 'Certificados' },
-  { feature: 'associacao', label: 'Associação Maria Rainha dos Corações' },
-  { feature: 'historico', label: 'Histórico de Consagrações' },
-  { feature: 'cadeiazinha', label: 'Solicite sua cadeiazinha' },
-];
+import { FEATURE_LIST as DEFAULT_FLAGS } from '@/lib/featureFlags';
 
 export default function Features() {
   const [flags, setFlags] = useState([]);

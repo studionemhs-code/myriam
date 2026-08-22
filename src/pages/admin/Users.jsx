@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { UserPlus, Trash2, Sparkles, Crown } from 'lucide-react';
+import { UserPlus, Trash2, Sparkles, Crown, KeyRound } from 'lucide-react';
 import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/admin/ui';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/components/ui/use-toast';
+import UserFeatureAccessDialog from '@/components/admin/UserFeatureAccessDialog';
 
 const STATUS_LABEL = { interessado: 'Interessado', preparacao: 'Em Preparação', consagrado: 'Consagrado' };
 const STATUS_TONE = { interessado: 'muted', preparacao: 'blue', consagrado: 'gold' };
@@ -20,6 +21,7 @@ export default function Users() {
   const [inviteExclusive, setInviteExclusive] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [msg, setMsg] = useState('');
+  const [accessUser, setAccessUser] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -189,12 +191,21 @@ export default function Users() {
                     </button>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => removeUser(u)}
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" /> Excluir
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => setAccessUser(u)}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+                        title="Gerenciar acessos"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" /> Acessos
+                      </button>
+                      <button
+                        onClick={() => removeUser(u)}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Excluir
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -204,6 +215,10 @@ export default function Users() {
       )}
 
       {dialog}
+
+      {accessUser && (
+        <UserFeatureAccessDialog user={accessUser} onClose={() => setAccessUser(null)} />
+      )}
     </div>
   );
 }

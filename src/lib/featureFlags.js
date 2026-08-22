@@ -1,0 +1,13 @@
+export const FEATURE_LIST = [
+  { feature: 'acamf', label: 'ACAMF (Formação)' },
+  { feature: 'myriam', label: 'Myriam (Comunidade)' },
+  { feature: 'intencoes', label: 'Intenções de Oração' },
+  { feature: 'jornadas', label: 'Jornadas Coletivas' },
+  { feature: 'chat', label: 'Conversas (no Myriam)' },
+  { feature: 'calendario', label: 'Calendário Mariano' },
+  { feature: 'agentes', label: 'Assistentes IA' },
+  { feature: 'certificados', label: 'Certificados' },
+  { feature: 'associacao', label: 'Associação Maria Rainha dos Corações' },
+  { feature: 'historico', label: 'Histórico de Consagrações' },
+  { feature: 'cadeiazinha', label: 'Solicite sua cadeiazinha' },
+];
