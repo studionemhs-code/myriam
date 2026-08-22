@@ -20,6 +20,52 @@ export default async function(req) {
     const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     let created = 0;
 
+    // ===== Indulgências da Associação =====
+    const computeEaster = (year: number) => {
+      const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+      const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const month = Math.floor((h + l - 7 * m + 114) / 31);
+      const day = ((h + l - 7 * m + 114) % 31) + 1;
+      return new Date(year, month - 1, day);
+    };
+    const getIndulgenceDays = (year: number, inscriptionDate: string | null) => {
+      const days = [
+        { label: 'Anunciação do Senhor', date: new Date(year, 2, 25) },
+        { label: 'São Luís Maria Grignion de Montfort', date: new Date(year, 3, 28) },
+        { label: 'Imaculada Conceição', date: new Date(year, 11, 8) },
+        { label: 'Natal do Senhor', date: new Date(year, 11, 25) },
+      ];
+      const easter = computeEaster(year);
+      const holyThursday = new Date(easter);
+      holyThursday.setDate(easter.getDate() - 3);
+      days.push({ label: 'Quinta-feira Santa', date: holyThursday });
+      if (inscriptionDate) {
+        const insc = new Date(inscriptionDate + 'T00:00:00');
+        if (!isNaN(insc.getTime())) {
+          days.push({ label: 'Aniversário de Ingresso na Associação', date: new Date(year, insc.getMonth(), insc.getDate()) });
+        }
+      }
+      return days;
+    };
+    const isSameDay = (a: Date, b: Date) =>
+      a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+    const approvedReqs = await base44.asServiceRole.entities.AssociationRequest.filter({ status: 'aprovado' });
+    const year = today.getFullYear();
+    for (const ar of approvedReqs) {
+      if (!ar.approved_date || !ar.user_id) continue;
+      const days = getIndulgenceDays(year, ar.approved_date);
+      const matching = days.find((d) => isSameDay(d.date, todayMidnight));
+      if (matching) {
+        await notifyUser(base44, ar.user_id, 'associacao', `Dia de Indulgência — ${matching.label}`,
+          `Hoje é ${matching.label}. Como membro da Associação Maria Rainha dos Corações, você pode lucrar a indulgência plenária.`, '/associacao');
+        created++;
+      }
+    }
+
     for (const u of users) {
       // Aniversário anual da consagração
       if (u.consecration_date) {

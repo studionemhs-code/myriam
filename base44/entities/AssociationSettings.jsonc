@@ -59,6 +59,72 @@
     "is_active": {
       "type": "boolean",
       "default": false
+    },
+    "cert_title": {
+      "type": "string",
+      "default": "Certificado de Ingresso",
+      "description": "T\u00edtulo exibido no certificado A4"
+    },
+    "cert_subtitle": {
+      "type": "string",
+      "default": "Associa\u00e7\u00e3o Maria Rainha dos Cora\u00e7\u00f5es",
+      "description": "Subt\u00edtulo do certificado"
+    },
+    "cert_body_text": {
+      "type": "string",
+      "description": "Texto principal do certificado. Placeholders: {nome}, {numero}, {data}",
+      "default": "Certificamos que {nome}, ap\u00f3s cumprir os requisitos necess\u00e1rios, foi admitido(a) como membro da Associa\u00e7\u00e3o Maria Rainha dos Cora\u00e7\u00f5es, sob o n\u00famero de inscri\u00e7\u00e3o {numero}, a partir de {data}, comprometendo-se a viver os ideais montfortinos de devo\u00e7\u00e3o e servi\u00e7o."
+    },
+    "cert_logo_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Logotipo exibido no topo do certificado"
+    },
+    "cert_signature_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Assinatura do emissor exibida no certificado"
+    },
+    "cert_issuer_name": {
+      "type": "string",
+      "default": "Associa\u00e7\u00e3o Maria Rainha dos Cora\u00e7\u00f5es",
+      "description": "Nome do emissor exibido sob a linha de assinatura"
+    },
+    "cert_border_style": {
+      "type": "string",
+      "enum": [
+        "classic",
+        "modern",
+        "minimal"
+      ],
+      "default": "classic"
+    },
+    "cert_primary_color": {
+      "type": "string",
+      "default": "#673ab7"
+    },
+    "cert_accent_color": {
+      "type": "string",
+      "default": "#c9a14a"
+    },
+    "cert_footer_text": {
+      "type": "string",
+      "default": "Theotokos \u00b7 Associa\u00e7\u00e3o Maria Rainha dos Cora\u00e7\u00f5es"
+    },
+    "montfortian_instagram": {
+      "type": "string",
+      "default": "@missionariosmonforinosbrasil",
+      "description": "Instagram dos Mission\u00e1rios Monfortinos"
+    },
+    "montfortian_whatsapp": {
+      "type": "string",
+      "default": "5531985161127",
+      "description": "WhatsApp dos Mission\u00e1rios Monfortinos (DDI+DDD+n\u00famero)"
+    },
+    "montfortian_email": {
+      "type": "string",
+      "default": "espiritualidademonfortina@hotmail.com",
+      "description": "E-mail dos Mission\u00e1rios Monfortinos"
     }
   },
   "required": [

@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { Field, inputCls } from '@/components/admin/ui';
+import AssociationCertificateEditor from '@/components/admin/AssociationCertificateEditor';
 
 const DEFAULTS = {
   reading_document_url: '',
@@ -18,7 +19,20 @@ const DEFAULTS = {
   border_style: 'classic',
   issuer_name: 'Associação Maria Rainha dos Corações',
   issuer_signature_url: '',
-  is_active: false
+  is_active: false,
+  cert_title: 'Certificado de Ingresso',
+  cert_subtitle: 'Associação Maria Rainha dos Corações',
+  cert_body_text: 'Certificamos que {nome}, após cumprir os requisitos necessários, foi admitido(a) como membro da Associação Maria Rainha dos Corações, sob o número de inscrição {numero}, a partir de {data}, comprometendo-se a viver os ideais montfortinos de devoção e serviço.',
+  cert_logo_url: '',
+  cert_signature_url: '',
+  cert_issuer_name: 'Associação Maria Rainha dos Corações',
+  cert_border_style: 'classic',
+  cert_primary_color: '#673ab7',
+  cert_accent_color: '#c9a14a',
+  cert_footer_text: 'Theotokos · Associação Maria Rainha dos Corações',
+  montfortian_instagram: '@missionariosmonforinosbrasil',
+  montfortian_whatsapp: '5531985161127',
+  montfortian_email: 'espiritualidademonfortina@hotmail.com'
 };
 
 export default function AssociationSettingsForm({ settings, onSaved }) {
@@ -143,6 +157,17 @@ export default function AssociationSettingsForm({ settings, onSaved }) {
               </div>
             </Field>
           </div>
+        </div>
+      </section>
+
+      <AssociationCertificateEditor form={form} set={set} />
+
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <h3 className="mb-3 font-display text-base">Contato dos Missionários Monfortinos</h3>
+        <div className="grid gap-4">
+          <Field label="Instagram"><input className={inputCls} value={form.montfortian_instagram || ''} onChange={(e) => set('montfortian_instagram', e.target.value)} /></Field>
+          <Field label="WhatsApp (DDI+DDD+número, só dígitos)"><input className={inputCls} value={form.montfortian_whatsapp || ''} onChange={(e) => set('montfortian_whatsapp', e.target.value)} /></Field>
+          <Field label="E-mail"><input className={inputCls} value={form.montfortian_email || ''} onChange={(e) => set('montfortian_email', e.target.value)} /></Field>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Flower2, BookOpen, Calendar, Heart, ChevronRight, Sparkles, Leaf, Play } from 'lucide-react';
+import { Flower2, BookOpen, Calendar, Heart, ChevronRight, Sparkles, Leaf, Play, Award } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -9,6 +9,7 @@ import {
   getGreeting, daysSince, daysUntil, formatDate, formatDuration, nextRenewal,
   getNextMarianEvent, isToday } from
 '@/lib/marianDates';
+import { isIndulgenceDay } from '@/lib/indulgenceDates';
 
 export default function Hoje() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function Hoje() {
   const [intentions, setIntentions] = useState([]);
   const [dayContent, setDayContent] = useState([]);
   const [aiGreeting, setAiGreeting] = useState(null);
+  const [indulgenceToday, setIndulgenceToday] = useState(null);
 
   const status = user?.status || 'interessado';
 
@@ -47,6 +49,14 @@ export default function Hoje() {
           const res = await base44.functions.invoke('generateGreeting', {});
           if (res.data?.greeting) setAiGreeting(res.data.greeting);
         } catch (e) { /* use default */ }
+        try {
+          const reqs = await base44.entities.AssociationRequest.filter({ user_id: user.id, status: 'aprovado' }, '-approved_date', 1);
+          const approvedReq = reqs[0];
+          if (approvedReq?.approved_date) {
+            const today = isIndulgenceDay(approvedReq.approved_date);
+            if (today) setIndulgenceToday(today);
+          }
+        } catch { /* ignore */ }
       } catch (e) {/* ignore */}
     })();
   }, [user, status]);
@@ -73,6 +83,24 @@ export default function Hoje() {
         <h1 className="mt-1 font-display text-2xl capitalize text-[hsl(var(--primary-foreground))]">{firstName}</h1>
         <p className="mt-2 font-display italic text-primary-foreground/70">{quote}</p>
       </header>
+
+      {/* Lembrete de indulgência */}
+      {indulgenceToday && (
+        <Link to="/associacao" className="mt-4 block">
+          <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/10 to-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gold/20">
+                <Award className="h-6 w-6 text-gold" />
+              </div>
+              <div className="flex-1">
+                <p className="font-display text-sm text-gold">Dia de Indulgência</p>
+                <p className="text-xs text-muted-foreground">Hoje: {indulgenceToday.label}. Lembre-se de lucrar a indulgência plenária da Associação.</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Bloco de status */}
       {status === 'consagrado' && <ConsecratedBlock user={user} />}

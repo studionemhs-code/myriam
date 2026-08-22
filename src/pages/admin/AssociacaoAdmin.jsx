@@ -3,6 +3,7 @@ import { Crown, FileDown, Check, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { AdminPageTitle, Loading, Badge } from '@/components/admin/ui';
 import AssociationSettingsForm from '@/components/admin/AssociationSettingsForm';
+import AssociationApproveDialog from '@/components/admin/AssociationApproveDialog';
 
 const statusInfo = {
   pendente: { label: 'Pendente', tone: 'gold' },
@@ -31,6 +32,7 @@ export default function AssociacaoAdmin() {
   useEffect(() => { load(); }, []);
 
   const updateStatus = async (id, status, note) => {
+    if (!id) { load(); return; }
     try {
       await base44.entities.AssociationRequest.update(id, { status, admin_note: note || '' });
       load();
@@ -61,7 +63,7 @@ export default function AssociacaoAdmin() {
             </div>
           ) : (
             requests.map((r) => (
-              <RequestCard key={r.id} req={r} onUpdateStatus={updateStatus} />
+              <RequestCard key={r.id} req={r} settings={settings} onUpdateStatus={updateStatus} />
             ))
           )}
         </div>
@@ -70,8 +72,9 @@ export default function AssociacaoAdmin() {
   );
 }
 
-function RequestCard({ req, onUpdateStatus }) {
+function RequestCard({ req, settings, onUpdateStatus }) {
   const [note, setNote] = useState(req.admin_note || '');
+  const [showApprove, setShowApprove] = useState(false);
   const info = statusInfo[req.status] || statusInfo.pendente;
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
@@ -104,15 +107,25 @@ function RequestCard({ req, onUpdateStatus }) {
       {req.status === 'pendente' && (
         <div className="mt-4 space-y-3">
           <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Observação (opcional)..." rows={2} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-          <div className="flex gap-2">
-            <button onClick={() => onUpdateStatus(req.id, 'aprovado', note)} className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white">
-              <Check className="h-4 w-4" /> Aprovar
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setShowApprove(true)} className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white">
+              <Check className="h-4 w-4" /> Aprovar e emitir certificado
             </button>
             <button onClick={() => onUpdateStatus(req.id, 'rejeitado', note)} className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white">
               <X className="h-4 w-4" /> Rejeitar
             </button>
           </div>
         </div>
+      )}
+
+      {req.status === 'aprovado' && req.certificate_pdf_url && (
+        <a href={req.certificate_pdf_url} download target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-gold">
+          <FileDown className="h-4 w-4" /> Certificado A4
+        </a>
+      )}
+
+      {showApprove && (
+        <AssociationApproveDialog req={req} settings={settings || {}} onClose={() => setShowApprove(false)} onApproved={() => { setShowApprove(false); onUpdateStatus(); }} />
       )}
 
       {req.status !== 'pendente' && req.admin_note && (

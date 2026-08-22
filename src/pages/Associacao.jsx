@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Crown, FileDown, Loader2, PenLine, Upload, Check, FileText, ArrowLeft, PenTool } from 'lucide-react';
+import { Crown, FileDown, Loader2, PenLine, Upload, Check, FileText, ArrowLeft, PenTool, Award, Phone, Mail, Instagram, Calendar, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader } from '@/components/ui/marian';
 import { generateAssociationPdf } from '@/lib/generateAssociationPdf';
 import { downloadPdf } from '@/lib/savePdf';
+import { getIndulgenceDays, getNextIndulgenceDay } from '@/lib/indulgenceDates';
 import SignaturePad from '@/components/associacao/SignaturePad';
 import PdfViewer from '@/components/PdfViewer';
 
@@ -160,9 +161,15 @@ export default function Associacao() {
   if (existing && !generated) {
     const info = statusInfo[existing.status] || statusInfo.pendente;
     const Icon = info.icon;
+    const isApproved = existing.status === 'aprovado';
+    const indulgenceDays = isApproved ? getIndulgenceDays(new Date().getFullYear(), existing.approved_date) : [];
+    const nextIndulgence = isApproved ? getNextIndulgenceDay(existing.approved_date) : null;
+    const waLink = settings?.montfortian_whatsapp ? `https://wa.me/${settings.montfortian_whatsapp}` : null;
+    const igLink = settings?.montfortian_instagram ? `https://instagram.com/${settings.montfortian_instagram.replace('@', '')}` : null;
     return (
       <div className="space-y-6">
         <PageHeader title="Associação Maria Rainha dos Corações" icon={Crown} />
+
         <section className="rounded-2xl border border-border bg-card p-6 text-center">
           <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${info.bg}`}>
             <Icon className={`h-8 w-8 ${info.color}`} />
@@ -179,10 +186,95 @@ export default function Associacao() {
           )}
           {existing.pdf_url && (
             <a href={existing.pdf_url} download target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gold px-6 py-3 font-medium text-deep">
-              <FileDown className="h-5 w-5" /> Baixar PDF
+              <FileDown className="h-5 w-5" /> Baixar PDF da Solicitação
             </a>
           )}
         </section>
+
+        {isApproved && (
+          <>
+            <section className="rounded-2xl border border-gold/30 bg-gradient-to-br from-card to-accent p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gold/15">
+                  <Award className="h-6 w-6 text-gold" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg">Inscrição Confirmada</h3>
+                  <p className="text-xs text-muted-foreground">Associação Maria Rainha dos Corações</p>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-muted/50 p-3">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Nº de Inscrição</p>
+                  <p className="mt-1 font-display text-lg text-gold">{existing.inscription_number || '—'}</p>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-3">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Data de Ingresso</p>
+                  <p className="mt-1 font-display text-lg">{existing.approved_date ? new Date(existing.approved_date + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</p>
+                </div>
+              </div>
+              {existing.certificate_pdf_url && (
+                <a href={existing.certificate_pdf_url} download target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-gold px-6 py-3 font-medium text-deep">
+                  <FileDown className="h-5 w-5" /> Baixar Certificado (A4)
+                </a>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-gold" />
+                <h3 className="font-display text-base">Dias para Lucrar Indulgências</h3>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Como membro da Associação, você pode lucrar indulgências nos seguintes dias:
+              </p>
+              {nextIndulgence && (
+                <div className="mt-3 rounded-xl bg-gold/10 p-3 text-sm">
+                  <p className="font-medium text-gold">Próximo: {nextIndulgence.label}</p>
+                  <p className="text-xs text-muted-foreground">{nextIndulgence.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                </div>
+              )}
+              <ul className="mt-3 space-y-2">
+                {indulgenceDays.map((d, i) => (
+                  <li key={i} className="flex items-center gap-2.5 rounded-lg border border-border bg-muted/30 p-2.5">
+                    <div className="flex h-9 w-9 flex-col items-center justify-center rounded-lg bg-gold/10 text-gold">
+                      <span className="font-display text-sm leading-none">{d.date.getDate()}</span>
+                      <span className="text-[8px] uppercase">{d.date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}</span>
+                    </div>
+                    <span className="flex-1 text-sm">{d.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <div className="flex items-center gap-2">
+                <Phone className="h-5 w-5 text-gold" />
+                <h3 className="font-display text-base">Contato dos Missionários Monfortinos</h3>
+              </div>
+              <div className="mt-3 space-y-2">
+                {igLink && (
+                  <a href={igLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50">
+                    <Instagram className="h-5 w-5 text-primary" />
+                    <span className="text-sm">{settings.montfortian_instagram}</span>
+                  </a>
+                )}
+                {waLink && (
+                  <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50">
+                    <Phone className="h-5 w-5 text-emerald-600" />
+                    <span className="text-sm">WhatsApp: +{settings.montfortian_whatsapp.replace(/^55/, '55 ')}</span>
+                  </a>
+                )}
+                {settings?.montfortian_email && (
+                  <a href={`mailto:${settings.montfortian_email}`} className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50">
+                    <Mail className="h-5 w-5 text-primary" />
+                    <span className="text-sm">{settings.montfortian_email}</span>
+                  </a>
+                )}
+              </div>
+            </section>
+          </>
+        )}
       </div>
     );
   }
