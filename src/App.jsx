@@ -12,6 +12,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import AprovacaoAutoridade from '@/pages/AprovacaoAutoridade';
 import AppLayout from '@/components/AppLayout';
 import Onboarding from '@/pages/Onboarding';
 import Hoje from '@/pages/Hoje';
@@ -92,6 +93,7 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/aprovacao/:token" element={<AprovacaoAutoridade />} />
 
       <Route path="/onboarding" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route index element={<Onboarding />} />

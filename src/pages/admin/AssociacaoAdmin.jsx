@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Crown, FileDown, Check, X } from 'lucide-react';
+import { Crown, FileDown, Check, X, Link2, Shield, Award, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { AdminPageTitle, Loading, Badge } from '@/components/admin/ui';
 import AssociationSettingsForm from '@/components/admin/AssociationSettingsForm';
 import AssociationApproveDialog from '@/components/admin/AssociationApproveDialog';
+import AssociationApprovalLinkDialog from '@/components/admin/AssociationApprovalLinkDialog';
 
 const statusInfo = {
   pendente: { label: 'Pendente', tone: 'gold' },
@@ -75,7 +76,34 @@ export default function AssociacaoAdmin() {
 function RequestCard({ req, settings, onUpdateStatus }) {
   const [note, setNote] = useState(req.admin_note || '');
   const [showApprove, setShowApprove] = useState(false);
+  const [showLink, setShowLink] = useState(false);
+  const [generatingCert, setGeneratingCert] = useState(false);
   const info = statusInfo[req.status] || statusInfo.pendente;
+
+  const emitCertificate = async () => {
+    setGeneratingCert(true);
+    try {
+      const { generateAssociationCertificatePdf } = await import('@/lib/generateAssociationCertificatePdf');
+      const doc = await generateAssociationCertificatePdf({
+        settings,
+        userName: req.user_name,
+        inscriptionNumber: req.inscription_number,
+        approvedDate: req.approved_date,
+      });
+      const safeName = (req.user_name || 'documento').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const fileName = `certificado-${safeName}.pdf`;
+      const blob = doc.output('blob');
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.entities.AssociationRequest.update(req.id, { certificate_pdf_url: file_url });
+      try { (await import('@/lib/savePdf')).downloadPdf(doc, fileName); } catch {}
+      window.location.reload();
+    } catch (e) {
+      alert('Erro ao emitir certificado: ' + (e?.message || String(e)));
+    } finally {
+      setGeneratingCert(false);
+    }
+  };
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="flex items-start gap-3">
@@ -111,10 +139,32 @@ function RequestCard({ req, settings, onUpdateStatus }) {
             <button onClick={() => setShowApprove(true)} className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white">
               <Check className="h-4 w-4" /> Aprovar e emitir certificado
             </button>
+            <button onClick={() => setShowLink(true)} className="flex items-center gap-1.5 rounded-lg border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-medium text-gold">
+              <Link2 className="h-4 w-4" /> {req.approval_token ? 'Ver Link' : 'Gerar Link'} da Autoridade
+            </button>
             <button onClick={() => onUpdateStatus(req.id, 'rejeitado', note)} className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white">
               <X className="h-4 w-4" /> Rejeitar
             </button>
           </div>
+        </div>
+      )}
+
+      {req.status === 'aprovado' && !req.certificate_pdf_url && (
+        <button onClick={emitCertificate} disabled={generatingCert} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gold px-4 py-2 text-sm font-medium text-deep disabled:opacity-50">
+          {generatingCert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Award className="h-4 w-4" />}
+          {generatingCert ? 'Emitindo...' : 'Emitir Certificado A4'}
+        </button>
+      )}
+
+      {req.authority_name && req.status !== 'pendente' && (
+        <div className="mt-3 rounded-lg bg-gold/5 border border-gold/20 p-3 text-sm">
+          <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gold">
+            <Shield className="h-3.5 w-3.5" /> Decisão da Autoridade Certificadora
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {req.authority_name} · {req.authority_decision_date ? new Date(req.authority_decision_date).toLocaleString('pt-BR') : ''}
+          </p>
+          {req.authority_note && <p className="mt-1 text-xs">{req.authority_note}</p>}
         </div>
       )}
 
@@ -126,6 +176,10 @@ function RequestCard({ req, settings, onUpdateStatus }) {
 
       {showApprove && (
         <AssociationApproveDialog req={req} settings={settings || {}} onClose={() => setShowApprove(false)} onApproved={() => { setShowApprove(false); onUpdateStatus(); }} />
+      )}
+
+      {showLink && (
+        <AssociationApprovalLinkDialog req={req} onClose={() => setShowLink(false)} onGenerated={() => onUpdateStatus()} />
       )}
 
       {req.status !== 'pendente' && req.admin_note && (
