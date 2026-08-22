@@ -38,7 +38,7 @@ export default function AdminLayout() {
         <p className="mt-1 pl-0.5 text-[10px] uppercase tracking-[0.25em] text-sidebar-foreground/50">Painel Admin</p>
       </div>
       <div className="gold-line mx-5 opacity-40" />
-      <nav className="mt-3 flex-1 px-2">
+      <nav className="sidebar-scroll mt-3 flex-1 overflow-y-auto px-2">
         {items.map((it) => {
           const active = it.end ? location.pathname === it.to : location.pathname.startsWith(it.to);
           const Icon = it.icon;
