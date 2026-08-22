@@ -4,7 +4,7 @@ import { jsPDF } from 'jspdf';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { daysSince, nextRenewal, formatDuration, parseDate } from '@/lib/marianDates';
-import { downloadPdf } from '@/lib/savePdf';
+import { downloadPdf, isMobile, blobUrlFromDoc } from '@/lib/savePdf';
 
 const fmt = (d) => {
   if (!d) return '—';
@@ -19,6 +19,8 @@ const fmt = (d) => {
 export default function ExportJourneyPdf() {
   const { user } = useCurrentUser();
   const [loading, setLoading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfName, setPdfName] = useState('');
 
   const buildPdf = async () => {
     if (!user) return;
@@ -176,7 +178,13 @@ export default function ExportJourneyPdf() {
       }
 
       const fileName = `minha-caminhada-theotokos-${(user.full_name || user.email || 'usuario').toLowerCase().replace(/\s+/g, '-')}.pdf`;
-      downloadPdf(doc, fileName);
+      if (isMobile()) {
+        if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+        setPdfUrl(blobUrlFromDoc(doc));
+        setPdfName(fileName);
+      } else {
+        downloadPdf(doc, fileName);
+      }
     } catch (e) {
       console.error(e);
       alert('Não foi possível gerar o PDF. Tente novamente.');
@@ -186,14 +194,28 @@ export default function ExportJourneyPdf() {
   };
 
   return (
-    <button
-      type="button"
-      onClick={buildPdf}
-      disabled={loading || !user}
-      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium hover:border-gold/40 disabled:opacity-50"
-    >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin text-gold" /> : <FileDown className="h-4 w-4 text-gold" />}
-      {loading ? 'Gerando PDF...' : 'Exportar minha caminhada (PDF)'}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={buildPdf}
+        disabled={loading || !user}
+        className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium hover:border-gold/40 disabled:opacity-50"
+      >
+        {loading ? <Loader2 className="h-4 w-4 animate-spin text-gold" /> : <FileDown className="h-4 w-4 text-gold" />}
+        {loading ? 'Gerando PDF...' : 'Exportar minha caminhada (PDF)'}
+      </button>
+      {pdfUrl && (
+        <a
+          href={pdfUrl}
+          download={pdfName}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-medium text-deep"
+        >
+          <FileDown className="h-4 w-4" />
+          Abrir / Baixar PDF
+        </a>
+      )}
+    </>
   );
 }
