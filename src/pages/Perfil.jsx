@@ -63,7 +63,9 @@ export default function Perfil() {
 
       {/* Cartão de identidade */}
       <section className="relative overflow-hidden rounded-2xl bg-deep p-6 text-primary-foreground">
-        <div className="flex flex-col items-center text-center">
+        <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: `url(${COVER_IMAGE})` }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-deep/80 to-deep/30" />
+        <div className="relative flex flex-col items-center text-center">
           <div className="relative">
             {photo ? (
               <img src={photo} alt="" className="h-24 w-24 rounded-full border-2 border-gold object-cover" />
@@ -139,16 +141,6 @@ export default function Perfil() {
           <LogOut className="h-5 w-5" /> Sair
         </button>
       </div>
-
-      {/* Capa */}
-      <section className="relative mt-6 overflow-hidden rounded-2xl border border-border">
-        <div className="h-44 bg-cover bg-center" style={{ backgroundImage: `url(${COVER_IMAGE})` }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-deep/85 via-deep/30 to-transparent" />
-        <div className="absolute bottom-3 left-4 right-4 text-primary-foreground">
-          <p className="font-script text-2xl">Theotokos</p>
-          <p className="text-[10px] uppercase tracking-[0.2em] opacity-80">Consagrar, Conectar e Conscientizar</p>
-        </div>
-      </section>
     </div>
   );
 }
