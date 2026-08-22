@@ -45,7 +45,13 @@ export default function Perfil() {
   const save = async () => {
     setSaving(true);
     try {
+      const resolvedName = name || user.full_name || 'Alma';
       await update({ display_name: name, bio, photo_url: photo });
+      // Sincroniza o nome/foto nas publicações e comentários existentes do Myriam
+      try {
+        await base44.entities.MyriamPost.updateMany({ created_by_id: user.id }, { $set: { author_name: resolvedName, author_photo: photo } });
+        await base44.entities.MyriamComment.updateMany({ created_by_id: user.id }, { $set: { author_name: resolvedName, author_photo: photo } });
+      } catch (e) { /* ignore sync errors */ }
       setEditing(false);
     } finally { setSaving(false); }
   };

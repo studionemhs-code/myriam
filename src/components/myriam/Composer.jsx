@@ -30,7 +30,7 @@ export default function Composer({ user, onPosted }) {
     try {
       const post = {
         text: text.trim(),
-        author_name: user.full_name || 'Alma',
+        author_name: user.display_name || user.full_name || 'Alma',
         author_photo: user.photo_url || '',
         author_status: user.status || 'interessado'
       };
@@ -49,7 +49,7 @@ export default function Composer({ user, onPosted }) {
     <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="flex gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-marian/15 font-display text-sm text-marian">
-          {(user.full_name || 'A')[0]}
+          {(user.display_name || user.full_name || 'A')[0]}
         </div>
         <div className="flex-1">
           <textarea

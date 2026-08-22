@@ -76,7 +76,7 @@ export default function PostCard({ post, user }) {
       parent_id: parentId || undefined,
       author_id: user.id,
       text: commentText.trim(),
-      author_name: user.full_name || 'Alma',
+      author_name: user.display_name || user.full_name || 'Alma',
       author_photo: user.photo_url || ''
     });
     setComments((p) => [...p, c]);
@@ -106,7 +106,7 @@ export default function PostCard({ post, user }) {
       image_url: post.image_url,
       video_url: post.video_url,
       document_url: post.document_url,
-      author_name: user.full_name || 'Alma',
+      author_name: user.display_name || user.full_name || 'Alma',
       author_photo: user.photo_url || '',
       author_status: user.status || 'interessado',
       tags: ['compartilhado']
