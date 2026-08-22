@@ -79,7 +79,8 @@ export default function Associacao() {
         : { type: 'uploaded', data: sigUploaded };
 
       const doc = await generateAssociationPdf({ settings, userData, signature, requestDate });
-      const fileName = `solicitacao-${form.name.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      const safeName = form.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const fileName = `solicitacao-${safeName || 'documento'}.pdf`;
       const blob = doc.output('blob');
       const file = new File([blob], fileName, { type: 'application/pdf' });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -100,11 +101,11 @@ export default function Associacao() {
         request_date: requestDate,
       });
 
-      downloadPdf(doc, fileName);
       setGenerated({ url: file_url, name: fileName });
+      try { downloadPdf(doc, fileName); } catch (e) { console.error(e); }
     } catch (e) {
-      alert('Erro ao gerar solicitação.');
       console.error(e);
+      alert('Erro ao gerar solicitação: ' + (e?.message || String(e)));
     } finally {
       setGenerating(false);
     }
@@ -212,7 +213,7 @@ export default function Associacao() {
             {settings.reading_document_url ? (
               <>
                 <div className="mt-4 overflow-hidden rounded-xl border border-border">
-                  <iframe src={settings.reading_document_url} className="h-[500px] w-full" title="Documento" />
+                  <iframe src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(settings.reading_document_url)}`} className="h-[500px] w-full" title="Documento" />
                 </div>
                 <a href={settings.reading_document_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary">
                   <FileText className="h-4 w-4" /> Abrir em nova aba
