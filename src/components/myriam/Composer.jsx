@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ImagePlus, Video, FileText, Send, X } from 'lucide-react';
+import { ImagePlus, Video, FileText, Send, X, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const MAX_SIZE = 100 * 1024 * 1024;
@@ -9,6 +9,7 @@ export default function Composer({ user, onPosted }) {
   const [media, setMedia] = useState({ url: '', type: '' });
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState('');
+  const [isTestimonial, setIsTestimonial] = useState(false);
   const fileRef = useRef(null);
 
   const onFile = async (e) => {
@@ -32,7 +33,8 @@ export default function Composer({ user, onPosted }) {
         text: text.trim(),
         author_name: user.display_name || user.full_name || 'Alma',
         author_photo: user.photo_url || '',
-        author_status: user.status || 'interessado'
+        author_status: user.status || 'interessado',
+        is_testimonial: isTestimonial
       };
       if (media.type === 'image') post.image_url = media.url;
       else if (media.type === 'video') post.video_url = media.url;
@@ -40,6 +42,7 @@ export default function Composer({ user, onPosted }) {
       await base44.entities.MyriamPost.create(post);
       setText('');
       setMedia({ url: '', type: '' });
+      setIsTestimonial(false);
       if (fileRef.current) fileRef.current.value = '';
       onPosted();
     } finally { setPosting(false); }
@@ -83,9 +86,20 @@ export default function Composer({ user, onPosted }) {
                 <input type="file" accept="application/pdf,.doc,.docx" onChange={onFile} className="hidden" />
               </label>
             </div>
-            <button onClick={submit} disabled={posting || (!text.trim() && !media.url)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40">
-              <Send className="h-4 w-4" /> {posting ? 'Enviando...' : 'Publicar'}
-            </button>
+            <div className="flex items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground hover:text-gold">
+                <input
+                  type="checkbox"
+                  checked={isTestimonial}
+                  onChange={(e) => setIsTestimonial(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-input accent-primary"
+                />
+                <Sparkles className="h-3.5 w-3.5" /> Testemunho
+              </label>
+              <button onClick={submit} disabled={posting || (!text.trim() && !media.url)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40">
+                <Send className="h-4 w-4" /> {posting ? 'Enviando...' : 'Publicar'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

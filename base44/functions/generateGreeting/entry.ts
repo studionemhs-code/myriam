@@ -22,7 +22,7 @@ export default async function(req) {
       systemPrompt += '\n\n--- CONHECIMENTO DE REFERÊNCIA ---\n' + agent.knowledge_content;
     }
 
-    const firstName = (user.full_name || user.email || 'alma').split(' ')[0];
+    const firstName = (user.display_name || user.full_name || user.email || 'alma').split(' ')[0];
     const status = user.status || 'interessado';
 
     const messages = [

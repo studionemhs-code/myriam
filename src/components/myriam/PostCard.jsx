@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Leaf, MessageCircle, Send, MoreHorizontal, Share2, Flag, Trash2, CornerDownRight, FileText, X } from 'lucide-react';
+import { Heart, Leaf, MessageCircle, Send, MoreHorizontal, Share2, Flag, Trash2, CornerDownRight, FileText, X, Pin, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { notifyUser } from '@/lib/notify';
 import ReportDialog from './ReportDialog';
@@ -22,6 +22,16 @@ export default function PostCard({ post, user }) {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportCommentId, setReportCommentId] = useState(null);
   const [shared, setShared] = useState(false);
+  const [pinned, setPinned] = useState(post.is_pinned || false);
+
+  const togglePin = async () => {
+    try {
+      const newVal = !pinned;
+      setPinned(newVal);
+      await base44.entities.MyriamPost.update(post.id, { is_pinned: newVal });
+      setShowMenu(false);
+    } catch { setPinned(post.is_pinned); alert('Erro ao fixar.'); }
+  };
 
   useEffect(() => {
     (async () => {
@@ -131,6 +141,16 @@ export default function PostCard({ post, user }) {
           <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] ${statusTone[post.author_status] || statusTone.interessado}`}>
             {statusLabel[post.author_status] || 'Interessado'}
           </span>
+          {post.is_testimonial && (
+            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 text-[10px] text-gold">
+              <Sparkles className="h-2.5 w-2.5" /> Testemunho
+            </span>
+          )}
+          {pinned && (
+            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-marian/15 px-2 py-0.5 text-[10px] text-marian">
+              <Pin className="h-2.5 w-2.5" /> Fixado
+            </span>
+          )}
         </div>
         <div className="ml-auto relative">
           <button onClick={() => setShowMenu((s) => !s)} className="text-muted-foreground hover:text-foreground"><MoreHorizontal className="h-5 w-5" /></button>
@@ -144,6 +164,11 @@ export default function PostCard({ post, user }) {
                 <button onClick={() => { share(); setShowMenu(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/50">
                   <Share2 className="h-4 w-4" /> Compartilhar
                 </button>
+                {isAdmin && post.is_testimonial && (
+                  <button onClick={togglePin} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/50">
+                    <Pin className="h-4 w-4" /> {pinned ? 'Desafixar do Mural' : 'Fixar no Mural'}
+                  </button>
+                )}
               </div>
             </>
           )}

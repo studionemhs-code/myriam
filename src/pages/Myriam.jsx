@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Leaf, MessageCircle } from 'lucide-react';
+import { Leaf, MessageCircle, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -8,6 +8,7 @@ import Composer from '@/components/myriam/Composer';
 import PostCard from '@/components/myriam/PostCard';
 import StoriesBar from '@/components/myriam/StoriesBar';
 import ChatList from '@/components/myriam/ChatList';
+import MuralTestimonials from '@/components/myriam/MuralTestimonials';
 
 export default function Myriam() {
   const { user, loading } = useCurrentUser();
@@ -47,13 +48,30 @@ export default function Myriam() {
           <button onClick={() => setTab('feed')} className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${tab === 'feed' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
             <Leaf className="h-4 w-4" /> Feed
           </button>
-          <button onClick={() => setTab('chat')} className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${tab === 'chat' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
-            <MessageCircle className="h-4 w-4" /> Conversas
+          <button onClick={() => setTab('mural')} className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${tab === 'mural' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
+            <Sparkles className="h-4 w-4" /> Mural
           </button>
+          {showChat && (
+            <button onClick={() => setTab('chat')} className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${tab === 'chat' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
+              <MessageCircle className="h-4 w-4" /> Conversas
+            </button>
+          )}
         </div>
       )}
 
-      {tab === 'feed' ? (
+      {tab === 'mural' ? (
+        <>
+          <div className="mb-5 rounded-2xl bg-gradient-to-br from-marian/10 to-gold/10 p-4">
+            <p className="font-display italic text-sm text-muted-foreground">
+              "Mural dos Testemunhos" — Partilhe a graça de sua consagração. Seus testemunhos podem ser fixados em destaque pela administração e curtidos por toda a comunidade.
+            </p>
+          </div>
+          <div className="mb-5">
+            <Composer user={user} onPosted={load} />
+          </div>
+          <MuralTestimonials />
+        </>
+      ) : tab === 'feed' ? (
         <>
         <div className="mb-5 rounded-2xl bg-gradient-to-br from-marian/10 to-gold/10 p-4">
         <p className="font-display italic text-sm text-muted-foreground">

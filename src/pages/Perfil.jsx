@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, StatPill, GoldDivider } from '@/components/ui/marian';
 import { formatDate } from '@/lib/marianDates';
 import SpiritualStatus from '@/components/perfil/SpiritualStatus';
+import JourneyTimeline from '@/components/perfil/JourneyTimeline';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
@@ -118,6 +119,8 @@ export default function Perfil() {
       </section>
 
       <SpiritualStatus user={user} />
+
+      <JourneyTimeline />
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <StatPill value={stats.reflections} label="reflexões" />
