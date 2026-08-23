@@ -43,47 +43,45 @@ export default function Myriam() {
     <div>
       <PageHeader title="Myriam" subtitle="A rede social da comunidade mariana" icon={Leaf} />
 
-      {showChat && (
-        <div className="mb-5 flex gap-1 rounded-xl bg-muted/60 p-1">
-          <button onClick={() => setTab('feed')} className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${tab === 'feed' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
-            <Leaf className="h-4 w-4" /> Feed
+      <div className="mb-4 flex gap-1 rounded-xl bg-muted/60 p-1">
+        <button onClick={() => setTab('feed')} className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition sm:text-sm ${tab === 'feed' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
+          <Leaf className="h-4 w-4" /> <span className="hidden sm:inline">Feed</span>
+        </button>
+        <button onClick={() => setTab('mural')} className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition sm:text-sm ${tab === 'mural' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
+          <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">Mural</span>
+        </button>
+        {showChat && (
+          <button onClick={() => setTab('chat')} className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition sm:text-sm ${tab === 'chat' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
+            <MessageCircle className="h-4 w-4" /> <span className="hidden sm:inline">Conversas</span>
           </button>
-          <button onClick={() => setTab('mural')} className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${tab === 'mural' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
-            <Sparkles className="h-4 w-4" /> Mural
-          </button>
-          {showChat && (
-            <button onClick={() => setTab('chat')} className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition ${tab === 'chat' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
-              <MessageCircle className="h-4 w-4" /> Conversas
-            </button>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {tab === 'mural' ? (
         <>
-          <div className="mb-5 rounded-2xl bg-gradient-to-br from-marian/10 to-gold/10 p-4">
-            <p className="font-display italic text-sm text-muted-foreground">
+          <div className="mb-4 rounded-2xl bg-gradient-to-br from-marian/10 to-gold/10 p-3 sm:p-4">
+            <p className="font-display italic text-xs leading-relaxed text-muted-foreground sm:text-sm">
               "Mural dos Testemunhos" — Partilhe a graça de sua consagração. Seus testemunhos podem ser fixados em destaque pela administração e curtidos por toda a comunidade.
             </p>
           </div>
-          <div className="mb-5">
+          <div className="mb-4">
             <Composer user={user} onPosted={load} />
           </div>
           <MuralTestimonials />
         </>
       ) : tab === 'feed' ? (
         <>
-        <div className="mb-5 rounded-2xl bg-gradient-to-br from-marian/10 to-gold/10 p-4">
-        <p className="font-display italic text-sm text-muted-foreground">
+        <div className="mb-4 rounded-2xl bg-gradient-to-br from-marian/10 to-gold/10 p-3 sm:p-4">
+        <p className="font-display italic text-xs leading-relaxed text-muted-foreground sm:text-sm">
           "Eis aqui a serva do Senhor." — Um espaço para partilhar a caminhada, testemunhos e intenções com seus irmãos e irmãs em Maria.
         </p>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-4">
         <StoriesBar />
       </div>
 
-      <div className="mb-5">
+      <div className="mb-4">
         <Composer user={user} onPosted={load} />
       </div>
 
@@ -92,7 +90,7 @@ export default function Myriam() {
       ) : posts.length === 0 ? (
         <EmptyState icon={Leaf} title="Nenhuma publicação ainda" subtitle="Seja o primeiro a partilhar algo com a comunidade." />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {posts.map((p) => (
             <PostCard key={p.id} post={p} user={user} />
           ))}

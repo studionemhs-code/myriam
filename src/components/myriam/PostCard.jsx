@@ -129,30 +129,32 @@ export default function PostCard({ post, user }) {
   const repliesOf = (cid) => comments.filter((c) => c.parent_id === cid);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-center gap-3">
-        <Link to={`/perfil/${post.created_by_id}`}>
-          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-marian/15 font-display text-sm text-marian">
-            {post.author_photo ? <img src={post.author_photo} alt="" className="h-10 w-10 rounded-full object-cover" /> : (post.author_name || 'A')[0]}
+    <div className="rounded-2xl border border-border bg-card p-3 shadow-sm sm:p-4">
+      <div className="flex items-start gap-2.5 sm:gap-3">
+        <Link to={`/perfil/${post.created_by_id}`} className="shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-marian/15 font-display text-sm text-marian sm:h-10 sm:w-10">
+            {post.author_photo ? <img src={post.author_photo} alt="" className="h-9 w-9 rounded-full object-cover sm:h-10 sm:w-10" /> : (post.author_name || 'A')[0]}
           </div>
         </Link>
-        <div>
-          <Link to={`/perfil/${post.created_by_id}`} className="text-sm font-medium hover:underline">{post.author_name || 'Alma'}</Link>
-          <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] ${statusTone[post.author_status] || statusTone.interessado}`}>
-            {statusLabel[post.author_status] || 'Interessado'}
-          </span>
-          {post.is_testimonial && (
-            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 text-[10px] text-gold">
-              <Sparkles className="h-2.5 w-2.5" /> Testemunho
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Link to={`/perfil/${post.created_by_id}`} className="text-sm font-medium hover:underline">{post.author_name || 'Alma'}</Link>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] ${statusTone[post.author_status] || statusTone.interessado}`}>
+              {statusLabel[post.author_status] || 'Interessado'}
             </span>
-          )}
-          {pinned && (
-            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-marian/15 px-2 py-0.5 text-[10px] text-marian">
-              <Pin className="h-2.5 w-2.5" /> Fixado
-            </span>
-          )}
+            {post.is_testimonial && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 text-[10px] text-gold">
+                <Sparkles className="h-2.5 w-2.5" /> Testemunho
+              </span>
+            )}
+            {pinned && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-marian/15 px-2 py-0.5 text-[10px] text-marian">
+                <Pin className="h-2.5 w-2.5" /> Fixado
+              </span>
+            )}
+          </div>
         </div>
-        <div className="ml-auto relative">
+        <div className="relative shrink-0">
           <button onClick={() => setShowMenu((s) => !s)} className="text-muted-foreground hover:text-foreground"><MoreHorizontal className="h-5 w-5" /></button>
           {showMenu && (
             <>
@@ -175,17 +177,17 @@ export default function PostCard({ post, user }) {
         </div>
       </div>
 
-      <p className="mt-3 whitespace-pre-wrap text-sm">{post.text}</p>
-      {post.image_url && <img src={post.image_url} alt="" className="mt-3 w-full rounded-xl object-cover" />}
-      {post.video_url && <video src={post.video_url} className="mt-3 w-full rounded-xl" controls />}
-      {post.document_url && <a href={post.document_url} target="_blank" rel="noreferrer" className="mt-3 flex items-center gap-2 rounded-xl bg-muted p-3 text-sm hover:bg-muted/70"><FileText className="h-5 w-5 text-marian" /> Abrir documento</a>}
+      <p className="mt-2.5 whitespace-pre-wrap text-sm sm:mt-3">{post.text}</p>
+      {post.image_url && <img src={post.image_url} alt="" className="mt-2.5 w-full rounded-xl object-cover sm:mt-3" />}
+      {post.video_url && <video src={post.video_url} className="mt-2.5 w-full rounded-xl sm:mt-3" controls />}
+      {post.document_url && <a href={post.document_url} target="_blank" rel="noreferrer" className="mt-2.5 flex items-center gap-2 rounded-xl bg-muted p-3 text-sm hover:bg-muted/70 sm:mt-3"><FileText className="h-5 w-5 text-marian" /> Abrir documento</a>}
 
-      <div className="mt-3 flex items-center gap-4 border-t border-border pt-3 text-sm">
+      <div className="mt-2.5 flex items-center gap-3 border-t border-border pt-2.5 text-sm sm:gap-4 sm:pt-3">
         <button onClick={toggleLike} className={`flex items-center gap-1.5 transition ${liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}>
           <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} /> {likeCount}
         </button>
         <button onClick={togglePray} className={`flex items-center gap-1.5 transition ${prayed ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}>
-          <Leaf className="h-4 w-4" /> Rezei {prayerCount > 0 && `(${prayerCount})`}
+          <Leaf className="h-4 w-4" /> <span className="hidden sm:inline">Rezei</span> {prayerCount > 0 && `(${prayerCount})`}
         </button>
         <button
           onClick={() => { setShowComments((s) => !s); if (!showComments) loadComments(); }}
@@ -194,7 +196,7 @@ export default function PostCard({ post, user }) {
           <MessageCircle className="h-4 w-4" /> {post.comment_count || 0}
         </button>
         <button onClick={share} className={`flex items-center gap-1.5 transition ${shared ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}>
-          <Share2 className="h-4 w-4" /> {shared ? 'Compartilhado!' : ''}
+          <Share2 className="h-4 w-4" /> {shared ? <span className="hidden sm:inline">Compartilhado!</span> : ''}
         </button>
       </div>
 

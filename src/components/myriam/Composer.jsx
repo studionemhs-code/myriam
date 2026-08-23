@@ -49,9 +49,9 @@ export default function Composer({ user, onPosted }) {
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-      <div className="flex gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-marian/15 font-display text-sm text-marian">
+    <div className="rounded-2xl border border-border bg-card p-3 shadow-sm sm:p-4">
+      <div className="flex gap-2.5 sm:gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-marian/15 font-display text-sm text-marian sm:h-10 sm:w-10">
           {(user.display_name || user.full_name || 'A')[0]}
         </div>
         <div className="flex-1">
@@ -60,7 +60,7 @@ export default function Composer({ user, onPosted }) {
             onChange={(e) => setText(e.target.value)}
             placeholder="Compartilhe algo com a comunidade mariana..."
             rows={2}
-            className="w-full resize-none rounded-xl border border-input bg-background p-3 text-sm outline-none focus:border-primary"
+            className="w-full resize-none rounded-xl border border-input bg-background p-2.5 text-sm outline-none focus:border-primary sm:p-3"
           />
           {media.url && (
             <div className="relative mt-2">
@@ -71,22 +71,22 @@ export default function Composer({ user, onPosted }) {
             </div>
           )}
           {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
-          <div className="mt-2 flex items-center justify-between">
-            <div className="flex gap-3">
-              <label className="flex cursor-pointer items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex gap-2.5 sm:gap-3">
+              <label className="flex cursor-pointer items-center gap-1 text-sm text-muted-foreground hover:text-primary" title="Imagem">
                 <ImagePlus className="h-4 w-4" />
                 <input type="file" accept="image/*" onChange={onFile} className="hidden" />
               </label>
-              <label className="flex cursor-pointer items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+              <label className="flex cursor-pointer items-center gap-1 text-sm text-muted-foreground hover:text-primary" title="Vídeo">
                 <Video className="h-4 w-4" />
                 <input type="file" accept="video/*" onChange={onFile} className="hidden" />
               </label>
-              <label className="flex cursor-pointer items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+              <label className="flex cursor-pointer items-center gap-1 text-sm text-muted-foreground hover:text-primary" title="Documento">
                 <FileText className="h-4 w-4" />
                 <input type="file" accept="application/pdf,.doc,.docx" onChange={onFile} className="hidden" />
               </label>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground hover:text-gold">
                 <input
                   type="checkbox"
@@ -96,8 +96,8 @@ export default function Composer({ user, onPosted }) {
                 />
                 <Sparkles className="h-3.5 w-3.5" /> Testemunho
               </label>
-              <button onClick={submit} disabled={posting || (!text.trim() && !media.url)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40">
-                <Send className="h-4 w-4" /> {posting ? 'Enviando...' : 'Publicar'}
+              <button onClick={submit} disabled={posting || (!text.trim() && !media.url)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40 sm:px-4">
+                <Send className="h-4 w-4" /> <span className="hidden sm:inline">{posting ? 'Enviando...' : 'Publicar'}</span>
               </button>
             </div>
           </div>

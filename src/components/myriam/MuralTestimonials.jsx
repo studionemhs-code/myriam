@@ -70,27 +70,27 @@ export default function MuralTestimonials() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {posts.map((post) => {
         const isPinned = post.is_pinned;
         const liked = interactions[post.id] === 'like';
         return (
           <div
             key={post.id}
-            className={`rounded-2xl border bg-card p-5 shadow-sm ${isPinned ? 'border-gold/50 ring-1 ring-gold/20' : 'border-border'}`}
+            className={`rounded-2xl border bg-card p-3 shadow-sm sm:p-5 ${isPinned ? 'border-gold/50 ring-1 ring-gold/20' : 'border-border'}`}
           >
             {isPinned && (
               <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gold">
                 <Pin className="h-3.5 w-3.5" /> Fixado em destaque
               </div>
             )}
-            <div className="flex items-center gap-3">
-              <Link to={`/perfil/${post.created_by_id}`}>
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-marian/15 font-display text-sm text-marian">
-                  {post.author_photo ? <img src={post.author_photo} alt="" className="h-10 w-10 rounded-full object-cover" /> : (post.author_name || 'A')[0]}
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <Link to={`/perfil/${post.created_by_id}`} className="shrink-0">
+                <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-marian/15 font-display text-sm text-marian sm:h-10 sm:w-10">
+                  {post.author_photo ? <img src={post.author_photo} alt="" className="h-9 w-9 rounded-full object-cover sm:h-10 sm:w-10" /> : (post.author_name || 'A')[0]}
                 </div>
               </Link>
-              <div>
+              <div className="min-w-0 flex-1">
                 <Link to={`/perfil/${post.created_by_id}`} className="text-sm font-medium hover:underline">{post.author_name || 'Alma'}</Link>
                 <p className="text-xs text-muted-foreground">
                   {new Date(post.created_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
@@ -99,17 +99,17 @@ export default function MuralTestimonials() {
               {user?.role === 'admin' && (
                 <button
                   onClick={() => togglePin(post)}
-                  className={`ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${isPinned ? 'bg-gold/15 text-gold' : 'border border-border text-muted-foreground hover:text-gold'}`}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium sm:px-3 ${isPinned ? 'bg-gold/15 text-gold' : 'border border-border text-muted-foreground hover:text-gold'}`}
                 >
                   <Pin className="h-3.5 w-3.5" /> {isPinned ? 'Desafixar' : 'Fixar'}
                 </button>
               )}
             </div>
 
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">{post.text}</p>
-            {post.image_url && <img src={post.image_url} alt="" className="mt-3 w-full rounded-xl object-cover" />}
+            <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed sm:mt-3">{post.text}</p>
+            {post.image_url && <img src={post.image_url} alt="" className="mt-2.5 w-full rounded-xl object-cover sm:mt-3" />}
 
-            <div className="mt-3 flex items-center gap-4 border-t border-border pt-3 text-sm">
+            <div className="mt-2.5 flex items-center gap-3 border-t border-border pt-2.5 text-sm sm:mt-3 sm:gap-4 sm:pt-3">
               <button onClick={() => toggleLike(post)} className={`flex items-center gap-1.5 transition ${liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}>
                 <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} /> {post.like_count || 0}
               </button>
