@@ -90,7 +90,7 @@ export default function Users() {
   const removeUser = async (u) => {
     const ok = await confirm({
       title: 'Excluir acesso',
-      description: `Tem certeza que deseja excluir ${u.full_name || u.email}? Esta ação remove o acesso do usuário ao aplicativo.`,
+      description: `Tem certeza que deseja excluir ${u.display_name || u.full_name || u.email}? Esta ação remove o acesso do usuário ao aplicativo.`,
       confirmLabel: 'Excluir',
       destructive: true,
     });
@@ -152,7 +152,7 @@ export default function Users() {
                   <td className="px-4 py-3 font-medium">
                     <div className="flex items-center gap-2">
                       {u.exclusive_access && <Crown className="h-3.5 w-3.5 text-gold" />}
-                      {u.full_name || '—'}
+                      {u.display_name || u.full_name || '—'}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{u.email}</td>

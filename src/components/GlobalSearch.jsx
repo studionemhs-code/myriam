@@ -110,7 +110,7 @@ export default function GlobalSearch() {
                       ) : (
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10"><User className="h-4 w-4 text-primary" /></div>
                       )}
-                      <p className="flex-1 truncate text-sm font-medium">{u.full_name}</p>
+                      <p className="flex-1 truncate text-sm font-medium">{u.display_name || u.full_name}</p>
                     </button>
                   ))}
                 </div>

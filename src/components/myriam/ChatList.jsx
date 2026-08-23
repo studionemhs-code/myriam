@@ -39,7 +39,7 @@ export default function ChatList({ user }) {
     if (existing) { setShowNew(false); navigate(`/chat/${existing.id}`); return; }
     const conv = await base44.entities.ChatConversation.create({
       participants: [user.id, otherUser.id],
-      participant_names: [user.full_name || 'Eu', otherUser.full_name],
+      participant_names: [user.display_name || user.full_name || 'Eu', otherUser.display_name || otherUser.full_name],
       participant_photos: [user.photo_url || '', otherUser.photo_url || ''],
       last_message_text: '',
       last_message_date: new Date().toISOString()
@@ -94,8 +94,8 @@ export default function ChatList({ user }) {
               {searching && <p className="text-center text-sm text-muted-foreground">Buscando...</p>}
               {!searching && searchResults.map((u) => (
                 <button key={u.id} onClick={() => startConversation(u)} className="flex w-full items-center gap-3 rounded-xl p-2 hover:bg-muted/50">
-                  {u.photo_url ? <img src={u.photo_url} className="h-10 w-10 rounded-full object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-full bg-marian/15 text-sm text-marian">{(u.full_name || 'A')[0]}</div>}
-                  <span className="text-sm font-medium">{u.full_name}</span>
+                  {u.photo_url ? <img src={u.photo_url} className="h-10 w-10 rounded-full object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-full bg-marian/15 text-sm text-marian">{(u.display_name || u.full_name || 'A')[0]}</div>}
+                  <span className="text-sm font-medium">{u.display_name || u.full_name}</span>
                 </button>
               ))}
             </div>

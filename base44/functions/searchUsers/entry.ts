@@ -9,11 +9,12 @@ export default async function(req) {
     const query = (payload.query || '').toLowerCase();
     const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
     const filtered = users
-      .filter((u) => u.id !== user.id && (!query || (u.full_name || '').toLowerCase().includes(query)))
+      .filter((u) => u.id !== user.id && (!query || (u.full_name || '').toLowerCase().includes(query) || (u.display_name || '').toLowerCase().includes(query)))
       .slice(0, 20)
       .map((u) => ({
         id: u.id,
         full_name: u.full_name || '',
+        display_name: u.display_name || u.full_name || '',
         photo_url: u.photo_url || '',
         status: u.status || 'interessado'
       }));

@@ -37,7 +37,7 @@ export default function PublicProfile() {
       if (conv) { navigate(`/chat/${conv.id}`); return; }
       const newConv = await base44.entities.ChatConversation.create({
         participants: [currentUser.id, userId],
-        participant_names: [currentUser.full_name || 'Eu', profile.full_name],
+        participant_names: [currentUser.display_name || currentUser.full_name || 'Eu', profile.display_name || profile.full_name],
         participant_photos: [currentUser.photo_url || '', profile.photo_url || ''],
         last_message_text: '',
         last_message_date: new Date().toISOString()
@@ -56,9 +56,9 @@ export default function PublicProfile() {
         {profile.photo_url ? (
           <img src={profile.photo_url} alt="" className="h-24 w-24 rounded-full object-cover" />
         ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-marian/15 font-display text-2xl text-marian">{(profile.full_name || 'A')[0]}</div>
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-marian/15 font-display text-2xl text-marian">{(profile.display_name || profile.full_name || 'A')[0]}</div>
         )}
-        <h1 className="mt-3 font-display text-xl">{profile.full_name}</h1>
+        <h1 className="mt-3 font-display text-xl">{profile.display_name || profile.full_name}</h1>
         <span className={`mt-1 rounded-full px-3 py-0.5 text-[10px] ${statusTone[profile.status]}`}>{statusLabel[profile.status]}</span>
         {profile.bio && <p className="mt-3 max-w-md text-center text-sm text-muted-foreground">{profile.bio}</p>}
         {currentUser?.id !== userId && (

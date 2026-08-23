@@ -80,7 +80,7 @@ export default function ExportJourneyPdf() {
 
       // Estado atual e dados da consagração
       section('Estado atual e Consagração');
-      write(`Nome: ${user.full_name || user.email || '—'}`, 11);
+      write(`Nome: ${user.display_name || user.full_name || user.email || '—'}`, 11);
       const statusLabel = { interessado: 'Interessado', preparacao: 'Em preparação', consagrado: 'Consagrado' }[user.status] || '—';
       write(`Estado atual: ${statusLabel}`, 11);
       if (user.consecration_date) {
@@ -177,7 +177,7 @@ export default function ExportJourneyPdf() {
         doc.text(`Theotokos · gerado em ${new Date().toLocaleDateString('pt-BR')} · página ${i}/${pageCount}`, margin, pageH - 28);
       }
 
-      const fileName = `minha-caminhada-theotokos-${(user.full_name || user.email || 'usuario').toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      const fileName = `minha-caminhada-theotokos-${(user.display_name || user.full_name || user.email || 'usuario').toLowerCase().replace(/\s+/g, '-')}.pdf`;
       if (isMobile()) {
         if (pdfUrl) URL.revokeObjectURL(pdfUrl);
         setPdfUrl(blobUrlFromDoc(doc));

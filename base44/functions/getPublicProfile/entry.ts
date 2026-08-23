@@ -18,6 +18,7 @@ export default async function(req) {
     return Response.json({
       id: target.id,
       full_name: target.full_name || '',
+      display_name: target.display_name || target.full_name || '',
       photo_url: target.photo_url || '',
       bio: target.bio || '',
       status: target.status || 'interessado'

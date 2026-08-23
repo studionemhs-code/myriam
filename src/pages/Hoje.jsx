@@ -69,7 +69,7 @@ export default function Hoje() {
 
   }
 
-  const firstName = (user.full_name || user.email || 'alma').split(' ')[0];
+  const firstName = (user.display_name || user.full_name || user.email || 'alma').split(' ')[0];
   const greeting = getGreeting();
   const nextEvent = getNextMarianEvent();
 

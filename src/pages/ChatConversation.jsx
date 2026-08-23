@@ -59,7 +59,7 @@ export default function ChatConversation() {
       await base44.entities.ChatMessage.create({
         conversation_id: id,
         sender_id: user.id,
-        sender_name: user.full_name || 'Eu',
+        sender_name: user.display_name || user.full_name || 'Eu',
         sender_photo: user.photo_url || '',
         text: text.trim(),
         participants: conversation.participants,
@@ -90,7 +90,7 @@ export default function ChatConversation() {
       await base44.entities.ChatMessage.create({
         conversation_id: id,
         sender_id: user.id,
-        sender_name: user.full_name || 'Eu',
+        sender_name: user.display_name || user.full_name || 'Eu',
         sender_photo: user.photo_url || '',
         text: '',
         file_url,

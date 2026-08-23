@@ -26,8 +26,8 @@ export default function Certificado() {
 
   useEffect(() => {
     if (user) {
-      setForm((f) => ({ ...f, name: user.full_name || '', email: user.email || '' }));
-      setSigTyped(user.full_name || '');
+      setForm((f) => ({ ...f, name: user.display_name || user.full_name || '', email: user.email || '' }));
+      setSigTyped(user.display_name || user.full_name || '');
     }
   }, [user]);
 
