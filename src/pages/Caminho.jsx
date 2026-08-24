@@ -139,13 +139,13 @@ export default function Caminho() {
 
   return (
     <div>
-      <PageHeader title="Caminho" subtitle={`Dia ${currentUnlocked} de 33`} icon={Flower2} />
+      <PageHeader title="Caminho" subtitle={`Dia ${currentUnlocked} de ${TOTAL_DAYS}`} icon={Flower2} />
 
       {/* Progresso */}
       <section className="rounded-2xl bg-deep p-6 text-primary-foreground">
         <div className="flex items-center justify-between">
           <p className="font-display text-2xl">{pct}% concluído</p>
-          <p className="text-sm text-primary-foreground/60">{completed}/33 dias</p>
+          <p className="text-sm text-primary-foreground/60">{completed}/{TOTAL_DAYS} dias</p>
         </div>
         <div className="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-primary-foreground/15">
           <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${pct}%` }} />
@@ -174,7 +174,7 @@ export default function Caminho() {
             )}
           </div>
         </div>
-        {progress?.status !== 'concluida' && currentUnlocked <= 33 && allReady && getDayStatus(currentUnlocked) !== 'missed' && (
+        {progress?.status !== 'concluida' && currentUnlocked <= TOTAL_DAYS && allReady && getDayStatus(currentUnlocked) !== 'missed' && (
           <Link
             to={`/caminho/dia/${currentUnlocked}`}
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep"

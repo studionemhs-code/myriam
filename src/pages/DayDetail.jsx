@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import ReactMarkdown from 'react-markdown';
 import { parseDate, daysBetween } from '@/lib/marianDates';
+import { getCurrentUnlockedDay, TOTAL_DAYS } from '@/lib/preparationProgress';
 
 export default function DayDetail() {
   const { day } = useParams();
@@ -23,14 +24,19 @@ export default function DayDetail() {
     if (!user) return;
     (async () => {
       const all = await base44.entities.PreparationDay.filter({ day_number: dayNum });
-      setDayData(all[0] || null);
+      const dayRecord = all[0] || null;
+      setDayData(dayRecord);
       const prog = await base44.entities.UserProgress.filter({ created_by_id: user.id });
       setProgress(prog[0] || null);
       const refl = await base44.entities.Reflection.filter({ created_by_id: user.id, day_number: dayNum });
       if (refl[0]) setReflection(refl[0].content);
-      if (all[0]?.related_content_ids?.length) {
+      // Conteúdos ACAMF: prioriza related_content_ids do PreparationDay; se não houver, busca por related_day_number
+      if (dayRecord?.related_content_ids?.length) {
         const contents = await base44.entities.ACAMFContent.list();
-        setRelated(contents.filter((c) => all[0].related_content_ids.includes(c.id)));
+        setRelated(contents.filter((c) => dayRecord.related_content_ids.includes(c.id)));
+      } else {
+        const dayContents = await base44.entities.ACAMFContent.filter({ status: 'publicado', related_day_number: dayNum }, '-published_date', 10);
+        setRelated(dayContents);
       }
       setLoaded(true);
     })();
