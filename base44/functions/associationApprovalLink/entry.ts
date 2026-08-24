@@ -24,6 +24,18 @@ export default async function (req) {
 
     const request = requests[0];
 
+    // Expiração temporal do token: links expiram após 30 dias da criação da solicitação.
+    // Solicitações já decididas (aprovado/rejeitado) permanecem consultáveis via "get",
+    // mas ações mutáveis (approve/reject/attach_certificate) exigem token dentro da validade.
+    const TOKEN_TTL_DAYS = 30;
+    const created = request.created_date ? new Date(request.created_date) : null;
+    const isExpired = created && (Date.now() - created.getTime() > TOKEN_TTL_DAYS * 86400000);
+    const isDecided = request.status !== 'pendente';
+
+    if (isExpired && action !== 'get') {
+      return Response.json({ error: 'Link expirado. Solicite um novo link ao administrador.' }, { status: 410 });
+    }
+
     // ===== GET: retornar dados para a autoridade =====
     if (action === 'get') {
       const settings = await base44.asServiceRole.entities.AssociationSettings.list();
