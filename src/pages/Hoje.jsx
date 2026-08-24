@@ -10,6 +10,7 @@ import {
   getNextMarianEvent, isToday } from
 '@/lib/marianDates';
 import { isIndulgenceDay } from '@/lib/indulgenceDates';
+import { getCurrentUnlockedDay, getProgressPercent, getDaysLeft, syncCurrentDay, TOTAL_DAYS } from '@/lib/preparationProgress';
 
 export default function Hoje() {
   const navigate = useNavigate();
@@ -25,17 +26,19 @@ export default function Hoje() {
   const status = user?.status || 'interessado';
 
   useEffect(() => {
-    if (user && !user.onboarding_completed) {
-      navigate('/onboarding');
-      return;
-    }
     if (!user) return;
     (async () => {
       try {
         let dayNum = null;
         if (status === 'preparacao') {
           const list = await base44.entities.UserProgress.filter({ created_by_id: user.id });
-          if (list[0]) {setProgress(list[0]);dayNum = list[0].current_day;}
+          let p = list[0];
+          if (p) {
+            const unlocked = getCurrentUnlockedDay(p.started_date);
+            p = await syncCurrentDay(p, unlocked, base44.entities.UserProgress.update);
+            setProgress(p);
+            dayNum = unlocked;
+          }
         }
         const rec = await base44.entities.ACAMFContent.filter({ status: 'publicado', recommended: true }, '-published_date', 3);
         setRecommended(rec);
@@ -197,19 +200,18 @@ export default function Hoje() {
 }
 
 function PreparationBlock({ user, progress, dayContent }) {
-  const current = progress?.current_day || 1;
-  const completed = progress?.completed_days?.length || 0;
-  const total = 33;
-  const pct = Math.round(completed / total * 100);
-  const remaining = total - current + 1;
+  const current = getCurrentUnlockedDay(progress?.started_date);
+  const completedDays = progress?.completed_days || [];
+  const pct = getProgressPercent(completedDays);
+  const remaining = getDaysLeft(user, current);
 
   return (
     <div className="mt-4">
       <SectionCard title="Sua preparação" icon={Flower2} accent>
         <div className="flex items-end justify-between">
           <div>
-            <p className="font-display text-2xl">Dia {current}<span className="text-base text-muted-foreground"> / {total}</span></p>
-            <p className="text-xs text-muted-foreground">{remaining > 0 ? `faltam ${remaining} dias` : 'conclua hoje'}</p>
+            <p className="font-display text-2xl">Dia {current}<span className="text-base text-muted-foreground"> / {TOTAL_DAYS}</span></p>
+            <p className="text-xs text-muted-foreground">{remaining > 0 ? `faltam ${remaining} ${remaining === 1 ? 'dia' : 'dias'}` : 'conclua hoje'}</p>
           </div>
           <p className="font-display text-2xl text-gold">{pct}%</p>
         </div>
@@ -227,11 +229,11 @@ function PreparationBlock({ user, progress, dayContent }) {
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Para o seu dia de hoje</p>
             <div className="space-y-2">
               {dayContent.map((c) =>
-            <Link key={c.id} to={`/acamf/${c.id}`} className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-muted/50">
-                  {c.cover_url ? <img src={c.cover_url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <BookOpen className="h-5 w-5 text-primary" />}
-                  <p className="flex-1 text-sm leading-tight">{c.title}</p>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </Link>
+            <Link key={c.id} to={`/caminho/dia/${current}`} className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-muted/50">
+                   {c.cover_url ? <img src={c.cover_url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <BookOpen className="h-5 w-5 text-primary" />}
+                   <p className="flex-1 text-sm leading-tight">{c.title}</p>
+                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                 </Link>
             )}
             </div>
           </div>

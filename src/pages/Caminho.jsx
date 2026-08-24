@@ -8,6 +8,7 @@ import MedalGrid from '@/components/caminho/MedalGrid';
 import ExportJourneyPdf from '@/components/ExportJourneyPdf';
 import AssociationRequestButton from '@/components/associacao/AssociationRequestButton';
 import { formatDate, daysUntil, parseDate, daysBetween } from '@/lib/marianDates';
+import { getCurrentUnlockedDay, getProgressPercent, getDaysLeft, TOTAL_DAYS } from '@/lib/preparationProgress';
 
 const DEFAULT_PHASES = {
   desejo: 'Espírito de Desejo',
@@ -36,8 +37,7 @@ export default function Caminho() {
       setPhases(phaseList);
       // Sincroniza current_day com o valor baseado em tempo
       if (p && p.started_date) {
-        const elapsed = daysBetween(parseDate(p.started_date), new Date());
-        const unlocked = Math.min(33, Math.max(1, elapsed + 1));
+        const unlocked = getCurrentUnlockedDay(p.started_date);
         if (p.current_day !== unlocked) {
           const updated = await base44.entities.UserProgress.update(p.id, { current_day: unlocked });
           setProgress(updated);
@@ -87,15 +87,13 @@ export default function Caminho() {
   const startedDate = progress?.started_date ? parseDate(progress.started_date) : null;
   const now = new Date();
   const daysElapsed = startedDate ? daysBetween(startedDate, now) : 0;
-  const currentUnlocked = Math.min(33, Math.max(1, daysElapsed + 1));
+  const currentUnlocked = getCurrentUnlockedDay(progress?.started_date);
   const completedDays = progress?.completed_days || [];
   const completed = completedDays.length;
-  const pct = Math.round((completed / 33) * 100);
+  const pct = getProgressPercent(completedDays);
   const allReady = days.length === 33;
-  const daysLeft = user.target_consecration_date
-    ? Math.max(0, daysUntil(user.target_consecration_date))
-    : Math.max(0, 33 - currentUnlocked + 1);
-  const journeyEnded = daysElapsed >= 33;
+  const daysLeft = getDaysLeft(user, currentUnlocked);
+  const journeyEnded = daysElapsed >= TOTAL_DAYS;
 
   const phaseName = (phase) => {
     if (!phase) return 'Sem fase';
