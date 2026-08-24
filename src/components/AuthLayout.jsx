@@ -10,11 +10,11 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-8 overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-[0.18] pointer-events-none lg:hidden"
+        className="absolute inset-0 bg-cover bg-center opacity-40 pointer-events-none lg:hidden"
         style={{ backgroundImage: `url(${BG_IMAGE_MOBILE})` }}
       />
       <div
-        className="absolute inset-0 hidden bg-cover bg-center opacity-[0.18] pointer-events-none lg:block"
+        className="absolute inset-0 hidden bg-cover bg-center opacity-40 pointer-events-none lg:block"
         style={{ backgroundImage: `url(${BG_IMAGE_DESKTOP})` }}
       />
       <div className="absolute right-4 top-4 z-10">
