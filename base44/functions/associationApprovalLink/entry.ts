@@ -18,6 +18,9 @@ export default async function (req) {
     if (!requests || requests.length === 0) {
       return Response.json({ error: 'Link inválido ou expirado.' }, { status: 404 });
     }
+    if (requests.length > 1) {
+      return Response.json({ error: 'Token duplicado. Contate o administrador.' }, { status: 500 });
+    }
 
     const request = requests[0];
 
@@ -115,9 +118,17 @@ export default async function (req) {
     }
 
     // ===== Anexar certificado (após aprovação) =====
+    // Apenas define o URL uma vez; não permite sobrescrever um certificado já anexado.
+    // Re-anexamentos ficam a cargo do administrador (painel admin, via SDK com auth + RLS).
     if (action === 'attach_certificate') {
       if (request.status !== 'aprovado') {
         return Response.json({ error: 'Solicitação não está aprovada.' }, { status: 400 });
+      }
+      if (request.certificate_pdf_url) {
+        return Response.json({ error: 'Certificado já foi anexado a esta solicitação.' }, { status: 400 });
+      }
+      if (!body.certificate_pdf_url || typeof body.certificate_pdf_url !== 'string') {
+        return Response.json({ error: 'URL do certificado não informada.' }, { status: 400 });
       }
       await base44.asServiceRole.entities.AssociationRequest.update(request.id, {
         certificate_pdf_url: body.certificate_pdf_url,
