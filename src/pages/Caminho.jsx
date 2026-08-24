@@ -23,6 +23,7 @@ export default function Caminho() {
   const [days, setDays] = useState([]);
   const [phases, setPhases] = useState([]);
   const [showSetup, setShowSetup] = useState(false);
+  const [contentLoaded, setContentLoaded] = useState(false);
 
   const loadProgress = async () => {
     if (!user) return;
@@ -35,6 +36,7 @@ export default function Caminho() {
       ]);
       setDays(allDays);
       setPhases(phaseList);
+      setContentLoaded(true);
       // Sincroniza current_day com o valor baseado em tempo
       if (p && p.started_date) {
         const unlocked = getCurrentUnlockedDay(p.started_date);
@@ -81,6 +83,22 @@ export default function Caminho() {
 
   if (showSetup) {
     return <SetupPreparation user={user} update={update} onDone={loadProgress} onCancel={() => setShowSetup(false)} />;
+  }
+
+  // Sem conteúdo publicado pelo admin
+  if (contentLoaded && days.length === 0) {
+    return (
+      <div>
+        <PageHeader title="Caminho" subtitle="A jornada de 33 dias para a Total Consagração" icon={Flower2} />
+        <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-card to-accent p-8 text-center">
+          <div className="ornament text-gold">✦</div>
+          <h2 className="mt-3 font-display text-2xl">Aguarde! Carregando conteúdo</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Os 33 dias de preparação ainda não foram publicados. Em breve sua jornada estará disponível.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // Desbloqueio baseado em tempo: cada dia abre à meia-noite
@@ -213,7 +231,6 @@ export default function Caminho() {
         Cada dia desbloqueia à meia-noite. Abra o dia dentro do prazo de 24h para não perder o conteúdo.
       </p>
       <div className="space-y-2">
-        {days.length === 0 && <p className="text-sm text-muted-foreground">Os 33 dias serão carregados pelo administrador. Aguarde.</p>}
         {days.map((d) => {
           const status = getDayStatus(d.day_number);
           const canView = status !== 'locked' && status !== 'missed';

@@ -21,6 +21,8 @@ export default function Hoje() {
   const [dayContent, setDayContent] = useState([]);
   const [aiGreeting, setAiGreeting] = useState(null);
   const [indulgenceToday, setIndulgenceToday] = useState(null);
+  const [days, setDays] = useState([]);
+  const [contentLoaded, setContentLoaded] = useState(false);
 
   const status = user?.status || 'interessado';
 
@@ -39,8 +41,13 @@ export default function Hoje() {
             dayNum = unlocked;
           }
         }
-        const rec = await base44.entities.ACAMFContent.filter({ status: 'publicado', recommended: true }, '-published_date', 3);
+        const [rec, allDays] = await Promise.all([
+          base44.entities.ACAMFContent.filter({ status: 'publicado', recommended: true }, '-published_date', 3),
+          base44.entities.PreparationDay.list('day_number', 33)
+        ]);
         setRecommended(rec);
+        setDays(allDays);
+        setContentLoaded(true);
         if (dayNum) {
           const dayCont = await base44.entities.ACAMFContent.filter({ status: 'publicado', related_day_number: dayNum }, '-published_date', 3);
           setDayContent(dayCont);
@@ -106,7 +113,7 @@ export default function Hoje() {
 
       {/* Bloco de status */}
       {status === 'consagrado' && <ConsecratedBlock user={user} />}
-      {status === 'preparacao' && <PreparationBlock user={user} progress={progress} dayContent={dayContent} />}
+      {status === 'preparacao' && <PreparationBlock user={user} progress={progress} dayContent={dayContent} days={days} contentLoaded={contentLoaded} />}
       {status === 'interessado' && <DiscoverBlock />}
 
       <GoldDivider />
@@ -198,45 +205,60 @@ export default function Hoje() {
 
 }
 
-function PreparationBlock({ user, progress, dayContent }) {
+function PreparationBlock({ user, progress, dayContent, days, contentLoaded }) {
   const current = getCurrentUnlockedDay(progress?.started_date);
   const completedDays = progress?.completed_days || [];
   const pct = getProgressPercent(completedDays);
   const remaining = getDaysLeft(user, current);
+  const hasContent = days.length > 0;
 
   return (
     <div className="mt-4">
       <SectionCard title="Sua preparação" icon={Flower2} accent>
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="font-display text-2xl">Dia {current}<span className="text-base text-muted-foreground"> / {TOTAL_DAYS}</span></p>
-            <p className="text-xs text-muted-foreground">{remaining > 0 ? `faltam ${remaining} ${remaining === 1 ? 'dia' : 'dias'}` : 'conclua hoje'}</p>
+        {contentLoaded && !hasContent ? (
+          <div className="py-6 text-center">
+            <div className="ornament text-gold">✦</div>
+            <p className="mt-3 font-display text-lg">Aguarde! Carregando conteúdo</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Os 33 dias de preparação ainda não foram publicados. Em breve sua jornada estará disponível.
+            </p>
           </div>
-          <p className="font-display text-2xl text-gold">{pct}%</p>
-        </div>
-        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${pct}%` }} />
-        </div>
-        {user.target_consecration_date &&
-        <p className="mt-2 text-xs text-muted-foreground">Consagração prevista: <span className="text-gold">{formatDate(user.target_consecration_date)}</span></p>
-        }
-        <Link to={`/caminho/dia/${current}`} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">
-          <Play className="h-4 w-4" /> Continuar pelo Dia {current}
-        </Link>
-        {dayContent?.length > 0 &&
-        <div className="mt-4 border-t border-border pt-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Para o seu dia de hoje</p>
-            <div className="space-y-2">
-              {dayContent.map((c) =>
-            <Link key={c.id} to={`/caminho/dia/${current}`} className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-muted/50">
-                   {c.cover_url ? <img src={c.cover_url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <BookOpen className="h-5 w-5 text-primary" />}
-                   <p className="flex-1 text-sm leading-tight">{c.title}</p>
-                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                 </Link>
-            )}
+        ) : (
+          <>
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="font-display text-2xl">Dia {current}<span className="text-base text-muted-foreground"> / {TOTAL_DAYS}</span></p>
+                <p className="text-xs text-muted-foreground">{remaining > 0 ? `faltam ${remaining} ${remaining === 1 ? 'dia' : 'dias'}` : 'conclua hoje'}</p>
+              </div>
+              <p className="font-display text-2xl text-gold">{pct}%</p>
             </div>
-          </div>
-        }
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            {user.target_consecration_date &&
+            <p className="mt-2 text-xs text-muted-foreground">Consagração prevista: <span className="text-gold">{formatDate(user.target_consecration_date)}</span></p>
+            }
+            {hasContent && (
+              <Link to={`/caminho/dia/${current}`} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">
+                <Play className="h-4 w-4" /> Continuar pelo Dia {current}
+              </Link>
+            )}
+            {dayContent?.length > 0 &&
+            <div className="mt-4 border-t border-border pt-3">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Para o seu dia de hoje</p>
+                <div className="space-y-2">
+                  {dayContent.map((c) =>
+                <Link key={c.id} to={`/caminho/dia/${current}`} className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-muted/50">
+                     {c.cover_url ? <img src={c.cover_url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <BookOpen className="h-5 w-5 text-primary" />}
+                     <p className="flex-1 text-sm leading-tight">{c.title}</p>
+                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                   </Link>
+                )}
+                </div>
+              </div>
+            }
+          </>
+        )}
       </SectionCard>
     </div>);
 
