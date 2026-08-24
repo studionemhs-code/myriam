@@ -7,6 +7,7 @@ import {
 import { base44 } from '@/api/base44Client';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import GlobalSearch from '@/components/GlobalSearch';
@@ -27,10 +28,19 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('appbar_collapsed') === 'true');
+  const { user, loading: loadingUser } = useCurrentUser();
 
   useEffect(() => {
     localStorage.setItem('appbar_collapsed', String(collapsed));
   }, [collapsed]);
+
+  // Redireciona novos usuários ao onboarding imediatamente após o login
+  useEffect(() => {
+    if (!loadingUser && user && !user.onboarding_completed) {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [loadingUser, user, navigate]);
+
   const { isVisible } = useFeatureFlags();
   const { unreadCount } = useNotifications();
 

@@ -75,7 +75,7 @@ export default function DayDetail() {
   const startedDate = progress.started_date ? parseDate(progress.started_date) : null;
   const now = new Date();
   const daysElapsed = startedDate ? daysBetween(startedDate, now) : 0;
-  const currentUnlocked = Math.min(33, Math.max(1, daysElapsed + 1));
+  const currentUnlocked = getCurrentUnlockedDay(progress.started_date);
   const isUnlocked = dayNum <= currentUnlocked;
   const isExpired = startedDate ? daysElapsed >= dayNum : false;
   const openedEntry = (progress.day_opened_at || []).find((d) => d.day === dayNum);
@@ -108,7 +108,7 @@ export default function DayDetail() {
     setSaving(true);
     try {
       const completed = Array.from(new Set([...(progress?.completed_days || []), dayNum]));
-      const allDone = completed.length >= 33;
+      const allDone = completed.length >= TOTAL_DAYS;
       const updated = await base44.entities.UserProgress.update(progress.id, {
         completed_days: completed,
         current_day: currentUnlocked,
