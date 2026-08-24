@@ -255,9 +255,9 @@ export default function Onboarding() {
             </div>
 
             {/* Registro de data de consagração (aparece ao escolher "Já Sou Consagrado") */}
-            {saving && !consecrationDate && (
-              <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-center dark:border-amber-700 dark:bg-amber-950/30">
-                <p className="text-sm text-amber-700 dark:text-amber-400">Informe a data da sua consagração:</p>
+            {showConsecrationForm && (
+              <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-4 text-center">
+                <p className="text-sm text-muted-foreground">Informe a data da sua consagração:</p>
                 <input
                   type="date"
                   value={consecrationDate}
@@ -265,8 +265,10 @@ export default function Onboarding() {
                   className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm"
                 />
                 <div className="mt-3 flex gap-2">
-                  <button onClick={() => setSaving(false)} className="flex-1 rounded-lg border border-border px-4 py-2 text-sm">Cancelar</button>
-                  <button onClick={() => choose('consagrado')} disabled={!consecrationDate} className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40">Confirmar</button>
+                  <button onClick={() => { setShowConsecrationForm(false); setConsecrationDate(''); }} className="flex-1 rounded-lg border border-border px-4 py-2 text-sm">Cancelar</button>
+                  <button onClick={() => choose('consagrado')} disabled={!consecrationDate || saving} className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40">
+                    {saving ? 'Salvando...' : 'Confirmar'}
+                  </button>
                 </div>
               </div>
             )}

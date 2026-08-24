@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Flower2, BookOpen, Calendar, Heart, ChevronRight, Sparkles, Leaf, Play, Award } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -13,7 +13,6 @@ import { isIndulgenceDay } from '@/lib/indulgenceDates';
 import { getCurrentUnlockedDay, getProgressPercent, getDaysLeft, syncCurrentDay, TOTAL_DAYS } from '@/lib/preparationProgress';
 
 export default function Hoje() {
-  const navigate = useNavigate();
   const { user, loading } = useCurrentUser();
   const { isVisible } = useFeatureFlags();
   const [progress, setProgress] = useState(null);
