@@ -4,8 +4,7 @@ import { Flower2, Check, ChevronLeft, ChevronRight, BookOpen, FileText, PenLine,
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import ReactMarkdown from 'react-markdown';
-import { parseDate, daysBetween } from '@/lib/marianDates';
-import { getCurrentUnlockedDay, TOTAL_DAYS } from '@/lib/preparationProgress';
+import { getCurrentUnlockedDay, isDayUnlocked, TOTAL_DAYS } from '@/lib/preparationProgress';
 
 export default function DayDetail() {
   const { day } = useParams();
@@ -71,18 +70,12 @@ export default function DayDetail() {
     );
   }
 
-  // Verifica acessibilidade baseada em tempo
-  const startedDate = progress.started_date ? parseDate(progress.started_date) : null;
-  const now = new Date();
-  const daysElapsed = startedDate ? daysBetween(startedDate, now) : 0;
+  // Verifica acessibilidade: meia-noite chegou E todos os dias anteriores concluídos
   const currentUnlocked = getCurrentUnlockedDay(progress.started_date);
-  const isUnlocked = dayNum <= currentUnlocked;
-  const isExpired = startedDate ? daysElapsed >= dayNum : false;
-  const openedEntry = (progress.day_opened_at || []).find((d) => d.day === dayNum);
-  const wasOpenedInTime = openedEntry && startedDate && daysBetween(startedDate, new Date(openedEntry.opened_at)) < dayNum;
-  const canView = isUnlocked && (!isExpired || wasOpenedInTime);
+  const canView = isDayUnlocked(dayNum, progress, progress.started_date);
 
   if (!canView) {
+    const timeReady = dayNum <= currentUnlocked;
     return (
       <div className="space-y-4">
         <button onClick={() => navigate('/caminho')} className="inline-flex items-center gap-1 text-sm text-muted-foreground">
@@ -92,9 +85,9 @@ export default function DayDetail() {
           <Lock className="mx-auto h-10 w-10 text-muted-foreground" />
           <h2 className="mt-3 font-display text-xl">Dia {dayNum} indisponível</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isExpired && !wasOpenedInTime
-              ? 'O prazo de 24h para acessar as meditações deste dia se encerrou. Continue sua jornada pelo dia atual.'
-              : 'Este dia ainda não foi desbloqueado. Aguarde o desbloqueio automático à meia-noite.'}
+            {timeReady
+              ? 'Conclua o dia anterior para desbloquear este dia.'
+              : 'Aguarde a meia-noite para desbloquear o próximo dia.'}
           </p>
           <Link to="/caminho" className="mt-4 inline-block rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">Voltar ao Caminho</Link>
         </div>

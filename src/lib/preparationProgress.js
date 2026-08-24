@@ -58,3 +58,23 @@ export async function syncCurrentDay(progress, currentUnlocked, updateFn) {
   }
   return progress;
 }
+
+/**
+ * Verifica se um dia está desbloqueado para acesso.
+ * Condições: a meia-noite do dia chegou (dayNum <= getCurrentUnlockedDay)
+ * E todos os dias anteriores (1..dayNum-1) foram concluídos.
+ * @param {number} dayNum - número do dia (1-33)
+ * @param {object} progress - registro de UserProgress (com completed_days)
+ * @param {string|null} startedDateISO - data de início da preparação
+ * @returns {boolean}
+ */
+export function isDayUnlocked(dayNum, progress, startedDateISO) {
+  if (!startedDateISO) return dayNum === 1;
+  const timeUnlocked = dayNum <= getCurrentUnlockedDay(startedDateISO);
+  if (!timeUnlocked) return false;
+  const completedDays = progress?.completed_days || [];
+  for (let d = 1; d < dayNum; d++) {
+    if (!completedDays.includes(d)) return false;
+  }
+  return true;
+}

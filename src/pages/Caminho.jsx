@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Flower2, ChevronRight, Calendar, Sparkles, Play, Lock, Check, Clock, Award } from 'lucide-react';
+import { Flower2, ChevronRight, Calendar, Sparkles, Play, Lock, Check, Award } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, GoldDivider } from '@/components/ui/marian';
@@ -8,7 +8,7 @@ import MedalGrid from '@/components/caminho/MedalGrid';
 import ExportJourneyPdf from '@/components/ExportJourneyPdf';
 import AssociationRequestButton from '@/components/associacao/AssociationRequestButton';
 import { formatDate, daysUntil, parseDate, daysBetween } from '@/lib/marianDates';
-import { getCurrentUnlockedDay, getProgressPercent, getDaysLeft, TOTAL_DAYS } from '@/lib/preparationProgress';
+import { getCurrentUnlockedDay, getProgressPercent, getDaysLeft, isDayUnlocked, TOTAL_DAYS } from '@/lib/preparationProgress';
 
 const DEFAULT_PHASES = {
   desejo: 'Espírito de Desejo',
@@ -144,13 +144,8 @@ export default function Caminho() {
   ];
 
   const getDayStatus = (dayNum) => {
-    if (!startedDate) return 'locked';
-    if (dayNum > currentUnlocked) return 'locked'; // ainda não chegou o dia
-    const isExpired = daysElapsed >= dayNum; // janela de 24h passou
-    const openedEntry = (progress?.day_opened_at || []).find((d) => d.day === dayNum);
-    const wasOpenedInTime = openedEntry && daysBetween(startedDate, new Date(openedEntry.opened_at)) < dayNum;
-    if (isExpired && !wasOpenedInTime) return 'missed'; // perdeu o prazo
     if (completedDays.includes(dayNum)) return 'completed';
+    if (!isDayUnlocked(dayNum, progress, progress?.started_date)) return 'locked';
     if (dayNum === currentUnlocked) return 'current';
     return 'available';
   };
@@ -192,7 +187,7 @@ export default function Caminho() {
             )}
           </div>
         </div>
-        {progress?.status !== 'concluida' && currentUnlocked <= TOTAL_DAYS && allReady && getDayStatus(currentUnlocked) !== 'missed' && (
+        {progress?.status !== 'concluida' && currentUnlocked <= TOTAL_DAYS && allReady && isDayUnlocked(currentUnlocked, progress, progress?.started_date) && (
           <Link
             to={`/caminho/dia/${currentUnlocked}`}
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep"
@@ -228,33 +223,30 @@ export default function Caminho() {
 
       {/* Lista de dias */}
       <p className="mb-3 text-xs text-muted-foreground">
-        Cada dia desbloqueia à meia-noite. Abra o dia dentro do prazo de 24h para não perder o conteúdo.
+        Cada dia desbloqueia à meia-noite. Conclua o dia anterior para liberar o próximo.
       </p>
       <div className="space-y-2">
         {days.map((d) => {
           const status = getDayStatus(d.day_number);
-          const canView = status !== 'locked' && status !== 'missed';
+          const canView = status !== 'locked';
           const inner = (
             <>
               <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition ${
                 status === 'completed' ? 'bg-gold/15 text-gold' :
                 status === 'current' ? 'bg-marian text-white' :
-                status === 'missed' ? 'bg-muted text-muted-foreground' :
                 status === 'locked' ? 'bg-muted/50 text-muted-foreground/50' :
                 'border border-border text-muted-foreground'
               }`}>
                 {status === 'completed' ? <Check className="h-5 w-5" /> :
                  status === 'locked' ? <Lock className="h-4 w-4" /> :
-                 status === 'missed' ? <Clock className="h-4 w-4" /> :
                  d.day_number}
               </div>
               <div className="flex-1">
-                <p className={`font-medium leading-tight ${status === 'locked' || status === 'missed' ? 'text-muted-foreground' : ''}`}>
+                <p className={`font-medium leading-tight ${status === 'locked' ? 'text-muted-foreground' : ''}`}>
                   {d.title || `Dia ${d.day_number}`}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {phaseName(d.phase)}
-                  {status === 'missed' && ' · Dia perdido'}
                   {status === 'locked' && ' · Bloqueado'}
                 </p>
               </div>

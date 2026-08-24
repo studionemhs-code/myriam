@@ -10,7 +10,7 @@ import {
   getNextMarianEvent, isToday } from
 '@/lib/marianDates';
 import { isIndulgenceDay } from '@/lib/indulgenceDates';
-import { getCurrentUnlockedDay, getProgressPercent, getDaysLeft, syncCurrentDay, TOTAL_DAYS } from '@/lib/preparationProgress';
+import { getCurrentUnlockedDay, getProgressPercent, getDaysLeft, isDayUnlocked, syncCurrentDay, TOTAL_DAYS } from '@/lib/preparationProgress';
 
 export default function Hoje() {
   const { user, loading } = useCurrentUser();
@@ -238,10 +238,17 @@ function PreparationBlock({ user, progress, dayContent, days, contentLoaded }) {
             {user.target_consecration_date &&
             <p className="mt-2 text-xs text-muted-foreground">Consagração prevista: <span className="text-gold">{formatDate(user.target_consecration_date)}</span></p>
             }
-            {hasContent && (
+            {hasContent && isDayUnlocked(current, progress, progress?.started_date) && (
               <Link to={`/caminho/dia/${current}`} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">
                 <Play className="h-4 w-4" /> Continuar pelo Dia {current}
               </Link>
+            )}
+            {hasContent && !isDayUnlocked(current, progress, progress?.started_date) && (
+              <p className="mt-4 rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground text-center">
+                {progress?.completed_days?.includes(current - 1) || current === 1
+                  ? 'Aguarde a meia-noite para desbloquear o próximo dia.'
+                  : `Conclua o Dia ${current - 1} para liberar o Dia ${current}.`}
+              </p>
             )}
             {dayContent?.length > 0 &&
             <div className="mt-4 border-t border-border pt-3">
