@@ -111,6 +111,9 @@
     "request_date"
   ],
   "rls": {
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
     "read": {
       "$or": [
         {
@@ -123,20 +126,10 @@
         }
       ]
     },
-    "create": {
-      "data.user_id": "{{user.id}}"
-    },
     "update": {
-      "$or": [
-        {
-          "data.user_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
       "user_condition": {
