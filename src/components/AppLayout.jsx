@@ -12,6 +12,7 @@ import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import GlobalSearch from '@/components/GlobalSearch';
 import MyriamIcon from '@/components/MyriamIcon';
+import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -220,6 +221,11 @@ export default function AppLayout() {
           })}
         </div>
       </nav>
+
+      {/* PWA install popup — mobile only, after login */}
+      <div className="fixed inset-x-0 bottom-16 z-40 px-4 lg:hidden">
+        <PwaInstallPrompt />
+      </div>
     </div>
   );
 }
