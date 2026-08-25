@@ -63,7 +63,6 @@ import OrcamentosMensagens from '@/pages/admin/OrcamentosMensagens';
 import OrcamentosConfiguracoes from '@/pages/admin/OrcamentosConfiguracoes';
 import OrcamentosLink from '@/pages/admin/OrcamentosLink';
 import WebhooksAdmin from '@/pages/admin/WebhooksAdmin';
-import SupabaseMigration from '@/pages/admin/SupabaseMigration';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -155,7 +154,6 @@ const AuthenticatedApp = () => {
           <Route path="/admin/orcamentos/configuracoes" element={<OrcamentosConfiguracoes />} />
           <Route path="/admin/orcamentos/link" element={<OrcamentosLink />} />
           <Route path="/admin/automacoes-webhook" element={<WebhooksAdmin />} />
-          <Route path="/admin/migracao-supabase" element={<SupabaseMigration />} />
         </Route>
       </Route>
 
