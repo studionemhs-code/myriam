@@ -417,15 +417,12 @@ export default function ChatConversation() {
         <input
           value={text}
           onChange={onType}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
           placeholder="Mensagem..."
           className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm outline-none focus:border-primary"
         />
-        {text.trim() ? (
-          <button onClick={send} disabled={uploading} className="rounded-full bg-primary p-2.5 text-primary-foreground disabled:opacity-40">
-            <Send className="h-4 w-4" />
-          </button>
-        ) : null}
+        <button onClick={send} disabled={!text.trim() || uploading} className="rounded-full bg-primary p-2.5 text-primary-foreground disabled:opacity-40">
+          <Send className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
