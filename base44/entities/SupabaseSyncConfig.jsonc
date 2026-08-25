@@ -1,0 +1,64 @@
+{
+  "name": "SupabaseSyncConfig",
+  "type": "object",
+  "properties": {
+    "entity_name": {
+      "type": "string",
+      "description": "Nome da entidade Base44 sendo sincronizada"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se true, a sincroniza\u00e7\u00e3o em tempo real est\u00e1 ativa para esta entidade"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "migrando",
+        "sincronizado",
+        "erro"
+      ],
+      "default": "pendente"
+    },
+    "total_records": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total de registros migrados na \u00faltima sincroniza\u00e7\u00e3o"
+    },
+    "last_sync": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data da \u00faltima sincroniza\u00e7\u00e3o"
+    },
+    "errors": {
+      "type": "string",
+      "description": "Log de erros da \u00faltima sincroniza\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "entity_name"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

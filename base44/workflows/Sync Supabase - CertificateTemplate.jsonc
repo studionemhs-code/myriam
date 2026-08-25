@@ -1,0 +1,44 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "sync_supabase_certificatetemplate",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync_record": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncEntityToSupabase",
+            "args": {
+              "entity_name": "CertificateTemplate",
+              "record_id": "${ .trigger.entity_id }",
+              "operation": "${ .trigger.event_type }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Sincronizar CertificateTemplate",
+            "description": "Replica registro para Supabase"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Sync Supabase - CertificateTemplate",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "entity_name": "CertificateTemplate"
+    }
+  },
+  "description": "Replica altera\u00e7\u00f5es de CertificateTemplate para o Supabase em tempo real"
+}

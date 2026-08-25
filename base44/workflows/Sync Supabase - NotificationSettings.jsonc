@@ -1,0 +1,44 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "sync_supabase_notificationsettings",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync_record": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncEntityToSupabase",
+            "args": {
+              "entity_name": "NotificationSettings",
+              "record_id": "${ .trigger.entity_id }",
+              "operation": "${ .trigger.event_type }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Sincronizar NotificationSettings",
+            "description": "Replica registro para Supabase"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Sync Supabase - NotificationSettings",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "entity_name": "NotificationSettings"
+    }
+  },
+  "description": "Replica altera\u00e7\u00f5es de NotificationSettings para o Supabase em tempo real"
+}
