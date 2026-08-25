@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Webhook, Code } from 'lucide-react';
+import { X, Save, Webhook, Code, Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const TRIGGER_OPTIONS = [
@@ -33,6 +33,8 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
   const [headersText, setHeadersText] = useState('{}');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   useEffect(() => {
     if (webhook) {
@@ -48,6 +50,34 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
       setHeadersText(JSON.stringify(webhook.custom_headers || {}, null, 2));
     }
   }, [webhook]);
+
+  const testConnection = async () => {
+    if (!form.url.trim()) {
+      setError('Informe a URL de destino antes de testar.');
+      return;
+    }
+    let parsedHeaders = {};
+    try {
+      parsedHeaders = JSON.parse(headersText || '{}');
+    } catch {
+      setError('Headers customizados inválidos (use JSON válido).');
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    setError('');
+    try {
+      const res = await base44.functions.invoke('testWebhook', {
+        url: form.url,
+        custom_headers: parsedHeaders,
+        message_template: form.message_template
+      });
+      setTestResult(res.data);
+    } catch (e) {
+      setTestResult({ error: e.message || 'Erro ao testar conexão.' });
+    }
+    setTesting(false);
+  };
 
   const toggleTrigger = (val) => {
     setForm((f) => ({
@@ -193,17 +223,56 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
           </label>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
+
+          {testResult && (
+            <div className={`rounded-lg border p-3 text-sm ${testResult.error ? 'border-destructive/30 bg-destructive/5' : testResult.ok ? 'border-green-500/30 bg-green-500/5' : 'border-yellow-500/30 bg-yellow-500/5'}`}>
+              <div className="flex items-center gap-2">
+                {testResult.error ? (
+                  <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+                ) : testResult.ok ? (
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 shrink-0 text-yellow-500" />
+                )}
+                <span className="font-medium">
+                  {testResult.error
+                    ? `Erro: ${testResult.error}`
+                    : testResult.ok
+                      ? `Conexão estabelecida com sucesso! (HTTP ${testResult.status})`
+                      : `Resposta recebida (HTTP ${testResult.status}), mas com possível problema.`}
+                </span>
+              </div>
+              {testResult.ok && (
+                <p className="mt-1.5 pl-6 text-xs text-green-700 dark:text-green-400">
+                  O URL de destino recebeu os campos corretamente. O webhook está pronto para uso.
+                </p>
+              )}
+              {testResult.response && (
+                <pre className="mt-2 max-h-28 overflow-auto rounded bg-background p-2 text-xs">{testResult.response}</pre>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
-          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-muted-foreground hover:bg-muted">Cancelar</button>
+        <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-4">
           <button
-            onClick={save}
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40"
+            onClick={testConnection}
+            disabled={testing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-40"
           >
-            <Save className="h-4 w-4" /> {saving ? 'Salvando...' : 'Salvar'}
+            {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {testing ? 'Testando...' : 'Testar Conexão'}
           </button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-muted-foreground hover:bg-muted">Cancelar</button>
+            <button
+              onClick={save}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40"
+            >
+              <Save className="h-4 w-4" /> {saving ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
