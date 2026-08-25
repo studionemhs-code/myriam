@@ -27,9 +27,14 @@
       "enum": [
         "image",
         "video",
+        "audio",
         "document"
       ],
       "default": "image"
+    },
+    "audio_duration": {
+      "type": "number",
+      "description": "Dura\u00e7\u00e3o do \u00e1udio em segundos (opcional)"
     },
     "participants": {
       "type": "array",
@@ -46,6 +51,28 @@
       },
       "default": [],
       "description": "IDs de usu\u00e1rios que leram a mensagem"
+    },
+    "reply_to_id": {
+      "type": "string",
+      "description": "ID da mensagem \u00e0 qual esta responde"
+    },
+    "reply_to_text": {
+      "type": "string",
+      "description": "Trecho do texto da mensagem original citada"
+    },
+    "reply_to_sender_name": {
+      "type": "string",
+      "description": "Nome do autor da mensagem citada"
+    },
+    "edited": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indica se a mensagem foi editada"
+    },
+    "edited_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data da \u00faltima edi\u00e7\u00e3o"
     }
   },
   "required": [
