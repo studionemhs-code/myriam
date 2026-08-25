@@ -1,0 +1,75 @@
+{
+  "name": "ContentComment",
+  "type": "object",
+  "properties": {
+    "content_id": {
+      "type": "string",
+      "description": "ID do conte\u00fado ACAMF comentado"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Nome de exibi\u00e7\u00e3o do autor (denormalizado)"
+    },
+    "author_photo": {
+      "type": "string",
+      "format": "uri",
+      "description": "Foto do autor (denormalizado)"
+    },
+    "author_status": {
+      "type": "string",
+      "enum": [
+        "interessado",
+        "preparacao",
+        "consagrado"
+      ],
+      "default": "interessado",
+      "description": "Status do autor no momento da publica\u00e7\u00e3o"
+    },
+    "text": {
+      "type": "string",
+      "description": "Texto do coment\u00e1rio"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "ID do coment\u00e1rio pai (para respostas)"
+    },
+    "like_count": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "content_id",
+    "text"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

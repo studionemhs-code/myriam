@@ -5,6 +5,10 @@ import ReportDialog from '@/components/myriam/ReportDialog';
 import { base44 } from '@/api/base44Client';
 import { Ornament, GoldDivider } from '@/components/ui/marian';
 import PrivacyVideoPlayer from '@/components/PrivacyVideoPlayer';
+import AcamfPdfReader from '@/components/acamf/AcamfPdfReader';
+import ContentNotes from '@/components/acamf/ContentNotes';
+import ContentComments from '@/components/acamf/ContentComments';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
 
@@ -17,6 +21,9 @@ export default function ACAMFDetalhe() {
   const [courseLessons, setCourseLessons] = useState([]);
   const [lessonProgress, setLessonProgress] = useState(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const [panel, setPanel] = useState(null);
+  const { user } = useCurrentUser();
 
   useEffect(() => {
     (async () => {
@@ -120,10 +127,13 @@ export default function ACAMFDetalhe() {
       )}
 
       {(content.content_type === 'pdf' || content.content_type === 'ebook') && content.file_url && (
-        <a href={content.file_url} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 hover:border-gold/40">
+        <button
+          onClick={() => setPdfOpen(true)}
+          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 hover:border-gold/40 transition"
+        >
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/15"><FileText className="h-5 w-5 text-gold" /></div>
-          <span className="text-sm font-medium">Abrir {content.content_type === 'pdf' ? 'PDF' : 'E-book'}</span>
-        </a>
+          <span className="text-sm font-medium">Ler {content.content_type === 'pdf' ? 'PDF' : 'E-book'}</span>
+        </button>
       )}
 
       {content.content_type === 'imagem' && content.file_url && (
@@ -195,9 +205,30 @@ export default function ACAMFDetalhe() {
       )}
 
       <GoldDivider />
+
+      {/* Anotações e Comentários (conteúdo não-PDF) */}
+      {content.content_type !== 'pdf' && content.content_type !== 'ebook' && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-card">
+            <ContentNotes contentId={content.id} user={user} />
+          </div>
+          <div className="rounded-2xl border border-border bg-card">
+            <ContentComments contentId={content.id} user={user} />
+          </div>
+        </div>
+      )}
+
+      <GoldDivider />
       <Ornament className="text-gold" />
 
       <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} targetType="conteudo" targetId={content.id} />
+      <AcamfPdfReader
+        url={content.file_url}
+        open={pdfOpen}
+        onClose={() => setPdfOpen(false)}
+        contentId={content.id}
+        contentTitle={content.title}
+      />
     </div>
   );
 }
