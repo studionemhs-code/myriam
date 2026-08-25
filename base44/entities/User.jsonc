@@ -2,7 +2,7 @@
   "properties": {
     "role": {
       "type": "string",
-      "description": "Papel do usu\u00e1rio no ecossistema Theotokos",
+      "description": "Papel do usu\u00e1rio no ecosistema Theotokos",
       "enum": [
         "admin",
         "moderator",
@@ -22,6 +22,10 @@
       "type": "string",
       "format": "uri",
       "description": "Foto de perfil"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefone do usu\u00e1rio para notifica\u00e7\u00f5es via WhatsApp (DDI+DDD+n\u00famero, s\u00f3 d\u00edgitos)"
     },
     "status": {
       "type": "string",

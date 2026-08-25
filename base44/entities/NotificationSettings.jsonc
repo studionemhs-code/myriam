@@ -1,0 +1,79 @@
+{
+  "name": "NotificationSettings",
+  "type": "object",
+  "properties": {
+    "email_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se true, envia notifica\u00e7\u00f5es por e-mail via Gmail"
+    },
+    "whatsapp_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se true, envia notifica\u00e7\u00f5es via WhatsApp Business API"
+    },
+    "email_sender_name": {
+      "type": "string",
+      "default": "Theotokos",
+      "description": "Nome do remetente exibido nos e-mails"
+    },
+    "whatsapp_from_number": {
+      "type": "string",
+      "description": "N\u00famero WhatsApp Business de origem (apenas d\u00edgitos, exibido no painel)"
+    },
+    "whatsapp_phone_number_id": {
+      "type": "string",
+      "description": "Phone Number ID da Meta WhatsApp Business Cloud API"
+    },
+    "whatsapp_access_token": {
+      "type": "string",
+      "description": "Token de acesso permanente da Meta WhatsApp Business Cloud API"
+    },
+    "trigger_categories": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "caminho",
+          "renovacao",
+          "myriam",
+          "intencoes",
+          "acamf",
+          "jornadas",
+          "novidades",
+          "associacao"
+        ]
+      },
+      "default": [
+        "myriam",
+        "associacao"
+      ],
+      "description": "Categorias que disparam notifica\u00e7\u00f5es externas (e-mail/WhatsApp)"
+    }
+  },
+  "required": [
+    "email_sender_name"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
