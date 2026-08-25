@@ -1,0 +1,85 @@
+{
+  "name": "WebhookAutomation",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome identificador do webhook"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL de destino do webhook (Zapier, Make, n8n, etc.)"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se true, o webhook est\u00e1 ativo e dispara"
+    },
+    "message_template": {
+      "type": "string",
+      "default": "Voc\u00ea recebeu uma nova mensagem de {remetente_nome}: {mensagem_texto}",
+      "description": "Template da mensagem com placeholders: {remetente_nome}, {destinatario_nome}, {destinatario_email}, {mensagem_texto}, {categoria}, {titulo}, {corpo}, {link_app}, {conversation_id}, {data}"
+    },
+    "trigger_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "chat",
+          "caminho",
+          "renovacao",
+          "myriam",
+          "intencoes",
+          "acamf",
+          "jornadas",
+          "novidades",
+          "associacao"
+        ]
+      },
+      "default": [
+        "chat"
+      ],
+      "description": "Tipos de disparo: 'chat' para mensagens de chat, ou categorias de notifica\u00e7\u00e3o"
+    },
+    "wait_seconds": {
+      "type": "integer",
+      "default": 30,
+      "minimum": 5,
+      "maximum": 300,
+      "description": "Segundos de espera antes de verificar se o destinat\u00e1rio leu (offline check)"
+    },
+    "custom_headers": {
+      "type": "object",
+      "description": "Headers HTTP customizados para o POST (ex: Authorization, Content-Type)",
+      "default": {}
+    }
+  },
+  "required": [
+    "name",
+    "url",
+    "message_template"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
