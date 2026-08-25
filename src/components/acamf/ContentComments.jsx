@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MessageCircle, Send, Trash2, Loader2, CornerDownRight } from 'lucide-react';
+import { MessageCircle, Send, Trash2, Loader2, CornerDownRight, Edit2, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const STATUS_LABEL = {
@@ -75,6 +75,13 @@ export default function ContentComments({ contentId, user }) {
     } catch (e) { /* ignore */ }
   };
 
+  const editComment = async (id, newText) => {
+    try {
+      await base44.entities.ContentComment.update(id, { text: newText });
+      setComments((p) => p.map((c) => c.id === id ? { ...c, text: newText } : c));
+    } catch (e) { /* ignore */ }
+  };
+
   const topLevel = comments.filter((c) => !c.parent_id);
   const repliesOf = (parentId) => comments.filter((c) => c.parent_id === parentId);
 
@@ -115,10 +122,10 @@ export default function ContentComments({ contentId, user }) {
         ) : (
           topLevel.map((c) => (
             <div key={c.id}>
-              <CommentItem comment={c} onDelete={deleteComment} onReply={() => setReplyTo(c.id)} canDelete={c.created_by_id === user?.id || user?.role === 'admin'} />
+              <CommentItem comment={c} onDelete={deleteComment} onEdit={editComment} onReply={() => setReplyTo(c.id)} canManage={c.created_by_id === user?.id || user?.role === 'admin'} />
               <div className="ml-6 mt-2 space-y-2 border-l-2 border-border pl-3">
                 {repliesOf(c.id).map((r) => (
-                  <CommentItem key={r.id} comment={r} onDelete={deleteComment} canDelete={r.created_by_id === user?.id || user?.role === 'admin'} isReply />
+                  <CommentItem key={r.id} comment={r} onDelete={deleteComment} onEdit={editComment} canManage={r.created_by_id === user?.id || user?.role === 'admin'} isReply />
                 ))}
               </div>
               {replyTo === c.id && (
@@ -147,7 +154,16 @@ export default function ContentComments({ contentId, user }) {
   );
 }
 
-function CommentItem({ comment, onDelete, onReply, canDelete, isReply }) {
+function CommentItem({ comment, onDelete, onEdit, onReply, canManage, isReply }) {
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.text);
+
+  const saveEdit = () => {
+    if (!editText.trim()) return;
+    onEdit(comment.id, editText.trim());
+    setEditing(false);
+  };
+
   return (
     <div className="rounded-lg border border-border bg-background p-2.5">
       <div className="flex items-center gap-2">
@@ -167,19 +183,44 @@ function CommentItem({ comment, onDelete, onReply, canDelete, isReply }) {
           )}
         </div>
       </div>
-      <p className="mt-1.5 whitespace-pre-wrap break-words text-sm">{comment.text}</p>
-      <div className="mt-1.5 flex items-center gap-3">
-        {!isReply && (
-          <button onClick={onReply} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
-            <CornerDownRight className="h-3 w-3" /> Responder
-          </button>
-        )}
-        {canDelete && (
-          <button onClick={() => onDelete(comment.id)} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive">
-            <Trash2 className="h-3 w-3" /> Excluir
-          </button>
-        )}
-      </div>
+      {editing ? (
+        <div className="mt-1.5">
+          <textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            rows={2}
+            autoFocus
+            className="w-full resize-none rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
+          />
+          <div className="mt-1 flex gap-2">
+            <button onClick={saveEdit} className="inline-flex items-center gap-1 rounded bg-primary px-2 py-0.5 text-[11px] text-primary-foreground">
+              <Check className="h-3 w-3" /> Salvar
+            </button>
+            <button onClick={() => { setEditing(false); setEditText(comment.text); }} className="text-[11px] text-muted-foreground">Cancelar</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="mt-1.5 whitespace-pre-wrap break-words text-sm">{comment.text}</p>
+          <div className="mt-1.5 flex items-center gap-3">
+            {!isReply && (
+              <button onClick={onReply} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+                <CornerDownRight className="h-3 w-3" /> Responder
+              </button>
+            )}
+            {canManage && (
+              <button onClick={() => { setEditing(true); setEditText(comment.text); }} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary">
+                <Edit2 className="h-3 w-3" /> Editar
+              </button>
+            )}
+            {canManage && (
+              <button onClick={() => onDelete(comment.id)} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive">
+                <Trash2 className="h-3 w-3" /> Excluir
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

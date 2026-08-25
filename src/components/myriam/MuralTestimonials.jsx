@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Pin, Heart, MessageCircle, Leaf, Sparkles, Loader2 } from 'lucide-react';
+import { Pin, Heart, MessageCircle, Leaf, Sparkles, Loader2, Edit2, Trash2, Check, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -41,14 +41,36 @@ export default function MuralTestimonials() {
       const myInt = (await base44.entities.MyriamInteraction.filter({ post_id: post.id, created_by_id: user.id, type: 'like' }))[0];
       if (myInt) await base44.entities.MyriamInteraction.delete(myInt.id);
       setInteractions((p) => ({ ...p, [post.id]: undefined }));
-      await base44.entities.MyriamPost.update(post.id, { like_count: Math.max(0, (post.like_count || 0) - 1) });
-      setPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, like_count: Math.max(0, (p.like_count || 0) - 1) } : p));
+      const newCount = Math.max(0, (post.like_count || 0) - 1);
+      await base44.entities.MyriamPost.update(post.id, { like_count: newCount });
+      setPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, like_count: newCount } : p));
     } else {
       await base44.entities.MyriamInteraction.create({ post_id: post.id, type: 'like' });
       setInteractions((p) => ({ ...p, [post.id]: 'like' }));
-      await base44.entities.MyriamPost.update(post.id, { like_count: (post.like_count || 0) + 1 });
-      setPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, like_count: (p.like_count || 0) + 1 } : p));
+      const newCount = (post.like_count || 0) + 1;
+      await base44.entities.MyriamPost.update(post.id, { like_count: newCount });
+      setPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, like_count: newCount } : p));
     }
+  };
+
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+
+  const saveEdit = async (post) => {
+    if (!editText.trim()) return;
+    try {
+      await base44.entities.MyriamPost.update(post.id, { text: editText.trim() });
+      setPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, text: editText.trim() } : p));
+      setEditingId(null);
+    } catch (e) { alert('Erro ao editar.'); }
+  };
+
+  const deletePost = async (post) => {
+    if (!confirm('Excluir este testemunho?')) return;
+    try {
+      await base44.entities.MyriamPost.delete(post.id);
+      setPosts((prev) => prev.filter((p) => p.id !== post.id));
+    } catch (e) { alert('Erro ao excluir.'); }
   };
 
   if (loading) {
@@ -96,17 +118,54 @@ export default function MuralTestimonials() {
                   {new Date(post.created_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
                 </p>
               </div>
-              {user?.role === 'admin' && (
-                <button
-                  onClick={() => togglePin(post)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium sm:px-3 ${isPinned ? 'bg-gold/15 text-gold' : 'border border-border text-muted-foreground hover:text-gold'}`}
-                >
-                  <Pin className="h-3.5 w-3.5" /> {isPinned ? 'Desafixar' : 'Fixar'}
-                </button>
-              )}
+              <div className="flex shrink-0 items-center gap-1">
+                {user?.role === 'admin' && (
+                  <button
+                    onClick={() => togglePin(post)}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium sm:px-3 ${isPinned ? 'bg-gold/15 text-gold' : 'border border-border text-muted-foreground hover:text-gold'}`}
+                  >
+                    <Pin className="h-3.5 w-3.5" /> {isPinned ? 'Desafixar' : 'Fixar'}
+                  </button>
+                )}
+                {(post.created_by_id === user?.id || user?.role === 'admin') && (
+                  <>
+                    <button
+                      onClick={() => { setEditingId(post.id); setEditText(post.text); }}
+                      className="flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-primary"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => deletePost(post)}
+                      className="flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
-            <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed sm:mt-3">{post.text}</p>
+            {editingId === post.id ? (
+              <div className="mt-2.5 sm:mt-3">
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  rows={3}
+                  className="w-full resize-none rounded-xl border border-input bg-background p-2.5 text-sm outline-none focus:border-primary"
+                />
+                <div className="mt-2 flex gap-2">
+                  <button onClick={() => saveEdit(post)} className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
+                    <Check className="h-3.5 w-3.5" /> Salvar
+                  </button>
+                  <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-muted-foreground">
+                    <X className="h-3.5 w-3.5" /> Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed sm:mt-3">{post.text}</p>
+            )}
             {post.image_url && <img src={post.image_url} alt="" className="mt-2.5 w-full rounded-xl object-cover sm:mt-3" />}
 
             <div className="mt-2.5 flex items-center gap-3 border-t border-border pt-2.5 text-sm sm:mt-3 sm:gap-4 sm:pt-3">

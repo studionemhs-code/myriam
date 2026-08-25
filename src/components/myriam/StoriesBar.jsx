@@ -53,7 +53,7 @@ export default function StoriesBar() {
         ))}
       </div>
       {composing && <StoryComposer user={user} onClose={() => setComposing(false)} onPosted={load} />}
-      {viewing && <StoryViewer group={viewing} currentUser={user} onClose={() => setViewing(null)} />}
+      {viewing && <StoryViewer group={viewing} currentUser={user} onClose={() => setViewing(null)} onStoryDeleted={() => load()} />}
     </>
   );
 }

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const BACKGROUNDS = { marian: 'bg-marian', gold: 'bg-gold', deep: 'bg-deep' };
 
-export default function StoryViewer({ group, currentUser, onClose }) {
+export default function StoryViewer({ group, currentUser, onClose, onStoryDeleted }) {
   const [idx, setIdx] = useState(0);
-  const story = group.items[idx];
+  const [items, setItems] = useState(group.items);
+  const story = items[idx];
 
   useEffect(() => {
     if (story && currentUser && !story.viewers?.includes(currentUser.id)) {
@@ -14,12 +15,32 @@ export default function StoryViewer({ group, currentUser, onClose }) {
     }
   }, [story, currentUser]);
 
-  const next = () => (idx < group.items.length - 1 ? setIdx(idx + 1) : onClose());
+  const next = () => (idx < items.length - 1 ? setIdx(idx + 1) : onClose());
   const prev = () => idx > 0 && setIdx(idx - 1);
+
+  const deleteStory = async (storyId) => {
+    if (!confirm('Excluir este story?')) return;
+    try {
+      await base44.entities.MyriamStory.delete(storyId);
+      const remaining = items.filter((s) => s.id !== storyId);
+      setItems(remaining);
+      if (onStoryDeleted) onStoryDeleted(storyId);
+      if (remaining.length === 0) { onClose(); return; }
+      if (idx >= remaining.length) setIdx(remaining.length - 1);
+    } catch (e) { alert('Erro ao excluir.'); }
+  };
+
+  const isAuthor = story?.created_by_id === currentUser?.id;
+  const isAdmin = currentUser?.role === 'admin';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95">
       <button onClick={onClose} className="absolute right-4 top-4 z-20 text-white/70 hover:text-white"><X className="h-6 w-6" /></button>
+      {story && (isAuthor || isAdmin) && (
+        <button onClick={() => deleteStory(story.id)} className="absolute right-14 top-4 z-20 text-white/70 hover:text-red-400" title="Excluir story">
+          <Trash2 className="h-6 w-6" />
+        </button>
+      )}
       {idx > 0 && <button onClick={prev} className="absolute left-2 z-20 text-white/70 hover:text-white"><ChevronLeft className="h-8 w-8" /></button>}
       {idx < group.items.length - 1 && <button onClick={next} className="absolute right-2 z-20 text-white/70 hover:text-white"><ChevronRight className="h-8 w-8" /></button>}
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Leaf, MessageCircle, Send, MoreHorizontal, Share2, Flag, Trash2, CornerDownRight, FileText, X, Pin, Sparkles } from 'lucide-react';
+import { Heart, Leaf, MessageCircle, Send, MoreHorizontal, Share2, Flag, Trash2, CornerDownRight, FileText, X, Pin, Sparkles, Edit2, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { notifyUser } from '@/lib/notify';
 import ReportDialog from './ReportDialog';
@@ -8,11 +8,12 @@ import ReportDialog from './ReportDialog';
 const statusTone = { consagrado: 'bg-gold/15 text-gold', preparacao: 'bg-marian/15 text-marian', interessado: 'bg-muted text-muted-foreground' };
 const statusLabel = { consagrado: 'Consagrado', preparacao: 'Em Preparação', interessado: 'Interessado' };
 
-export default function PostCard({ post, user }) {
+export default function PostCard({ post, user, onDeleted }) {
   const [liked, setLiked] = useState(false);
   const [prayed, setPrayed] = useState(false);
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
   const [prayerCount, setPrayerCount] = useState(post.prayer_count || 0);
+  const [commentCount, setCommentCount] = useState(post.comment_count || 0);
   const [comments, setComments] = useState([]);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -23,6 +24,13 @@ export default function PostCard({ post, user }) {
   const [reportCommentId, setReportCommentId] = useState(null);
   const [shared, setShared] = useState(false);
   const [pinned, setPinned] = useState(post.is_pinned || false);
+  const [editingPost, setEditingPost] = useState(false);
+  const [editPostText, setEditPostText] = useState(post.text || '');
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const isAuthor = post.created_by_id === user.id;
+  const isAdmin = user.role === 'admin';
+  const canManagePost = isAuthor || isAdmin;
 
   const togglePin = async () => {
     try {
@@ -47,66 +55,105 @@ export default function PostCard({ post, user }) {
     setLoadingComments(true);
     const list = await base44.entities.MyriamComment.filter({ post_id: post.id }, 'created_date', 100);
     setComments(list);
+    setCommentCount(list.length);
     setLoadingComments(false);
   };
 
   const toggleLike = async () => {
-    if (liked) {
-      const myInt = (await base44.entities.MyriamInteraction.filter({ post_id: post.id, created_by_id: user.id, type: 'like' }))[0];
-      if (myInt) await base44.entities.MyriamInteraction.delete(myInt.id);
-      setLiked(false);
-      setLikeCount((c) => Math.max(0, c - 1));
-      await base44.entities.MyriamPost.update(post.id, { like_count: Math.max(0, likeCount - 1) });
-    } else {
-      setLiked(true);
-      setLikeCount((c) => c + 1);
-      await base44.entities.MyriamInteraction.create({ post_id: post.id, type: 'like' });
-      await base44.entities.MyriamPost.update(post.id, { like_count: likeCount + 1 });
-      if (post.created_by_id !== user.id) {
-        await notifyUser({ user_id: post.created_by_id, category: 'myriam', title: 'Nova curtida', body: 'Alguém curtiu sua publicação.', link: '/myriam', related_id: post.id });
+    const newCount = liked ? Math.max(0, likeCount - 1) : likeCount + 1;
+    setLiked(!liked);
+    setLikeCount(newCount);
+    try {
+      if (liked) {
+        const myInt = (await base44.entities.MyriamInteraction.filter({ post_id: post.id, created_by_id: user.id, type: 'like' }))[0];
+        if (myInt) await base44.entities.MyriamInteraction.delete(myInt.id);
+      } else {
+        await base44.entities.MyriamInteraction.create({ post_id: post.id, type: 'like' });
+        if (post.created_by_id !== user.id) {
+          await notifyUser({ user_id: post.created_by_id, category: 'myriam', title: 'Nova curtida', body: 'Alguém curtiu sua publicação.', link: '/myriam', related_id: post.id });
+        }
       }
-    }
+      await base44.entities.MyriamPost.update(post.id, { like_count: newCount });
+    } catch (e) { /* revert on error */ }
   };
 
   const togglePray = async () => {
     if (prayed) return;
+    const newCount = prayerCount + 1;
     setPrayed(true);
-    setPrayerCount((c) => c + 1);
-    await base44.entities.MyriamInteraction.create({ post_id: post.id, type: 'pray' });
-    await base44.entities.MyriamPost.update(post.id, { prayer_count: prayerCount + 1 });
-    if (post.created_by_id !== user.id) {
-      await notifyUser({ user_id: post.created_by_id, category: 'myriam', title: 'Alguém rezou por sua publicação', body: 'Alguém ofereceu uma oração pela sua publicação.', link: '/myriam', related_id: post.id });
-    }
+    setPrayerCount(newCount);
+    try {
+      await base44.entities.MyriamInteraction.create({ post_id: post.id, type: 'pray' });
+      await base44.entities.MyriamPost.update(post.id, { prayer_count: newCount });
+      if (post.created_by_id !== user.id) {
+        await notifyUser({ user_id: post.created_by_id, category: 'myriam', title: 'Alguém rezou por sua publicação', body: 'Alguém ofereceu uma oração pela sua publicação.', link: '/myriam', related_id: post.id });
+      }
+    } catch (e) { /* ignore */ }
   };
 
   const submitComment = async (parentId = null) => {
     if (!commentText.trim()) return;
-    const c = await base44.entities.MyriamComment.create({
-      post_id: post.id,
-      parent_id: parentId || undefined,
-      author_id: user.id,
-      text: commentText.trim(),
-      author_name: user.display_name || user.full_name || 'Alma',
-      author_photo: user.photo_url || ''
-    });
-    setComments((p) => [...p, c]);
-    setCommentText('');
-    setReplyTo(null);
-    await base44.entities.MyriamPost.update(post.id, { comment_count: (post.comment_count || 0) + (comments.length + 1) });
-    if (post.created_by_id !== user.id) {
-      await notifyUser({ user_id: post.created_by_id, category: 'myriam', title: 'Novo comentário', body: commentText.trim().slice(0, 100), link: '/myriam', related_id: post.id });
-    }
-    if (parentId) {
-      const parentComment = comments.find((c) => c.id === parentId);
-      if (parentComment && parentComment.author_id && parentComment.author_id !== user.id && parentComment.author_id !== post.created_by_id) {
-        await notifyUser({ user_id: parentComment.author_id, category: 'myriam', title: 'Alguém respondeu seu comentário', body: commentText.trim().slice(0, 100), link: '/myriam', related_id: post.id });
+    try {
+      const c = await base44.entities.MyriamComment.create({
+        post_id: post.id,
+        parent_id: parentId || undefined,
+        author_id: user.id,
+        text: commentText.trim(),
+        author_name: user.display_name || user.full_name || 'Alma',
+        author_photo: user.photo_url || ''
+      });
+      setComments((p) => [...p, c]);
+      const newCount = commentCount + 1;
+      setCommentCount(newCount);
+      await base44.entities.MyriamPost.update(post.id, { comment_count: newCount });
+      setCommentText('');
+      setReplyTo(null);
+      if (post.created_by_id !== user.id) {
+        await notifyUser({ user_id: post.created_by_id, category: 'myriam', title: 'Novo comentário', body: commentText.trim().slice(0, 100), link: '/myriam', related_id: post.id });
       }
-    }
+      if (parentId) {
+        const parentComment = comments.find((c) => c.id === parentId);
+        if (parentComment && parentComment.author_id && parentComment.author_id !== user.id && parentComment.author_id !== post.created_by_id) {
+          await notifyUser({ user_id: parentComment.author_id, category: 'myriam', title: 'Alguém respondeu seu comentário', body: commentText.trim().slice(0, 100), link: '/myriam', related_id: post.id });
+        }
+      }
+    } catch (e) { /* ignore */ }
   };
 
   const deleteComment = async (commentId) => {
-    await base44.entities.MyriamComment.delete(commentId);
-    setComments((p) => p.filter((c) => c.id !== commentId));
+    try {
+      await base44.entities.MyriamComment.delete(commentId);
+      const removed = comments.filter((c) => c.id === commentId || c.parent_id === commentId);
+      setComments((p) => p.filter((c) => c.id !== commentId && c.parent_id !== commentId));
+      const newCount = Math.max(0, commentCount - removed.length);
+      setCommentCount(newCount);
+      await base44.entities.MyriamPost.update(post.id, { comment_count: newCount });
+    } catch (e) { /* ignore */ }
+  };
+
+  const editComment = async (commentId, newText) => {
+    try {
+      await base44.entities.MyriamComment.update(commentId, { text: newText });
+      setComments((p) => p.map((c) => c.id === commentId ? { ...c, text: newText } : c));
+    } catch (e) { /* ignore */ }
+  };
+
+  const savePostEdit = async () => {
+    if (!editPostText.trim()) return;
+    setSavingEdit(true);
+    try {
+      await base44.entities.MyriamPost.update(post.id, { text: editPostText.trim() });
+      setEditingPost(false);
+    } catch (e) { /* ignore */ }
+    setSavingEdit(false);
+  };
+
+  const deletePost = async () => {
+    if (!confirm('Excluir esta publicação?')) return;
+    try {
+      await base44.entities.MyriamPost.delete(post.id);
+      if (onDeleted) onDeleted(post.id);
+    } catch (e) { alert('Erro ao excluir.'); }
   };
 
   const share = async () => {
@@ -124,7 +171,6 @@ export default function PostCard({ post, user }) {
     setTimeout(() => setShared(false), 2000);
   };
 
-  const isAdmin = user.role === 'admin';
   const topLevel = comments.filter((c) => !c.parent_id);
   const repliesOf = (cid) => comments.filter((c) => c.parent_id === cid);
 
@@ -166,9 +212,19 @@ export default function PostCard({ post, user }) {
                 <button onClick={() => { share(); setShowMenu(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/50">
                   <Share2 className="h-4 w-4" /> Compartilhar
                 </button>
+                {canManagePost && (
+                  <button onClick={() => { setEditingPost(true); setEditPostText(post.text || ''); setShowMenu(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/50">
+                    <Edit2 className="h-4 w-4" /> Editar
+                  </button>
+                )}
+                {canManagePost && (
+                  <button onClick={() => { deletePost(); setShowMenu(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-muted/50">
+                    <Trash2 className="h-4 w-4" /> Excluir
+                  </button>
+                )}
                 {isAdmin && post.is_testimonial && (
                   <button onClick={togglePin} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted/50">
-                    <Pin className="h-4 w-4" /> {pinned ? 'Desafixar do Mural' : 'Fixar no Mural'}
+                    <Pin className="h-4 w-4" /> {pinned ? 'Desafixar' : 'Fixar'}
                   </button>
                 )}
               </div>
@@ -177,7 +233,24 @@ export default function PostCard({ post, user }) {
         </div>
       </div>
 
-      <p className="mt-2.5 whitespace-pre-wrap text-sm sm:mt-3">{post.text}</p>
+      {editingPost ? (
+        <div className="mt-2.5 sm:mt-3">
+          <textarea
+            value={editPostText}
+            onChange={(e) => setEditPostText(e.target.value)}
+            rows={3}
+            className="w-full resize-none rounded-xl border border-input bg-background p-2.5 text-sm outline-none focus:border-primary"
+          />
+          <div className="mt-2 flex gap-2">
+            <button onClick={savePostEdit} disabled={savingEdit} className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-40">
+              <Check className="h-3.5 w-3.5" /> Salvar
+            </button>
+            <button onClick={() => setEditingPost(false)} className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground">Cancelar</button>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-2.5 whitespace-pre-wrap text-sm sm:mt-3">{post.text}</p>
+      )}
       {post.image_url && <img src={post.image_url} alt="" className="mt-2.5 w-full rounded-xl object-cover sm:mt-3" />}
       {post.video_url && <video src={post.video_url} className="mt-2.5 w-full rounded-xl sm:mt-3" controls />}
       {post.document_url && <a href={post.document_url} target="_blank" rel="noreferrer" className="mt-2.5 flex items-center gap-2 rounded-xl bg-muted p-3 text-sm hover:bg-muted/70 sm:mt-3"><FileText className="h-5 w-5 text-marian" /> Abrir documento</a>}
@@ -193,10 +266,10 @@ export default function PostCard({ post, user }) {
           onClick={() => { setShowComments((s) => !s); if (!showComments) loadComments(); }}
           className="flex items-center gap-1.5 text-muted-foreground hover:text-primary"
         >
-          <MessageCircle className="h-4 w-4" /> {post.comment_count || 0}
+          <MessageCircle className="h-4 w-4" /> {commentCount}
         </button>
         <button onClick={share} className={`flex items-center gap-1.5 transition ${shared ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}>
-          <Share2 className="h-4 w-4" /> {shared ? <span className="hidden sm:inline">Compartilhado!</span> : ''}
+          <Share2 className="h-4 w-4" /> {shared && <span className="hidden sm:inline">Compartilhado!</span>}
         </button>
       </div>
 
@@ -205,10 +278,10 @@ export default function PostCard({ post, user }) {
           {loadingComments && <p className="text-xs text-muted-foreground">Carregando...</p>}
           {topLevel.map((c) => (
             <div key={c.id} className="space-y-1.5">
-              <CommentItem comment={c} currentUserId={user.id} isAdmin={isAdmin} onDelete={deleteComment} onReply={() => setReplyTo(c.id)} onReport={(cid) => { setReportCommentId(cid); setReportOpen(true); }} />
+              <CommentItem comment={c} currentUserId={user.id} isAdmin={isAdmin} onDelete={deleteComment} onEdit={editComment} onReply={() => setReplyTo(c.id)} onReport={(cid) => { setReportCommentId(cid); setReportOpen(true); }} />
               {repliesOf(c.id).map((r) => (
                 <div key={r.id} className="ml-6">
-                  <CommentItem comment={r} currentUserId={user.id} isAdmin={isAdmin} onDelete={deleteComment} onReport={(cid) => { setReportCommentId(cid); setReportOpen(true); }} isReply />
+                  <CommentItem comment={r} currentUserId={user.id} isAdmin={isAdmin} onDelete={deleteComment} onEdit={editComment} onReport={(cid) => { setReportCommentId(cid); setReportOpen(true); }} isReply />
                 </div>
               ))}
             </div>
@@ -237,23 +310,50 @@ export default function PostCard({ post, user }) {
   );
 }
 
-function CommentItem({ comment, currentUserId, isAdmin, onDelete, onReply, onReport, isReply }) {
-  const canDelete = comment.author_id === currentUserId || isAdmin;
+function CommentItem({ comment, currentUserId, isAdmin, onDelete, onEdit, onReply, onReport, isReply }) {
+  const canManage = comment.author_id === currentUserId || isAdmin;
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.text);
+
+  const saveEdit = () => {
+    if (!editText.trim()) return;
+    onEdit(comment.id, editText.trim());
+    setEditing(false);
+  };
+
   return (
     <div className="flex gap-2">
       <Link to={`/perfil/${comment.author_id || ''}`}>
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs">{(comment.author_name || 'A')[0]}</div>
       </Link>
       <div className="flex-1">
-        <div className="rounded-2xl rounded-tl-sm bg-muted/50 px-3 py-2">
-          <Link to={`/perfil/${comment.author_id || ''}`} className="text-xs font-medium hover:underline">{comment.author_name}</Link>
-          <p className="text-sm">{comment.text}</p>
-        </div>
-        <div className="mt-1 flex gap-3 text-[11px] text-muted-foreground">
-          {!isReply && <button onClick={onReply} className="flex items-center gap-1 hover:text-primary"><CornerDownRight className="h-3 w-3" /> Responder</button>}
-          <button onClick={() => onReport(comment.id)} className="hover:text-destructive"><Flag className="mr-1 inline h-3 w-3" /> Denunciar</button>
-          {canDelete && <button onClick={() => onDelete(comment.id)} className="hover:text-destructive"><Trash2 className="mr-1 inline h-3 w-3" /> Excluir</button>}
-        </div>
+        {editing ? (
+          <div>
+            <input
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              autoFocus
+              className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
+            />
+            <div className="mt-1 flex gap-2">
+              <button onClick={saveEdit} className="inline-flex items-center gap-1 rounded bg-primary px-2 py-0.5 text-[11px] text-primary-foreground"><Check className="h-3 w-3" /> Salvar</button>
+              <button onClick={() => { setEditing(false); setEditText(comment.text); }} className="text-[11px] text-muted-foreground">Cancelar</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-2xl rounded-tl-sm bg-muted/50 px-3 py-2">
+              <Link to={`/perfil/${comment.author_id || ''}`} className="text-xs font-medium hover:underline">{comment.author_name}</Link>
+              <p className="text-sm">{comment.text}</p>
+            </div>
+            <div className="mt-1 flex gap-3 text-[11px] text-muted-foreground">
+              {!isReply && <button onClick={onReply} className="flex items-center gap-1 hover:text-primary"><CornerDownRight className="h-3 w-3" /> Responder</button>}
+              <button onClick={() => onReport(comment.id)} className="hover:text-destructive"><Flag className="mr-1 inline h-3 w-3" /> Denunciar</button>
+              {canManage && <button onClick={() => { setEditing(true); setEditText(comment.text); }} className="hover:text-primary"><Edit2 className="mr-1 inline h-3 w-3" /> Editar</button>}
+              {canManage && <button onClick={() => onDelete(comment.id)} className="hover:text-destructive"><Trash2 className="mr-1 inline h-3 w-3" /> Excluir</button>}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

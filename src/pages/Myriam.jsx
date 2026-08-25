@@ -92,7 +92,7 @@ export default function Myriam() {
       ) : (
         <div className="space-y-3 sm:space-y-4">
           {posts.map((p) => (
-            <PostCard key={p.id} post={p} user={user} />
+            <PostCard key={p.id} post={p} user={user} onDeleted={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))} />
           ))}
         </div>
       )}
