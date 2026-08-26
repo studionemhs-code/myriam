@@ -1,14 +1,33 @@
-import { createClient } from '@base44/sdk';
-import { appParams } from '@/lib/app-params';
+// Camada de compatibilidade: mantém a interface `base44` usada em todo o app,
+// mas todas as operações rodam no Supabase.
+import { supabase } from './supabaseClient';
+import { entities } from './entityApi';
+import { auth } from './authApi';
+import { integrations, invokeFunction } from './integrationsApi';
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
+const functions = {
+  invoke: invokeFunction
+};
 
-//Create a client with authentication required
-export const base44 = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  requiresAuth: false,
-  appBaseUrl
-});
+const users = {
+  async inviteUser(email, role = 'user') {
+    const { data } = await invokeFunction('inviteUser', { email, role });
+    return data;
+  }
+};
+
+const analytics = {
+  track() { /* sem provedor de analytics configurado */ }
+};
+
+export const base44 = {
+  supabase,
+  entities,
+  auth,
+  integrations,
+  functions,
+  users,
+  analytics
+};
+
+export default base44;

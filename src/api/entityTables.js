@@ -1,0 +1,48 @@
+// Mapeia os nomes de entidade usados no app para as tabelas do Supabase.
+export const ENTITY_TABLES = {
+  User: 'profiles',
+  UserProgress: 'user_progress',
+  PreparationPhase: 'preparation_phases',
+  PreparationDay: 'preparation_days',
+  Reflection: 'reflections',
+  MarianCalendarEvent: 'marian_calendar_events',
+  Course: 'courses',
+  ACAMFCategory: 'acamf_categories',
+  ACAMFContent: 'acamf_contents',
+  LessonProgress: 'lesson_progress',
+  ContentNote: 'content_notes',
+  ContentComment: 'content_comments',
+  CollectiveJourney: 'collective_journeys',
+  JourneyParticipant: 'journey_participants',
+  CertificateTemplate: 'certificate_templates',
+  Certificate: 'certificates',
+  PrayerIntention: 'prayer_intentions',
+  PrayerInteraction: 'prayer_interactions',
+  MyriamPost: 'myriam_posts',
+  MyriamComment: 'myriam_comments',
+  MyriamInteraction: 'myriam_interactions',
+  MyriamStory: 'myriam_stories',
+  ChatConversation: 'chat_conversations',
+  ChatMessage: 'chat_messages',
+  Notification: 'notifications',
+  NotificationSettings: 'notification_settings',
+  Report: 'reports',
+  ShareLink: 'share_links',
+  FeatureFlag: 'feature_flags',
+  UserFeatureAccess: 'user_feature_access',
+  AIAgent: 'ai_agents',
+  AgentConversation: 'agent_conversations',
+  AssociationSettings: 'association_settings',
+  AssociationRequest: 'association_requests',
+  StoreSettings: 'store_settings',
+  CatalogProduct: 'catalog_products',
+  QuoteRequest: 'quote_requests',
+  WebhookAutomation: 'webhook_automations'
+};
+
+// Campos que são arrays no banco (usados para filtros de contenção)
+export const ARRAY_FIELDS = new Set([
+  'participants', 'participant_names', 'participant_photos', 'read_by',
+  'tags', 'trigger_types', 'trigger_categories', 'completed_days',
+  'content_ids', 'related_content_ids', 'viewers'
+]);
