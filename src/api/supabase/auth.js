@@ -1,4 +1,5 @@
-import { supabase } from './supabaseClient';
+// [SUPABASE] Autenticação: Supabase Auth + tabela `profiles`.
+import { supabase } from './client';
 
 // Mensagens do Supabase traduzidas para o usuário final.
 const MESSAGES = {
@@ -41,7 +42,7 @@ async function ensureProfile(authUser) {
 }
 
 // O app compara `user.id` com created_by_id/participants — que guardam o ID
-// histórico do Base44 quando existe. Por isso expomos legacy_id como `id`.
+// histórico dos dados migrados. Por isso expomos legacy_id como `id`.
 const toAppUser = (profile, authUser) => ({
   ...profile,
   id: profile.legacy_id || profile.id,
@@ -50,7 +51,7 @@ const toAppUser = (profile, authUser) => ({
   email: profile.email || authUser.email
 });
 
-export const auth = {
+export const supabaseAuth = {
   async me() {
     const user = await sessionUser();
     if (!user) throw authError('Not authenticated');

@@ -1,33 +1,9 @@
-// Camada de compatibilidade: mantém a interface `base44` usada em todo o app,
-// mas todas as operações rodam no Supabase.
-import { supabase } from './supabaseClient';
-import { entities } from './entityApi';
-import { auth } from './authApi';
-import { integrations, invokeFunction } from './integrationsApi';
+// ⚠️ ARQUIVO DE COMPATIBILIDADE — não há mais nada do Base44 aqui.
+// As páginas antigas importam `base44`, que hoje é apenas um apelido de
+// `supabaseApp` (src/api/supabase/index.js). Ao editar uma página, prefira:
+//   import { supabaseApp } from '@/api/supabase';
+import { supabaseApp } from './supabase';
 
-const functions = {
-  invoke: invokeFunction
-};
-
-const users = {
-  async inviteUser(email, role = 'user') {
-    const { data } = await invokeFunction('inviteUser', { email, role });
-    return data;
-  }
-};
-
-const analytics = {
-  track() { /* sem provedor de analytics configurado */ }
-};
-
-export const base44 = {
-  supabase,
-  entities,
-  auth,
-  integrations,
-  functions,
-  users,
-  analytics
-};
-
-export default base44;
+export const base44 = supabaseApp;
+export { supabaseApp };
+export default supabaseApp;

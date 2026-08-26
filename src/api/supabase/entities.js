@@ -1,5 +1,6 @@
-import { supabase } from './supabaseClient';
-import { ENTITY_TABLES, ARRAY_FIELDS } from './entityTables';
+// [SUPABASE] CRUD, filtros e tempo real sobre as tabelas do Postgres.
+import { supabase } from './client';
+import { SUPABASE_TABLES, SUPABASE_ARRAY_COLUMNS } from './tables';
 
 const stripPrefix = (key) => key.replace(/^data\./, '');
 
@@ -13,7 +14,7 @@ const unwrap = ({ data, error }) => {
   return data;
 };
 
-// Aplica um filtro no estilo Base44/Mongo sobre um query builder do Supabase.
+// Traduz filtros no estilo Mongo (herdados do app) para o query builder do Supabase.
 function applyFilter(builder, query = {}) {
   for (const [rawKey, value] of Object.entries(query)) {
     const key = stripPrefix(rawKey);
@@ -30,7 +31,7 @@ function applyFilter(builder, query = {}) {
       for (const [op, opValue] of Object.entries(value)) {
         switch (op) {
           case '$in':
-            builder = ARRAY_FIELDS.has(key)
+            builder = SUPABASE_ARRAY_COLUMNS.has(key)
               ? builder.overlaps(key, opValue)
               : builder.in(key, opValue);
             break;
@@ -48,7 +49,7 @@ function applyFilter(builder, query = {}) {
       continue;
     }
 
-    if (ARRAY_FIELDS.has(key)) {
+    if (SUPABASE_ARRAY_COLUMNS.has(key)) {
       builder = builder.contains(key, Array.isArray(value) ? value : [value]);
     } else if (value === null) {
       builder = builder.is(key, null);
@@ -71,7 +72,7 @@ function applySort(builder, sort) {
   return builder.order(desc ? sort.slice(1) : sort, { ascending: !desc });
 }
 
-// Converte operadores de update do Mongo ($set, $inc, ...) num objeto simples.
+// Converte operadores de update do Mongo ($set, $unset, ...) num objeto simples.
 function flattenUpdate(data) {
   if (!data || typeof data !== 'object') return data;
   const ops = Object.keys(data).filter((k) => k.startsWith('$'));
@@ -85,8 +86,8 @@ function flattenUpdate(data) {
   return out;
 }
 
-export function createEntityApi(entityName) {
-  const table = ENTITY_TABLES[entityName] || entityName.toLowerCase();
+export function createSupabaseTableApi(entityName) {
+  const table = SUPABASE_TABLES[entityName] || entityName.toLowerCase();
   const from = () => supabase.from(table);
 
   return {
@@ -152,6 +153,7 @@ export function createEntityApi(entityName) {
       return Promise.resolve({ type: 'object', properties: {} });
     },
 
+    // Supabase Realtime (substitui as assinaturas de entidade do Base44).
     subscribe(callback) {
       const channel = supabase
         .channel(`realtime:${table}:${Math.random().toString(36).slice(2)}`)
@@ -167,7 +169,7 @@ export function createEntityApi(entityName) {
   };
 }
 
-export const entities = Object.keys(ENTITY_TABLES).reduce((acc, name) => {
-  acc[name] = createEntityApi(name);
+export const supabaseEntities = Object.keys(SUPABASE_TABLES).reduce((acc, name) => {
+  acc[name] = createSupabaseTableApi(name);
   return acc;
 }, {});

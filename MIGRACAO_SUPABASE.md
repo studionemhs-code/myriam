@@ -11,16 +11,24 @@ Os dados do Base44 já foram importados preservando os IDs originais.
 
 **Storage** — buckets `uploads` (público) e `private` (privado), com políticas de acesso.
 
-**Frontend** — `src/api/base44Client.js` agora é uma camada de compatibilidade que
-roda 100% no Supabase. Todo o app continua usando `base44.entities`, `base44.auth`,
-`base44.integrations` e `base44.functions`, mas por baixo é `@supabase/supabase-js`:
+**Frontend** — toda a camada de dados vive agora em **`src/api/supabase/`**
+(arquivos marcados com o comentário `[SUPABASE]`), e nada mais usa o SDK do Base44:
 
-| Camada antiga | Implementação atual |
+| Antes (Base44) | Agora (Supabase) |
 |---|---|
-| `base44.entities.X` | `src/api/entityApi.js` → tabelas do Postgres (`src/api/entityTables.js`) |
-| `base44.auth` | `src/api/authApi.js` → Supabase Auth + tabela `profiles` |
-| `base44.integrations.Core` | `src/api/integrationsApi.js` → Storage + Edge Function `integrations` |
-| `base44.functions.invoke(nome)` | Edge Function equivalente (camelCase → kebab-case) |
+| `base44Client.js` → `base44` | `src/api/supabase/index.js` → `supabaseApp` |
+| `entityApi.js` / `entityTables.js` | `supabase/entities.js` (`supabaseEntities`) + `supabase/tables.js` (`SUPABASE_TABLES`, `SUPABASE_ARRAY_COLUMNS`) |
+| `authApi.js` | `supabase/auth.js` (`supabaseAuth`) → Supabase Auth + tabela `profiles` |
+| `integrationsApi.js` | `supabase/storageAndFunctions.js` (`supabaseIntegrations`, `invokeEdgeFunction`) |
+| `base44.functions.invoke('notifyUser')` | Edge Function `notify-user` (camelCase → kebab-case) |
+| entidades `MyriamPost`, `ChatMessage`… | tabelas `myriam_posts`, `chat_messages`… (ver `supabase/tables.js`) |
+| `base44/functions/` | `supabase/functions/` |
+
+`src/api/base44Client.js` ficou apenas como apelido de uma linha (`base44 = supabaseApp`),
+para as ~90 páginas antigas não quebrarem — e porque `src/lib/AuthContext.jsx` é um
+arquivo gerenciado pela plataforma e exige esse import. Ao editar uma página, troque para
+`import { supabaseApp } from '@/api/supabase'`. Os dados legados seguem identificados de
+propósito: coluna `profiles.legacy_id` e tabela `base44_users_import`.
 
 **Backend** — as 13 funções foram portadas para `supabase/functions/`:
 `test-webhook`, `dispatch-webhooks`, `notify-user`, `search-users`, `get-public-profile`,

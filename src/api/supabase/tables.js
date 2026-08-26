@@ -1,5 +1,5 @@
-// Mapeia os nomes de entidade usados no app para as tabelas do Supabase.
-export const ENTITY_TABLES = {
+// [SUPABASE] De/para: nome de entidade usado no app → tabela do Postgres.
+export const SUPABASE_TABLES = {
   User: 'profiles',
   UserProgress: 'user_progress',
   PreparationPhase: 'preparation_phases',
@@ -40,8 +40,8 @@ export const ENTITY_TABLES = {
   WebhookAutomation: 'webhook_automations'
 };
 
-// Campos que são arrays no banco (usados para filtros de contenção)
-export const ARRAY_FIELDS = new Set([
+// Colunas array no Postgres (usadas em filtros de contenção).
+export const SUPABASE_ARRAY_COLUMNS = new Set([
   'participants', 'participant_names', 'participant_photos', 'read_by',
   'tags', 'trigger_types', 'trigger_categories', 'completed_days',
   'content_ids', 'related_content_ids', 'viewers'
