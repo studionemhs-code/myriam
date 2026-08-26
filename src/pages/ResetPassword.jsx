@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,26 @@ import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams();
-  const resetToken = searchParams.get("token");
-
+  // O link de recuperação abre uma sessão temporária ao chegar nesta página.
+  const [linkState, setLinkState] = useState("checking");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let done = false;
+    const check = async () => {
+      if (await base44.auth.isAuthenticated()) {
+        done = true;
+        setLinkState("valid");
+      }
+    };
+    check();
+    const unsubscribe = base44.auth.onAuthStateChange(() => check());
+    const timer = setTimeout(() => { if (!done) setLinkState("invalid"); }, 2500);
+    return () => { clearTimeout(timer); unsubscribe(); };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +38,7 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      await base44.auth.resetPassword({ resetToken, newPassword });
+      await base44.auth.resetPassword({ newPassword });
       window.location.href = "/login";
     } catch (err) {
       setError(err.message || "Falha ao redefinir senha");
@@ -34,7 +47,18 @@ export default function ResetPassword() {
     }
   };
 
-  if (!resetToken) {
+  if (linkState === "checking") {
+    return (
+      <AuthLayout icon={Lock} title="Nova senha">
+        <div className="flex items-center justify-center py-6 text-muted-foreground">
+          <Loader2 className="w-5 h-5 mr-2 animate-spin" aria-hidden="true" />
+          Validando link...
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (linkState === "invalid") {
     return (
       <AuthLayout
         icon={AlertTriangle}

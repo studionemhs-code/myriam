@@ -1,10 +1,27 @@
 import { supabase } from './supabaseClient';
 
+// Mensagens do Supabase traduzidas para o usuário final.
+const MESSAGES = {
+  'Invalid login credentials': 'E-mail ou senha incorretos.',
+  'Email not confirmed': 'Confirme seu e-mail antes de entrar.',
+  'User already registered': 'Este e-mail já está cadastrado. Faça login.',
+  'Token has expired or is invalid': 'Código inválido ou expirado.',
+  'Password should be at least 6 characters': 'A senha deve ter ao menos 6 caracteres.',
+  'Email rate limit exceeded': 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'
+};
+
 const authError = (message, status = 401) => {
-  const e = new Error(message);
+  const e = new Error(MESSAGES[message] || message);
   e.status = status;
   return e;
 };
+
+// getSession() lê a sessão local (já renovada automaticamente), evitando
+// derrubar o usuário por uma falha momentânea de rede.
+async function sessionUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user || null;
+}
 
 // Garante que existe uma linha em `profiles` para o usuário autenticado.
 async function ensureProfile(authUser) {
@@ -35,14 +52,14 @@ const toAppUser = (profile, authUser) => ({
 
 export const auth = {
   async me() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await sessionUser();
     if (!user) throw authError('Not authenticated');
     const profile = await ensureProfile(user);
     return toAppUser(profile, user);
   },
 
   async updateMe(data) {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await sessionUser();
     if (!user) throw authError('Not authenticated');
     const { id, profile_id, auth_id, legacy_id, email, created_date, ...rest } = data;
     const { data: updated, error } = await supabase
@@ -94,6 +111,8 @@ export const auth = {
   async resetPassword({ newPassword }) {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw authError(error.message, 400);
+    // Encerra a sessão temporária do link para o usuário entrar com a nova senha.
+    await supabase.auth.signOut();
     return { success: true };
   },
 
@@ -120,7 +139,7 @@ export const auth = {
   },
 
   onAuthStateChange(callback) {
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(session));
+    const { data } = supabase.auth.onAuthStateChange((event, session) => callback(session, event));
     return () => data.subscription.unsubscribe();
   }
 };

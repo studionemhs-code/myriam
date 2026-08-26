@@ -11,8 +11,8 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
 
-  const checkUserAuth = useCallback(async () => {
-    setIsLoadingAuth(true);
+  const checkUserAuth = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setIsLoadingAuth(true);
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {
@@ -43,7 +43,20 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkUserAuth();
-    const unsubscribe = base44.auth.onAuthStateChange(() => { checkUserAuth(); });
+
+    // A renovação automática do token não deve reiniciar o app: só recarregamos
+    // o perfil quando a identidade realmente muda (entrar, sair, atualizar).
+    const unsubscribe = base44.auth.onAuthStateChange((session, event) => {
+      if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') return;
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        return;
+      }
+      checkUserAuth({ silent: !!session });
+    });
     return unsubscribe;
   }, [checkUserAuth]);
 
