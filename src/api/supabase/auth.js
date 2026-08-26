@@ -91,7 +91,7 @@ export const supabaseAuth = {
   },
 
   async verifyOtp({ email, otpCode }) {
-    const { data, error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: 'email' });
+    const { data, error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: 'signup' });
     if (error) throw authError(error.message, 400);
     return { access_token: data.session?.access_token };
   },

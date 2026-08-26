@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Flower2, BookOpen, Heart, ChevronRight, ChevronLeft, User, Camera, Crown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { toast } from '@/components/ui/use-toast';
 import Logo from '@/components/Logo';
 
 const TOTAL_STEPS = 4;
@@ -84,6 +85,12 @@ export default function Onboarding() {
         });
         navigate('/');
       }
+    } catch (err) {
+      toast({
+        title: 'Não foi possível salvar',
+        description: err?.message || 'Tente novamente em instantes.',
+        variant: 'destructive',
+      });
     } finally {
       setSaving(false);
     }
