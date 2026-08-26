@@ -3,8 +3,9 @@ import { Instagram } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 
-const BG_IMAGE_DESKTOP = "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/74db67cd0_23a05438-04ed-418c-9255-2eb6f3b8fb7a.png";
-const BG_IMAGE_MOBILE = "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/64d95bf77_ChatGPTImage21deagode202615_27_02.png";
+const STORAGE = "https://strrnkxrpyjyaewfpiwh.supabase.co/storage/v1/object/public/uploads/brand";
+const BG_IMAGE_DESKTOP = `${STORAGE}/auth-bg-desktop.png`;
+const BG_IMAGE_MOBILE = `${STORAGE}/auth-bg-mobile.png`;
 
 export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
   return (
