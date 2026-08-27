@@ -1,9 +1,9 @@
-const CACHE_NAME = 'theotokos-v1';
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
+const CACHE_NAME = 'theotokos-v2';
+const PRECACHE = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)).catch(() => {})
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE).catch(() => {}))
   );
   self.skipWaiting();
 });
@@ -18,25 +18,25 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  if (request.method !== 'GET') return;
+  const req = event.request;
+  if (req.method !== 'GET') return;
 
-  const url = new URL(request.url);
-  // Nunca cachear API calls ou autenticação
-  if (url.pathname.startsWith('/api/') || url.origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  // Skip cross-origin requests (Supabase API, Storage, etc.)
+  if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
+    caches.match(req).then((cached) => {
+      const network = fetch(req)
         .then((response) => {
           if (response && response.status === 200 && response.type === 'basic') {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
           }
           return response;
         })
         .catch(() => cached);
-      return cached || fetchPromise;
+      return cached || network;
     })
   );
 });

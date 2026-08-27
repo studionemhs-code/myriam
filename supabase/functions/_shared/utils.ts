@@ -35,14 +35,14 @@ export async function currentUser(req: Request) {
   if (!user) return null;
   const { data: profile } = await admin().from('profiles').select('*').eq('id', user.id).maybeSingle();
   if (!profile) return null;
-  return { ...profile, id: profile.legacy_id || profile.id, profile_id: profile.id, email: profile.email || user.email };
+  return { ...profile, profile_id: profile.id, email: profile.email || user.email };
 }
 
 // Localiza um perfil pelo ID do app (legado do Base44 ou UUID do Supabase Auth).
 export async function findProfile(appUserId: string) {
   const { data } = await admin()
     .from('profiles').select('*')
-    .or(`legacy_id.eq.${appUserId},id.eq.${appUserId}`)
+    .eq('id', appUserId)
     .limit(1).maybeSingle();
   return data;
 }

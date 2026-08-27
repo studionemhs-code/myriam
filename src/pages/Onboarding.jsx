@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Sparkles, Flower2, BookOpen, Heart, ChevronRight, ChevronLeft, User, Camera, Crown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -9,7 +8,6 @@ import Logo from '@/components/Logo';
 const TOTAL_STEPS = 4;
 
 export default function Onboarding() {
-  const navigate = useNavigate();
   const { user, update } = useCurrentUser();
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState(user?.display_name || user?.full_name || '');
@@ -47,7 +45,7 @@ export default function Onboarding() {
     try {
       if (path === 'conhecer') {
         await update({ status: 'interessado', onboarding_completed: true });
-        navigate('/acamf');
+        window.location.href = '/acamf';
       } else if (path === 'preparar') {
         const today = new Date();
         const startStr = today.toISOString().slice(0, 10);
@@ -70,7 +68,7 @@ export default function Onboarding() {
             status: 'ativa'
           });
         }
-        navigate('/caminho');
+        window.location.href = '/caminho';
       } else if (path === 'consagrado') {
         if (!consecrationDate) {
           setShowConsecrationForm(true);
@@ -83,7 +81,7 @@ export default function Onboarding() {
           last_renewal_date: consecrationDate,
           onboarding_completed: true
         });
-        navigate('/');
+        window.location.href = '/';
       }
     } catch (err) {
       toast({
@@ -98,7 +96,7 @@ export default function Onboarding() {
 
   const skip = async () => {
     await update({ onboarding_completed: true, status: 'interessado' });
-    navigate('/');
+    window.location.href = '/';
   };
 
   const next = async () => {

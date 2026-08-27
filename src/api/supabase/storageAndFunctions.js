@@ -11,6 +11,9 @@ export async function invokeEdgeFunction(name, payload = {}) {
     err.status = error.status || 500;
     throw err;
   }
+  if (data && data.error) {
+    throw new Error(data.error);
+  }
   return { data };
 }
 
