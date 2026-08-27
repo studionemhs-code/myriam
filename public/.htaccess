@@ -1,35 +1,20 @@
-# Hospedagem Apache/LiteSpeed (Hostinger) — app React de página única (SPA).
-# Sem estas regras, abrir /caminho ou recarregar /myriam devolve erro 404.
-
+# SPA Rewrite — garante que todas as rotas sejam servidas pelo index.html
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-
-  # Força HTTPS
-  RewriteCond %{HTTPS} !=on
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-  # Arquivos e pastas existentes são servidos normalmente
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
-
-  # Qualquer outra rota cai no index.html (React Router resolve)
-  RewriteRule ^ index.html [L]
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
 </IfModule>
 
-# Cache longo para os assets versionados, nenhum cache para index.html e sw.js
-<IfModule mod_headers.c>
-  <FilesMatch "\.(js|css|woff2|woff|ttf|png|jpg|jpeg|svg|webp)$">
-    Header set Cache-Control "public, max-age=31536000, immutable"
-  </FilesMatch>
-  <FilesMatch "^(index\.html|sw\.js|manifest\.json)$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
-  </FilesMatch>
+# Cache de assets estáticos (imutáveis com hash no nome)
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType text/html "access plus 0 seconds"
 </IfModule>
-
-<IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
-</IfModule>
-
-ErrorDocument 404 /index.html

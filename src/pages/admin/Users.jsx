@@ -96,8 +96,8 @@ export default function Users() {
     });
     if (!ok) return;
     try {
-      await base44.entities.User.delete(u.id);
-      toast({ description: 'Acesso excluído.' });
+      await base44.functions.invoke('deleteUser', { userId: u.id });
+      toast({ description: 'Usuário excluído permanentemente.' });
       await load();
     } catch (e) {
       toast({ variant: 'destructive', description: 'Não foi possível excluir: ' + (e.message || 'erro') });
