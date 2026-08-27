@@ -17,11 +17,15 @@ export default function MinhaConsagracao() {
   const { isVisible } = useFeatureFlags();
   const [registering, setRegistering] = useState(false);
   const [certificates, setCertificates] = useState([]);
+  const [formula, setFormula] = useState(null);
 
   useEffect(() => {
     if (user) {
       base44.entities.Certificate.filter({ user_id: user.id }, '-issue_date', 20)
         .then(setCertificates)
+        .catch(() => {});
+      base44.entities.ConsecrationSettings.list('-created_date', 1)
+        .then((list) => setFormula(list[0] || null))
         .catch(() => {});
     }
   }, [user]);
@@ -138,6 +142,32 @@ export default function MinhaConsagracao() {
                 )}
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Fórmula da Consagração — download */}
+      {formula?.formula_pdf_url && (
+        <section className="rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/5 to-transparent p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gold/15">
+                <FileDown className="h-5 w-5 text-gold" />
+              </div>
+              <div>
+                <p className="font-display text-base">{formula.formula_pdf_label || 'Fórmula da Consagração'}</p>
+                <p className="text-xs text-muted-foreground">Baixe e reze a fórmula oficial da Total Consagração.</p>
+              </div>
+            </div>
+            <a
+              href={formula.formula_pdf_url}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep transition hover:bg-gold/90"
+            >
+              <FileDown className="h-4 w-4" /> Baixar PDF
+            </a>
           </div>
         </section>
       )}

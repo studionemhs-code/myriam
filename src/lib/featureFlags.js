@@ -11,4 +11,5 @@ export const FEATURE_LIST = [
   { feature: 'historico', label: 'Histórico de Consagrações' },
   { feature: 'cadeiazinha', label: 'Solicite sua cadeiazinha' },
   { feature: 'garantia_cadeiazinha', label: 'Cadeiazinha Theotokos (Garantia)' },
+  { feature: 'assistente_ia_flutuante', label: 'Assistente IA (botão flutuante)' },
 ];

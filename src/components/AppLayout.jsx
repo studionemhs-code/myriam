@@ -13,6 +13,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import GlobalSearch from '@/components/GlobalSearch';
 import MyriamIcon from '@/components/MyriamIcon';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
+import FloatingAgentButton from '@/components/ai/FloatingAgentButton';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -226,6 +227,9 @@ export default function AppLayout() {
       <div className="fixed inset-x-0 bottom-16 z-40 px-4 lg:hidden">
         <PwaInstallPrompt />
       </div>
+
+      {/* Botão flutuante do assistente de IA */}
+      <FloatingAgentButton />
     </div>
   );
 }

@@ -15,10 +15,15 @@ export default async function(req) {
       name: a.name,
       description: a.description,
       welcome_message: a.welcome_message,
-      model: a.model
+      model: a.model,
+      icon_url: a.icon_url,
+      is_floating_main: a.is_floating_main === true
     }));
 
-    return Response.json({ agents: sanitized });
+    // Agente principal do botão flutuante (primeiro ativo marcado).
+    const floatingMain = sanitized.find(a => a.is_floating_main) || null;
+
+    return Response.json({ agents: sanitized, floatingMain });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

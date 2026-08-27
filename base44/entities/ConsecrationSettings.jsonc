@@ -1,0 +1,37 @@
+{
+  "name": "ConsecrationSettings",
+  "type": "object",
+  "properties": {
+    "formula_pdf_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL do PDF da F\u00f3rmula da Consagra\u00e7\u00e3o enviado pelo admin"
+    },
+    "formula_pdf_label": {
+      "type": "string",
+      "default": "F\u00f3rmula da Consagra\u00e7\u00e3o",
+      "description": "R\u00f3tulo exibido no bot\u00e3o de download"
+    }
+  },
+  "required": [
+    "formula_pdf_label"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

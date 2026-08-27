@@ -3,6 +3,7 @@ import { Award, Plus, Pencil, Trash2, Eye } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { AdminPageTitle, Loading, Badge } from '@/components/admin/ui';
 import CertificateEditor from '@/components/admin/CertificateEditor';
+import FormulaSection from '@/components/admin/FormulaSection';
 import { generateCertificatePdf } from '@/lib/generateCertificatePdf';
 
 const typeLabels = { preparacao: 'Preparação', jornada: 'Jornada', renovacao: 'Renovação' };
@@ -77,6 +78,11 @@ export default function CertificatesAdmin() {
       )}
 
       {editing && <CertificateEditor template={editing} onClose={() => setEditing(null)} onSaved={load} />}
+
+      {/* Fórmula da Consagração — upload do PDF */}
+      <div className="mt-8">
+        <FormulaSection />
+      </div>
     </div>
   );
 }

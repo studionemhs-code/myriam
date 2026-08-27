@@ -40,7 +40,8 @@ export const SUPABASE_TABLES = {
   WebhookAutomation: 'webhook_automations',
   Cadeiazinha: 'cadeiazinhas',
   WarrantyClaim: 'warranty_claims',
-  WarrantySettings: 'warranty_settings'
+  WarrantySettings: 'warranty_settings',
+  ConsecrationSettings: 'consecration_settings'
 };
 
 // Colunas array no Postgres (usadas em filtros de contenção).

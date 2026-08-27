@@ -1190,6 +1190,38 @@ CREATE POLICY "warranty_settings_insert" ON public.warranty_settings FOR INSERT 
 CREATE POLICY "warranty_settings_update" ON public.warranty_settings FOR UPDATE USING (is_admin());
 CREATE POLICY "warranty_settings_delete" ON public.warranty_settings FOR DELETE USING (is_admin());
 
+-- ============================================================================
+-- 6.1 TABELAS ADICIONAIS (Fórmula da Consagração + campos de IA)
+-- ============================================================================
+
+-- ConsecrationSettings
+CREATE TABLE IF NOT EXISTS public.consecration_settings (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date      TIMESTAMPTZ DEFAULT now(),
+  updated_date      TIMESTAMPTZ DEFAULT now(),
+  created_by_id     UUID,
+  formula_pdf_url   TEXT,
+  formula_pdf_label TEXT NOT NULL DEFAULT 'Fórmula da Consagração'
+);
+
+-- Novos campos em ai_agents
+ALTER TABLE public.ai_agents ADD COLUMN IF NOT EXISTS icon_url TEXT;
+ALTER TABLE public.ai_agents ADD COLUMN IF NOT EXISTS is_floating_main BOOLEAN DEFAULT false;
+
+-- RLS — ConsecrationSettings (read: public; write: admin)
+ALTER TABLE public.consecration_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "consecration_settings_read" ON public.consecration_settings FOR SELECT USING (true);
+CREATE POLICY "consecration_settings_insert" ON public.consecration_settings FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "consecration_settings_update" ON public.consecration_settings FOR UPDATE USING (is_admin());
+CREATE POLICY "consecration_settings_delete" ON public.consecration_settings FOR DELETE USING (is_admin());
+
+-- Seed da feature flag do botão flutuante
+INSERT INTO public.feature_flags (feature, label, visible)
+SELECT 'assistente_ia_flutuante', 'Assistente IA (botão flutuante)', true
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.feature_flags WHERE feature = 'assistente_ia_flutuante'
+);
+
 -- Índices
 CREATE INDEX IF NOT EXISTS idx_cadeiazinhas_user ON public.cadeiazinhas(user_id);
 CREATE INDEX IF NOT EXISTS idx_warranty_claims_user ON public.warranty_claims(user_id);

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Field, inputCls } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot } from 'lucide-react';
 
 export default function AgentEditor({ agent, onSave, onCancel }) {
   const [form, setForm] = useState({
@@ -15,10 +15,13 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     knowledge_content: agent?.knowledge_content || '',
     knowledge_files: agent?.knowledge_files || [],
     openai_api_key: agent?.openai_api_key || '',
-    is_active: agent?.is_active ?? true
+    is_active: agent?.is_active ?? true,
+    icon_url: agent?.icon_url || '',
+    is_floating_main: agent?.is_floating_main ?? false
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingIcon, setUploadingIcon] = useState(false);
   const [showKey, setShowKey] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -57,9 +60,32 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     setForm(f => ({ ...f, knowledge_files: f.knowledge_files.filter((_, i) => i !== idx) }));
   };
 
+  const onIconUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingIcon(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      set('icon_url', file_url);
+    } catch {
+      alert('Erro ao enviar ícone.');
+    } finally {
+      setUploadingIcon(false);
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     try {
+      // Garante exclusividade do agente principal do botão flutuante
+      if (form.is_floating_main) {
+        const all = await base44.entities.AIAgent.filter({ is_floating_main: true });
+        await Promise.all(
+          all
+            .filter((a) => a.id !== agent?.id)
+            .map((a) => base44.entities.AIAgent.update(a.id, { is_floating_main: false }))
+        );
+      }
       if (agent?.id) {
         await base44.entities.AIAgent.update(agent.id, form);
       } else {
@@ -149,6 +175,38 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
           )}
           <textarea className={inputCls} rows={8} value={form.knowledge_content} onChange={e => set('knowledge_content', e.target.value)} placeholder="Conteúdo de conhecimento do agente (extraído dos arquivos ou digitado manualmente)..." />
         </div>
+      </Field>
+
+      {/* Ícone do agente (botão flutuante) */}
+      <Field label="Ícone do agente (botão flutuante)" hint="Logo/ícone exibido no botão flutuante. Em branco usa o ícone padrão.">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-1 ring-border">
+            {form.icon_url
+              ? <img src={form.icon_url} alt="" className="h-full w-full object-cover" />
+              : <Bot className="h-7 w-7 text-primary" />}
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm hover:bg-muted">
+            {uploadingIcon ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {uploadingIcon ? 'Enviando...' : (form.icon_url ? 'Trocar ícone' : 'Enviar ícone')}
+            <input type="file" accept="image/*" className="hidden" onChange={onIconUpload} disabled={uploadingIcon} />
+          </label>
+          {form.icon_url && (
+            <button type="button" onClick={() => set('icon_url', '')} className="text-xs text-muted-foreground hover:text-destructive">Remover</button>
+          )}
+        </div>
+      </Field>
+
+      {/* Agente principal do botão flutuante */}
+      <Field label="Botão flutuante" hint="Marque para que este agente seja o principal do botão flutuante. Apenas um agente por vez pode ter esta marcação.">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={form.is_floating_main}
+            onChange={e => set('is_floating_main', e.target.checked)}
+            className="h-4 w-4 rounded border-border"
+          />
+          <span className="text-sm">Definir como agente principal do botão flutuante</span>
+        </label>
       </Field>
 
       <div className="flex gap-2 pt-2">
