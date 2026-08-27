@@ -15,7 +15,7 @@ const TRIGGER_OPTIONS = [
 ];
 
 const PLACEHOLDERS = [
-  '{remetente_nome}', '{destinatario_nome}', '{destinatario_email}',
+  '{remetente_nome}', '{destinatario_nome}', '{destinatario_email}', '{destinatario_telefone}',
   '{mensagem_texto}', '{categoria}', '{titulo}', '{corpo}',
   '{link_app}', '{conversation_id}', '{data}'
 ];

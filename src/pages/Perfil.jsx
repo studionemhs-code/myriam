@@ -18,6 +18,7 @@ export default function Perfil() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [photo, setPhoto] = useState('');
+  const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState({ reflections: 0, intentions: 0 });
 
@@ -26,6 +27,7 @@ export default function Perfil() {
       setName(user.display_name || '');
       setBio(user.bio || '');
       setPhoto(user.photo_url || '');
+      setPhone(user.phone || '');
       (async () => {
         try {
           const refs = await base44.entities.Reflection.filter({ created_by_id: user.id });
@@ -47,7 +49,7 @@ export default function Perfil() {
     setSaving(true);
     try {
       const resolvedName = name || user.full_name || 'Alma';
-      await update({ display_name: name, bio, photo_url: photo });
+      await update({ display_name: name, bio, photo_url: photo, phone });
       // Sincroniza o nome/foto nas publicações e comentários existentes do Myriam
       try {
         await base44.entities.MyriamPost.updateMany({ created_by_id: user.id }, { $set: { author_name: resolvedName, author_photo: photo } });
@@ -104,6 +106,10 @@ export default function Perfil() {
             <div>
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Biografia</label>
               <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} placeholder="Conte um pouco sobre você..." className="mt-1 w-full rounded-xl border border-input bg-background p-3 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Telefone / WhatsApp</label>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm" />
             </div>
             <div className="flex gap-2">
               <button onClick={() => setEditing(false)} className="rounded-lg border border-border px-4 py-2 text-sm">Cancelar</button>

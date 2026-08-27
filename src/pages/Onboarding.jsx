@@ -12,6 +12,7 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState(user?.display_name || user?.full_name || '');
   const [photoUrl, setPhotoUrl] = useState(user?.photo_url || '');
+  const [phone, setPhone] = useState(user?.phone || '');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [consecrationDate, setConsecrationDate] = useState('');
   const [showConsecrationForm, setShowConsecrationForm] = useState(false);
@@ -35,6 +36,7 @@ export default function Onboarding() {
     const data = {};
     if (displayName.trim()) data.display_name = displayName.trim();
     if (photoUrl) data.photo_url = photoUrl;
+    if (phone.trim()) data.phone = phone.trim();
     if (Object.keys(data).length > 0) {
       await update(data);
     }
@@ -204,6 +206,20 @@ export default function Onboarding() {
               </label>
               <p className="mt-3 text-xs text-muted-foreground">
                 Este nome aparecerá em suas publicações e interações na comunidade Myriam.
+              </p>
+
+              <label className="mt-4 block">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">Telefone / WhatsApp</span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(11) 99999-9999"
+                  className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-base"
+                />
+              </label>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Usado para enviar notificações por WhatsApp quando você não ler as mensagens no app.
               </p>
             </div>
           </div>
