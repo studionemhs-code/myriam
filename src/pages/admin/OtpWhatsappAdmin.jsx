@@ -3,6 +3,7 @@ import { Loader2, Save, MessageCircle, Power } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { AdminPageTitle } from '@/components/admin/ui';
 import { useToast } from '@/components/ui/use-toast';
+import OtpTestPanel from '@/components/admin/OtpTestPanel';
 
 export default function OtpWhatsappAdmin() {
   const { toast } = useToast();
@@ -170,6 +171,8 @@ export default function OtpWhatsappAdmin() {
       <p className="mt-4 text-xs text-muted-foreground">
         O serviço externo (Zapier, Make, n8n ou API própria) conectado à URL do webhook é responsável por enviar a mensagem via WhatsApp Business API.
       </p>
+
+      <OtpTestPanel enabled={form.enabled} />
     </div>
   );
 }

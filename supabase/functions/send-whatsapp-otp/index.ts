@@ -69,17 +69,23 @@ Deno.serve(async (req) => {
     });
 
     // Dispara o webhook (o serviço externo envia a mensagem via WhatsApp)
+    let webhook_status: number | null = null;
+    let webhook_ok = false;
+    let webhook_error: string | null = null;
     try {
-      await fetch(settings.webhook_url, {
+      const res = await fetch(settings.webhook_url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ whatsapp_number, message, token, email })
       });
+      webhook_status = res.status;
+      webhook_ok = res.ok;
     } catch (e) {
-      console.error('Webhook falhou:', (e as Error).message);
+      webhook_error = (e as Error).message;
+      console.error('Webhook falhou:', webhook_error);
     }
 
-    return json({ enabled: true, sent: true, expires_in: expirationMinutes });
+    return json({ enabled: true, sent: true, expires_in: expirationMinutes, webhook_status, webhook_ok, webhook_error });
   } catch (error) {
     return json({ error: (error as Error).message }, 500);
   }
