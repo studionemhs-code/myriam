@@ -5,12 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import AuthLayout from "@/components/AuthLayout";
 import { safeReturnTo } from "@/lib/authReturnTo";
 
+const SAVED_KEY = "theotokos_saved_login";
+
+function loadSavedCredentials() {
+  try {
+    const raw = localStorage.getItem(SAVED_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const saved = loadSavedCredentials();
+  const [email, setEmail] = useState(saved?.email || "");
+  const [password, setPassword] = useState(saved?.password || "");
+  const [remember, setRemember] = useState(!!saved);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   // Post-login destination (e.g. the MCP OAuth consent page sends users here
@@ -22,6 +37,11 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
+      if (remember) {
+        localStorage.setItem(SAVED_KEY, JSON.stringify({ email, password }));
+      } else {
+        localStorage.removeItem(SAVED_KEY);
+      }
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = returnTo;
     } catch (err) {
@@ -92,6 +112,16 @@ export default function Login() {
               required
             />
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="remember"
+            checked={remember}
+            onCheckedChange={(v) => setRemember(v === true)}
+          />
+          <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
+            Salvar login
+          </Label>
         </div>
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
           {loading ? (
