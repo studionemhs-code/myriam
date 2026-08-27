@@ -22,6 +22,7 @@ const items = [
   { to: '/admin/associacao', label: 'Associação', icon: Crown },
   { to: '/admin/garantia', label: 'Garantia Vitalícia', icon: ShieldCheck },
   { to: '/admin/garantia/config', label: 'Config. Garantia', icon: Settings2 },
+  { to: '/admin/otp-whatsapp', label: 'OTP WhatsApp', icon: MessageCircle },
   { to: '/admin/orcamentos', label: 'Orçamentos', icon: ShoppingBag },
   { to: '/admin/relatorios', label: 'Moderação', icon: Flag },
   { to: '/admin/automacoes-webhook', label: 'Automações Webhook', icon: Webhook },

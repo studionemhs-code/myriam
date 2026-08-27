@@ -41,7 +41,9 @@ export const SUPABASE_TABLES = {
   Cadeiazinha: 'cadeiazinhas',
   WarrantyClaim: 'warranty_claims',
   WarrantySettings: 'warranty_settings',
-  ConsecrationSettings: 'consecration_settings'
+  ConsecrationSettings: 'consecration_settings',
+  WhatsappOtpSettings: 'whatsapp_otp_settings',
+  WhatsappOtp: 'whatsapp_otps'
 };
 
 // Colunas array no Postgres (usadas em filtros de contenção).

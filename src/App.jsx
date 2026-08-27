@@ -65,6 +65,7 @@ import OrcamentosLink from '@/pages/admin/OrcamentosLink';
 import WebhooksAdmin from '@/pages/admin/WebhooksAdmin';
 import GarantiaAdmin from '@/pages/admin/GarantiaAdmin';
 import GarantiaConfig from '@/pages/admin/GarantiaConfig';
+import OtpWhatsappAdmin from '@/pages/admin/OtpWhatsappAdmin';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -158,6 +159,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/automacoes-webhook" element={<WebhooksAdmin />} />
           <Route path="/admin/garantia" element={<GarantiaAdmin />} />
           <Route path="/admin/garantia/config" element={<GarantiaConfig />} />
+          <Route path="/admin/otp-whatsapp" element={<OtpWhatsappAdmin />} />
         </Route>
       </Route>
 

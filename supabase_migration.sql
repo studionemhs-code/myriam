@@ -1229,6 +1229,62 @@ CREATE INDEX IF NOT EXISTS idx_warranty_claims_cadeiazinha ON public.warranty_cl
 CREATE INDEX IF NOT EXISTS idx_warranty_claims_status ON public.warranty_claims(status);
 
 -- ============================================================================
+-- 10. OTP CADASTRO VIA WHATSAPP
+-- ============================================================================
+
+-- WhatsappOtpSettings (singleton)
+CREATE TABLE IF NOT EXISTS public.whatsapp_otp_settings (
+  id                        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date              TIMESTAMPTZ DEFAULT now(),
+  updated_date              TIMESTAMPTZ DEFAULT now(),
+  created_by_id             UUID,
+  enabled                   BOOLEAN NOT NULL DEFAULT false,
+  webhook_url               TEXT,
+  message_template          TEXT NOT NULL DEFAULT 'Olá! Seu código de verificação Theotokos é: {{token}}',
+  token_expiration_minutes  INTEGER NOT NULL DEFAULT 5,
+  max_attempts              INTEGER NOT NULL DEFAULT 5,
+  max_resends               INTEGER NOT NULL DEFAULT 3
+);
+
+-- WhatsappOtp (registros de tokens pendentes)
+CREATE TABLE IF NOT EXISTS public.whatsapp_otps (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date    TIMESTAMPTZ DEFAULT now(),
+  updated_date    TIMESTAMPTZ DEFAULT now(),
+  created_by_id   UUID,
+  email           TEXT NOT NULL,
+  whatsapp_number TEXT NOT NULL,
+  token_hash       TEXT NOT NULL,
+  expires_at       TIMESTAMPTZ NOT NULL,
+  attempts_used    INTEGER NOT NULL DEFAULT 0,
+  resends_used     INTEGER NOT NULL DEFAULT 0,
+  verified         BOOLEAN NOT NULL DEFAULT false
+);
+
+-- RLS — WhatsappOtpSettings (read: public; write: admin)
+ALTER TABLE public.whatsapp_otp_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "whatsapp_otp_settings_read" ON public.whatsapp_otp_settings FOR SELECT USING (true);
+CREATE POLICY "whatsapp_otp_settings_insert" ON public.whatsapp_otp_settings FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "whatsapp_otp_settings_update" ON public.whatsapp_otp_settings FOR UPDATE USING (is_admin());
+CREATE POLICY "whatsapp_otp_settings_delete" ON public.whatsapp_otp_settings FOR DELETE USING (is_admin());
+
+-- RLS — WhatsappOtp (apenas admin; edge functions usam service role e ignoram RLS)
+ALTER TABLE public.whatsapp_otps ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "whatsapp_otps_read" ON public.whatsapp_otps FOR SELECT USING (is_admin());
+CREATE POLICY "whatsapp_otps_insert" ON public.whatsapp_otps FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "whatsapp_otps_update" ON public.whatsapp_otps FOR UPDATE USING (is_admin());
+CREATE POLICY "whatsapp_otps_delete" ON public.whatsapp_otps FOR DELETE USING (is_admin());
+
+-- Seed de configuração padrão (desativado)
+INSERT INTO public.whatsapp_otp_settings (enabled, message_template, token_expiration_minutes, max_attempts, max_resends)
+SELECT false, 'Olá! Seu código de verificação Theotokos é: {{token}}', 5, 5, 3
+WHERE NOT EXISTS (SELECT 1 FROM public.whatsapp_otp_settings);
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_whatsapp_otps_email ON public.whatsapp_otps(email);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_otps_expires ON public.whatsapp_otps(expires_at);
+
+-- ============================================================================
 -- FIM DO SCRIPT
 -- 
 -- Após executar este script no Supabase:
