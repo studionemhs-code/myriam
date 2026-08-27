@@ -1,7 +1,14 @@
-import { json, preflight, currentUser } from '../_shared/utils.ts';
+import { json, preflight, currentUser, admin, findProfile } from '../_shared/utils.ts';
 
 const OPENAI_KEY = () => Deno.env.get('OPENAI_API_KEY');
 const RESEND_KEY = () => Deno.env.get('RESEND_API_KEY');
+const GEMINI_KEY = () => Deno.env.get('GEMINI_API_KEY');
+const FCM_KEY = () => Deno.env.get('FCM_SERVER_KEY');
+
+// Vozes do app mapeadas para as vozes da OpenAI.
+const VOICES: Record<string, string> = {
+  river: 'alloy', honey: 'shimmer', sunny: 'nova', storm: 'onyx', spark: 'fable'
+};
 const FROM_EMAIL = () => Deno.env.get('EMAIL_FROM') || 'Theotokos <onboarding@resend.dev>';
 
 const openai = async (path: string, body: unknown) => {
@@ -40,7 +47,13 @@ async function generateImage(p: any) {
 }
 
 async function sendEmail(p: any) {
-  if (!RESEND_KEY()) throw new Error('RESEND_API_KEY não configurada');
+  if (!RESEND_KEY()) {
+    return {
+      ok: false,
+      error: 'Serviço de e-mail não configurado.',
+      hint: 'Defina a secret RESEND_API_KEY (e opcionalmente EMAIL_FROM) nas Edge Functions do Supabase.'
+    };
+  }
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${RESEND_KEY()}`, 'Content-Type': 'application/json' },
@@ -80,12 +93,100 @@ async function extractData(p: any) {
   }
 }
 
+// Gera áudio (TTS) e guarda no bucket público, devolvendo a URL definitiva.
+async function generateSpeech(p: any) {
+  const res = await fetch('https://api.openai.com/v1/audio/speech', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${OPENAI_KEY()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini-tts',
+      voice: VOICES[p.voice as string] || 'alloy',
+      input: String(p.text || '').slice(0, 5000),
+      response_format: 'mp3'
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Erro ao gerar áudio');
+  }
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const path = `speech/${crypto.randomUUID()}.mp3`;
+  const { error } = await admin().storage.from('public').upload(path, bytes, { contentType: 'audio/mpeg' });
+  if (error) throw new Error(error.message);
+  const { data } = admin().storage.from('public').getPublicUrl(path);
+  return { url: data.publicUrl };
+}
+
+// Gera vídeo via Google Veo (operação assíncrona: cria e faz polling).
+async function generateVideo(p: any) {
+  const key = GEMINI_KEY();
+  if (!key) {
+    return {
+      ok: false,
+      error: 'Geração de vídeo não configurada.',
+      hint: 'Defina a secret GEMINI_API_KEY nas Edge Functions do Supabase.'
+    };
+  }
+  const base = 'https://generativelanguage.googleapis.com/v1beta';
+  const start = await fetch(`${base}/models/veo-3.0-generate-001:predictLongRunning?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      instances: [{ prompt: p.prompt }],
+      parameters: { aspectRatio: p.aspect_ratio || '16:9', durationSeconds: p.duration || 6 }
+    })
+  }).then((r) => r.json());
+  if (!start.name) throw new Error(start.error?.message || 'Erro ao iniciar geração de vídeo');
+
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 6000));
+    const op = await fetch(`${base}/${start.name}?key=${key}`).then((r) => r.json());
+    if (op.error) throw new Error(op.error.message);
+    if (op.done) {
+      const uri = op.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri;
+      if (!uri) throw new Error('Vídeo não retornado pelo provedor');
+      return { url: `${uri}${uri.includes('?') ? '&' : '?'}key=${key}` };
+    }
+  }
+  throw new Error('Tempo esgotado ao gerar o vídeo');
+}
+
+// Push nativo via FCM. Depende do token salvo no perfil do usuário.
+async function sendPushNotification(p: any) {
+  const key = FCM_KEY();
+  if (!key) {
+    return {
+      ok: false,
+      error: 'Notificações push não configuradas.',
+      hint: 'Defina a secret FCM_SERVER_KEY nas Edge Functions do Supabase.'
+    };
+  }
+  const profile = await findProfile(p.user_id);
+  if (!profile?.push_token) return { ok: false, error: 'Usuário sem dispositivo registrado para push.' };
+
+  const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+    method: 'POST',
+    headers: { Authorization: `key=${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: profile.push_token,
+      notification: { title: p.title, body: p.content },
+      data: { action_label: p.action_label || '', action_url: p.action_url || '' }
+    })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Erro ao enviar push');
+  return { ok: true };
+}
+
 const HANDLERS: Record<string, (p: any) => Promise<unknown>> = {
   InvokeLLM: invokeLLM,
   GenerateImage: generateImage,
   SendEmail: sendEmail,
   TranscribeAudio: transcribeAudio,
-  ExtractDataFromUploadedFile: extractData
+  ExtractDataFromUploadedFile: extractData,
+  GenerateSpeech: generateSpeech,
+  GenerateVideo: generateVideo,
+  SendPushNotification: sendPushNotification
 };
 
 Deno.serve(async (req) => {

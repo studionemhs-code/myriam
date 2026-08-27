@@ -41,11 +41,11 @@ async function ensureProfile(authUser) {
   return created;
 }
 
-// O app compara `user.id` com created_by_id/participants — que guardam o ID
-// histórico dos dados migrados. Por isso expomos legacy_id como `id`.
+// `profiles.id` é o mesmo UUID do Supabase Auth e é o identificador usado em
+// created_by_id/participants por todo o app.
 const toAppUser = (profile, authUser) => ({
   ...profile,
-  id: profile.legacy_id || profile.id,
+  id: profile.id,
   profile_id: profile.id,
   auth_id: authUser.id,
   email: profile.email || authUser.email
