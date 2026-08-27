@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Save, MessageCircle, Power } from 'lucide-react';
+import { Loader2, Save, MessageCircle, Power, AlertCircle, RotateCw } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { AdminPageTitle } from '@/components/admin/ui';
 import { useToast } from '@/components/ui/use-toast';
@@ -11,9 +11,11 @@ export default function OtpWhatsappAdmin() {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
   const load = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const list = await base44.entities.WhatsappOtpSettings.list('-created_date', 1);
       const s = list[0] || null;
@@ -26,6 +28,8 @@ export default function OtpWhatsappAdmin() {
         max_attempts: s?.max_attempts ?? 5,
         max_resends: s?.max_resends ?? 3
       });
+    } catch (err) {
+      setLoadError(err.message || 'Erro ao carregar configurações.');
     } finally {
       setLoading(false);
     }
@@ -53,6 +57,27 @@ export default function OtpWhatsappAdmin() {
       setSaving(false);
     }
   };
+
+  if (loadError) {
+    return (
+      <div>
+        <AdminPageTitle title="OTP Cadastro via WhatsApp" subtitle="Verificação por código no WhatsApp durante o cadastro." />
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-8 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <div>
+            <p className="font-medium text-destructive">Erro ao carregar configurações</p>
+            <p className="mt-1 max-w-md text-sm text-muted-foreground">{loadError}</p>
+          </div>
+          <button
+            onClick={load}
+            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
+          >
+            <RotateCw className="h-4 w-4" /> Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading || !form) {
     return (
