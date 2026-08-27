@@ -1,4 +1,41 @@
-import { json, preflight, currentUser, admin } from '../_shared/utils.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// --- Helpers inlineados (não depende de ../_shared/utils.ts) ---
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+
+const preflight = (req: Request) =>
+  req.method === 'OPTIONS' ? new Response('ok', { headers: corsHeaders }) : null;
+
+const URL_ = Deno.env.get('SUPABASE_URL')!;
+const ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
+const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+const admin = () => createClient(URL_, SERVICE, { auth: { persistSession: false } });
+
+const asUser = (req: Request) =>
+  createClient(URL_, ANON, {
+    global: { headers: { Authorization: req.headers.get('Authorization') || '' } },
+    auth: { persistSession: false }
+  });
+
+async function currentUser(req: Request) {
+  const { data: { user } } = await asUser(req).auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await admin().from('profiles').select('*').eq('id', user.id).maybeSingle();
+  if (!profile) return null;
+  return { ...profile, profile_id: profile.id, email: profile.email || user.email };
+}
+// --- Fim dos helpers ---
 
 Deno.serve(async (req) => {
   const pf = preflight(req); if (pf) return pf;
