@@ -10,4 +10,5 @@ export const FEATURE_LIST = [
   { feature: 'associacao', label: 'Associação Maria Rainha dos Corações' },
   { feature: 'historico', label: 'Histórico de Consagrações' },
   { feature: 'cadeiazinha', label: 'Solicite sua cadeiazinha' },
+  { feature: 'garantia_cadeiazinha', label: 'Cadeiazinha Theotokos (Garantia)' },
 ];

@@ -1118,6 +1118,85 @@ CREATE INDEX IF NOT EXISTS idx_reflections_created_by ON public.reflections(crea
 CREATE INDEX IF NOT EXISTS idx_reflections_day ON public.reflections(day_number);
 
 -- ============================================================================
+-- 9. TABELAS DA CADEIAZINHA E GARANTIA VITALÍCIA
+-- ============================================================================
+
+CREATE TYPE warranty_claim_status AS ENUM ('aberta', 'em_analise', 'resolvida');
+
+-- Cadeiazinha
+CREATE TABLE IF NOT EXISTS public.cadeiazinhas (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date    TIMESTAMPTZ DEFAULT now(),
+  updated_date    TIMESTAMPTZ DEFAULT now(),
+  created_by_id   UUID,
+  user_id         UUID NOT NULL,
+  unique_code     TEXT,
+  seller_name     TEXT,
+  purchase_date   DATE,
+  receipt_date    DATE,
+  photos          TEXT[] DEFAULT '{}'
+);
+
+-- WarrantyClaim
+CREATE TABLE IF NOT EXISTS public.warranty_claims (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date        TIMESTAMPTZ DEFAULT now(),
+  updated_date        TIMESTAMPTZ DEFAULT now(),
+  created_by_id       UUID,
+  cadeiazinha_id      TEXT NOT NULL,
+  user_id             UUID NOT NULL,
+  problem_description TEXT NOT NULL,
+  observations        TEXT,
+  status              warranty_claim_status DEFAULT 'aberta',
+  admin_note          TEXT
+);
+
+-- WarrantySettings (singleton)
+CREATE TABLE IF NOT EXISTS public.warranty_settings (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date    TIMESTAMPTZ DEFAULT now(),
+  updated_date    TIMESTAMPTZ DEFAULT now(),
+  created_by_id   UUID,
+  term_text       TEXT,
+  cert_title      TEXT DEFAULT 'Certificado de Garantia Vitalícia',
+  cert_body_text  TEXT,
+  logo_url        TEXT,
+  signature_url   TEXT,
+  issuer_name     TEXT DEFAULT 'Theotokos',
+  primary_color   TEXT DEFAULT '#673ab7',
+  accent_color    TEXT DEFAULT '#c9a14a',
+  border_style    border_style DEFAULT 'classic',
+  footer_text     TEXT DEFAULT 'Theotokos · Garantia Vitalícia'
+);
+
+-- RLS — Cadeiazinhas (read/update/delete: own OR admin; create: own)
+ALTER TABLE public.cadeiazinhas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "cadeiazinhas_read" ON public.cadeiazinhas FOR SELECT USING (user_id = auth.uid() OR is_admin());
+CREATE POLICY "cadeiazinhas_insert" ON public.cadeiazinhas FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "cadeiazinhas_update" ON public.cadeiazinhas FOR UPDATE USING (user_id = auth.uid() OR is_admin());
+CREATE POLICY "cadeiazinhas_delete" ON public.cadeiazinhas FOR DELETE USING (user_id = auth.uid() OR is_admin());
+
+-- RLS — WarrantyClaims (read: own OR admin; create: own; update/delete: admin)
+ALTER TABLE public.warranty_claims ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "warranty_claims_read" ON public.warranty_claims FOR SELECT USING (user_id = auth.uid() OR is_admin());
+CREATE POLICY "warranty_claims_insert" ON public.warranty_claims FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "warranty_claims_update" ON public.warranty_claims FOR UPDATE USING (is_admin());
+CREATE POLICY "warranty_claims_delete" ON public.warranty_claims FOR DELETE USING (is_admin());
+
+-- RLS — WarrantySettings (read: public; write: admin)
+ALTER TABLE public.warranty_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "warranty_settings_read" ON public.warranty_settings FOR SELECT USING (true);
+CREATE POLICY "warranty_settings_insert" ON public.warranty_settings FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "warranty_settings_update" ON public.warranty_settings FOR UPDATE USING (is_admin());
+CREATE POLICY "warranty_settings_delete" ON public.warranty_settings FOR DELETE USING (is_admin());
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_cadeiazinhas_user ON public.cadeiazinhas(user_id);
+CREATE INDEX IF NOT EXISTS idx_warranty_claims_user ON public.warranty_claims(user_id);
+CREATE INDEX IF NOT EXISTS idx_warranty_claims_cadeiazinha ON public.warranty_claims(cadeiazinha_id);
+CREATE INDEX IF NOT EXISTS idx_warranty_claims_status ON public.warranty_claims(status);
+
+-- ============================================================================
 -- FIM DO SCRIPT
 -- 
 -- Após executar este script no Supabase:

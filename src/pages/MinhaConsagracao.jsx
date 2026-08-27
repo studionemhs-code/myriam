@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { Flower2, Heart, Calendar, Check, Sparkles, Award, FileDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { PageHeader, GoldDivider, StatPill } from '@/components/ui/marian';
+import CadeiazinhaSection from '@/components/cadeiazinha/CadeiazinhaSection';
 import {
   daysSince, daysUntil, formatDate, formatDuration, nextRenewal, isToday, parseDate
 } from '@/lib/marianDates';
@@ -12,6 +14,7 @@ const typeLabel = { preparacao: 'Preparação', jornada: 'Jornada', renovacao: '
 
 export default function MinhaConsagracao() {
   const { user, update } = useCurrentUser();
+  const { isVisible } = useFeatureFlags();
   const [registering, setRegistering] = useState(false);
   const [certificates, setCertificates] = useState([]);
 
@@ -137,6 +140,11 @@ export default function MinhaConsagracao() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Cadeiazinha Theotokos — Garantia Vitalícia */}
+      {isVisible('garantia_cadeiazinha') && (
+        <CadeiazinhaSection />
       )}
 
       <GoldDivider />

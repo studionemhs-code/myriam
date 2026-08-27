@@ -37,12 +37,15 @@ export const SUPABASE_TABLES = {
   StoreSettings: 'store_settings',
   CatalogProduct: 'catalog_products',
   QuoteRequest: 'quote_requests',
-  WebhookAutomation: 'webhook_automations'
+  WebhookAutomation: 'webhook_automations',
+  Cadeiazinha: 'cadeiazinhas',
+  WarrantyClaim: 'warranty_claims',
+  WarrantySettings: 'warranty_settings'
 };
 
 // Colunas array no Postgres (usadas em filtros de contenção).
 export const SUPABASE_ARRAY_COLUMNS = new Set([
   'participants', 'participant_names', 'participant_photos', 'read_by',
   'tags', 'trigger_types', 'trigger_categories', 'completed_days',
-  'content_ids', 'related_content_ids', 'viewers'
+  'content_ids', 'related_content_ids', 'viewers', 'photos'
 ]);

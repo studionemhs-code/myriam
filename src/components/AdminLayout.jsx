@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, CalendarDays, Sparkles,
-  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook
+  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook, ShieldCheck, Settings2
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Logo from '@/components/Logo';
@@ -20,6 +20,8 @@ const items = [
   { to: '/admin/certificados', label: 'Certificados', icon: Award },
   { to: '/admin/agentes', label: 'Agentes IA', icon: Bot },
   { to: '/admin/associacao', label: 'Associação', icon: Crown },
+  { to: '/admin/garantia', label: 'Garantia Vitalícia', icon: ShieldCheck },
+  { to: '/admin/garantia/config', label: 'Config. Garantia', icon: Settings2 },
   { to: '/admin/orcamentos', label: 'Orçamentos', icon: ShoppingBag },
   { to: '/admin/relatorios', label: 'Moderação', icon: Flag },
   { to: '/admin/automacoes-webhook', label: 'Automações Webhook', icon: Webhook },
