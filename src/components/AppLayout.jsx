@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   Home, Flower2, BookOpen, Leaf, User, ShoppingBag,
-  Bell, Calendar, Settings, LogOut, ChevronRight, ChevronLeft, Sparkles, Bot, Gift
+  Bell, Calendar, Settings, LogOut, ChevronRight, ChevronLeft, Sparkles, Bot, Gift, Menu
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -152,9 +152,18 @@ export default function AppLayout() {
       {/* Mobile top bar */}
       <header className="sticky top-0 z-30 bg-deep lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link to="/">
-            <Logo size="sm" variant="dark" subtitle={false} />
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMenuOpen(true)}
+              className="text-sidebar-foreground/70 hover:text-sidebar-foreground"
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <Link to="/">
+              <Logo size="sm" variant="dark" subtitle={false} />
+            </Link>
+          </div>
           <div className="flex items-center gap-3">
             <ThemeToggle className="text-sidebar-foreground/70 hover:text-sidebar-foreground" />
             <Link to="/notificacoes" className="relative text-sidebar-foreground/70">
