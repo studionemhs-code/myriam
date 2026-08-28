@@ -11,6 +11,7 @@ export default function Jornadas() {
   const { user } = useCurrentUser();
   const [journeys, setJourneys] = useState([]);
   const [participations, setParticipations] = useState([]);
+  const [joiningId, setJoiningId] = useState(null);
 
   const load = async () => {
     try {
@@ -25,21 +26,27 @@ export default function Jornadas() {
   useEffect(() => { load(); }, [user]);
 
   const isParticipating = (jid) => participations.some((p) => p.journey_id === jid);
-  const participantCount = async (jid) => {
-    const parts = await base44.entities.JourneyParticipant.filter({ journey_id: jid });
-    return parts.length;
-  };
 
   const join = async (journey) => {
-    if (isParticipating(journey.id)) return;
-    await base44.entities.JourneyParticipant.create({
-      journey_id: journey.id,
-      joined_date: new Date().toISOString().slice(0, 10),
-      progress: 0
-    });
-    await base44.entities.CollectiveJourney.update(journey.id, { participant_count: (journey.participant_count || 0) + 1 });
-    const parts = await base44.entities.JourneyParticipant.filter({ created_by_id: user.id });
-    setParticipations(parts);
+    if (isParticipating(journey.id) || joiningId) return;
+    setJoiningId(journey.id);
+    try {
+      await base44.entities.JourneyParticipant.create({
+        journey_id: journey.id,
+        joined_date: new Date().toISOString().slice(0, 10),
+        progress: 0
+      });
+      // Atualiza o participant_count localmente (a RLS bloqueia update no servidor para não-admins).
+      setJourneys((prev) => prev.map((j) =>
+        j.id === journey.id ? { ...j, participant_count: (j.participant_count || 0) + 1 } : j
+      ));
+      const parts = await base44.entities.JourneyParticipant.filter({ created_by_id: user.id });
+      setParticipations(parts);
+    } catch (e) {
+      alert(e.message || 'Não foi possível participar da jornada.');
+    } finally {
+      setJoiningId(null);
+    }
   };
 
   return (
@@ -81,9 +88,10 @@ export default function Jornadas() {
                 ) : (
                   <button
                     onClick={() => join(j)}
-                    className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground"
+                    disabled={joiningId === j.id}
+                    className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
                   >
-                    Participar
+                    {joiningId === j.id ? 'Entrando...' : 'Participar'}
                   </button>
                 )}
               </div>
