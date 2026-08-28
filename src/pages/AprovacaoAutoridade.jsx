@@ -31,8 +31,7 @@ export default function AprovacaoAutoridade() {
     (async () => {
       try {
         const res = await base44.functions.invoke('associationApprovalLink', { action: 'get', token });
-        if (res.error) { setError(res.error); }
-        else { setData(res); }
+        setData(res.data);
       } catch (e) {
         setError(e.message || 'Erro ao carregar dados.');
       } finally {
@@ -54,16 +53,15 @@ export default function AprovacaoAutoridade() {
         authority_name: authorityName,
         authority_note: authorityNote,
       });
-      if (res.error) {
-        alert(res.error);
-      } else if (action === 'approve' && res.ok) {
+      const result = res.data;
+      if (action === 'approve' && result?.ok) {
         // Gerar certificado A4 no cliente e enviar para o backend anexar
         try {
           const doc = await generateAssociationCertificatePdf({
             settings: data.settings,
             userName: data.request.user_name,
-            inscriptionNumber: res.inscriptionNumber,
-            approvedDate: res.approvedDate,
+            inscriptionNumber: result.inscriptionNumber,
+            approvedDate: result.approvedDate,
           });
           const safeName = (data.request.user_name || 'documento').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
           const fileName = `certificado-${safeName}.pdf`;
@@ -75,10 +73,10 @@ export default function AprovacaoAutoridade() {
             token,
             certificate_pdf_url: file_url,
           });
-          setResult({ action, inscriptionNumber: res.inscriptionNumber, approvedDate: res.approvedDate, certificateUrl: file_url });
+          setResult({ action, inscriptionNumber: result.inscriptionNumber, approvedDate: result.approvedDate, certificateUrl: file_url });
         } catch (certErr) {
           // Mesmo se o certificado falhar, a aprovação já foi registrada
-          setResult({ action, inscriptionNumber: res.inscriptionNumber, approvedDate: res.approvedDate, certError: true });
+          setResult({ action, inscriptionNumber: result.inscriptionNumber, approvedDate: result.approvedDate, certError: true });
         }
       } else {
         setResult({ action });
