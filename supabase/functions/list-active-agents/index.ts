@@ -14,10 +14,15 @@ Deno.serve(async (req) => {
       name: a.name,
       description: a.description,
       welcome_message: a.welcome_message,
-      model: a.model
+      model: a.model,
+      icon_url: a.icon_url || null,
+      is_floating_main: a.is_floating_main || false
     }));
 
-    return json({ agents: sanitized });
+    // Agente principal do botão flutuante (apenas um por vez pode ter a flag).
+    const floatingMain = sanitized.find((a) => a.is_floating_main) || null;
+
+    return json({ agents: sanitized, floatingMain });
   } catch (error) {
     return json({ error: (error as Error).message }, 500);
   }
