@@ -6,9 +6,8 @@
 -- com pg_net assíncrono (eventos de entidade).
 -- 
 -- INSTRUÇÕES:
--- 1. Vá em Supabase Dashboard → Settings → API → copie a "service_role" key
--- 2. Substitua <SUA_SERVICE_ROLE_KEY> abaixo pela chave copiada
--- 3. Cole este script inteiro no SQL Editor e execute
+-- Cole este script inteiro no SQL Editor do Supabase e execute.
+-- A service_role key já está preenchida abaixo.
 -- 
 -- Workflows migrados:
 --   1. Story Cleanup (agendado, a cada hora)
@@ -29,17 +28,15 @@ CREATE EXTENSION IF NOT EXISTS supabase_vault;
 
 -- ============================================================================
 -- 2. ARMAZENAR SERVICE ROLE KEY NO VAULT
---    Substitua <SUA_SERVICE_ROLE_KEY> pela chave real do Supabase.
---    Dashboard → Settings → API → service_role secret
+--    (chave já preenchida — não é necessário editar)
 -- ============================================================================
 DO $$
 BEGIN
-  -- Remove chave anterior se existir (re-executável)
   DELETE FROM vault.secrets WHERE name = 'supabase_service_role_key';
 END $$;
 
 SELECT vault.create_secret(
-  '<SUA_SERVICE_ROLE_KEY>',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0cnJua3hycHlqeWFld2ZwaXdoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzYyMzA1NCwiZXhwIjoyMTAzMTk5MDU0fQ.k-8qD-6pR4zjx0N1MZEVMaS_oGupFXLDrT3AuORV3KQ',
   'supabase_service_role_key',
   'Chave de service role para chamadas de cron e triggers às Edge Functions'
 );
@@ -257,14 +254,7 @@ CREATE TRIGGER trg_queue_notification_webhook
 -- ============================================================================
 -- FIM DO SCRIPT
 -- 
--- Após executar:
--- 1. Os 3 jobs pg_cron estarão ativos (verifique em cron.job)
--- 2. Os 5 triggers estarão ativos nas tabelas
--- 3. Os workflows .jsonc do Base44 podem ser excluídos (já foram removidos)
--- 
--- Para verificar os jobs ativos:
+-- Após executar, verifique:
 --   SELECT jobname, schedule, active FROM cron.job;
--- 
--- Para verificar os triggers ativos:
 --   SELECT tgname, tgrelid::regclass FROM pg_trigger WHERE NOT tgisinternal;
 -- ============================================================================
