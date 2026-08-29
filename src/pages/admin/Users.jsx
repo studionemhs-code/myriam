@@ -19,6 +19,7 @@ export default function Users() {
   const [inviteRole, setInviteRole] = useState('user');
   const [inviteStatus, setInviteStatus] = useState('interessado');
   const [inviteExclusive, setInviteExclusive] = useState(false);
+  const [invitePassword, setInvitePassword] = useState('');
   const [inviting, setInviting] = useState(false);
   const [msg, setMsg] = useState('');
   const [accessUser, setAccessUser] = useState(null);
@@ -36,11 +37,12 @@ export default function Users() {
     setInviting(true);
     setMsg('');
     try {
-      // Cria o usuário via Edge Function (senha gerada, e-mail já confirmado).
+      // Cria o usuário via Edge Function (senha definida pelo admin, e-mail já confirmado).
       const res = await base44.functions.invoke('inviteUser', {
         email: inviteEmail,
         role: inviteRole,
         full_name: inviteName || undefined,
+        password: invitePassword || undefined,
       });
       const password = res?.data?.password;
       // Aplica os campos extras no profile.
@@ -51,13 +53,12 @@ export default function Users() {
         if (inviteName) updates.full_name = inviteName;
         await base44.entities.User.update(created.id, updates);
       }
-      setMsg(
-        `Usuário criado! Login: ${inviteEmail} · Senha temporária: ${password || '—'} (o usuário pode alterá-la depois).`
-      );
+      setMsg(`Usuário criado! Login: ${inviteEmail} · Senha: ${password || '—'}`);
       setInviteEmail('');
       setInviteName('');
       setInviteStatus('interessado');
       setInviteExclusive(false);
+      setInvitePassword('');
       await load();
     } catch (e) {
       setMsg('Não foi possível criar: ' + (e.message || 'erro'));
@@ -121,6 +122,7 @@ export default function Users() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <input className={inputCls} type="text" placeholder="Nome completo" value={inviteName} onChange={(e) => setInviteName(e.target.value)} />
           <input className={inputCls} type="email" placeholder="email@exemplo.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
+          <input className={inputCls} type="text" placeholder="Senha (mín. 6 caracteres)" value={invitePassword} onChange={(e) => setInvitePassword(e.target.value)} />
           <select className={inputCls} value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
             <option value="user">Função: Usuário</option>
             <option value="admin">Função: Admin</option>
