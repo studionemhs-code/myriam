@@ -7,7 +7,18 @@ const toSlug = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase
 export async function invokeEdgeFunction(name, payload = {}) {
   const { data, error } = await supabase.functions.invoke(toSlug(name), { body: payload });
   if (error) {
-    const err = new Error(error.message || `Erro ao chamar ${name}`);
+    // O SDK do Supabase retorna "Edge Function returned a non-2xx status code"
+    // como mensagem genérica. Extrai a mensagem real do corpo da resposta.
+    let message = error.message || `Erro ao chamar ${name}`;
+    try {
+      const ctx = error.context;
+      if (ctx && typeof ctx.json === 'function') {
+        const body = await ctx.json();
+        if (body?.error) message = body.error;
+        else if (typeof body === 'string') message = body;
+      }
+    } catch { /* mantém a mensagem padrão */ }
+    const err = new Error(message);
     err.status = error.status || 500;
     throw err;
   }
