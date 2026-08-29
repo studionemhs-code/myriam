@@ -19,7 +19,8 @@ export default function FloatingAgentButton() {
       } catch { /* ignore */ }
     })();
     return () => { active = false; };
-  }, [isVisible]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Reseta o chat ao fechar
   useEffect(() => {
