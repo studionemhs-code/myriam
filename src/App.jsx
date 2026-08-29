@@ -66,6 +66,7 @@ import WebhooksAdmin from '@/pages/admin/WebhooksAdmin';
 import GarantiaAdmin from '@/pages/admin/GarantiaAdmin';
 import GarantiaConfig from '@/pages/admin/GarantiaConfig';
 import OtpWhatsappAdmin from '@/pages/admin/OtpWhatsappAdmin';
+import OAuthConsent from '@/pages/OAuthConsent';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -98,6 +99,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/aprovacao/:token" element={<AprovacaoAutoridade />} />
+      <Route path="/oauth/consent" element={<OAuthConsent />} />
 
       <Route path="/onboarding" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route index element={<Onboarding />} />
