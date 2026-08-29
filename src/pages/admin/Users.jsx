@@ -36,8 +36,14 @@ export default function Users() {
     setInviting(true);
     setMsg('');
     try {
-      await base44.users.inviteUser(inviteEmail, inviteRole);
-      // Após o convite, localiza o usuário recém-criado e aplica os campos extras
+      // Cria o usuário via Edge Function (senha gerada, e-mail já confirmado).
+      const res = await base44.functions.invoke('inviteUser', {
+        email: inviteEmail,
+        role: inviteRole,
+        full_name: inviteName || undefined,
+      });
+      const password = res?.data?.password;
+      // Aplica os campos extras no profile.
       const all = await base44.entities.User.list('-created_date', 200);
       const created = all.find((u) => u.email === inviteEmail);
       if (created) {
@@ -45,7 +51,9 @@ export default function Users() {
         if (inviteName) updates.full_name = inviteName;
         await base44.entities.User.update(created.id, updates);
       }
-      setMsg(`Usuário criado e convite enviado para ${inviteEmail}`);
+      setMsg(
+        `Usuário criado! Login: ${inviteEmail} · Senha temporária: ${password || '—'} (o usuário pode alterá-la depois).`
+      );
       setInviteEmail('');
       setInviteName('');
       setInviteStatus('interessado');
