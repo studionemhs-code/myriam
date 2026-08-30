@@ -20,14 +20,26 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [otpEnabled, setOtpEnabled] = useState(false);
   const [checkingOtp, setCheckingOtp] = useState(true);
-  const [step, setStep] = useState("form"); // 'form' | 'otp'
+  const [step, setStep] = useState("form"); // 'form' | 'otp' | 'pending'
   const [resending, setResending] = useState(false);
+  const [regMode, setRegMode] = useState("auto");
+  const [pendingMessage, setPendingMessage] = useState("");
 
-  // Verifica se o OTP via WhatsApp está ativado pelo admin
+  // Verifica se o OTP via WhatsApp está ativado e o modo de cadastro
   useEffect(() => {
-    base44.entities.WhatsappOtpSettings.list('-created_date', 1)
-      .then((list) => setOtpEnabled(list[0]?.enabled ?? false))
-      .catch(() => setOtpEnabled(false))
+    Promise.all([
+      base44.entities.WhatsappOtpSettings.list('-created_date', 1),
+      base44.entities.RegistrationSettings.list('-created_date', 1),
+    ])
+      .then(([otpList, regList]) => {
+        setOtpEnabled(otpList[0]?.enabled ?? false);
+        setRegMode(regList[0]?.mode ?? "auto");
+        setPendingMessage(regList[0]?.pending_message ?? "");
+      })
+      .catch(() => {
+        setOtpEnabled(false);
+        setRegMode("auto");
+      })
       .finally(() => setCheckingOtp(false));
   }, []);
 
@@ -56,6 +68,15 @@ export default function Register() {
   const registerAndLogin = async () => {
     await base44.auth.register({ email, password });
     await base44.auth.loginViaEmailPassword(email, password);
+    // Se o modo for "approval", marca o perfil como não aprovado e mostra tela de pendência
+    if (regMode === "approval") {
+      const me = await base44.auth.me();
+      if (me?.id) {
+        await base44.entities.User.update(me.id, { is_approved: false });
+      }
+      setStep("pending");
+      return;
+    }
     window.location.href = safeReturnTo();
   };
 
@@ -96,6 +117,29 @@ export default function Register() {
       setLoading(false);
     }
   };
+
+  // --- Etapa Pendência (aguardando aprovação) ---
+  if (step === 'pending') {
+    return (
+      <AuthLayout
+        icon={UserPlus}
+        title="Cadastro recebido"
+        subtitle="Aguardando aprovação"
+        footer={
+          <button
+            onClick={() => { base44.auth.logout('/login'); }}
+            className="text-primary font-medium hover:underline"
+          >
+            Voltar ao login
+          </button>
+        }
+      >
+        <div className="rounded-lg bg-gold/10 p-4 text-center text-sm leading-relaxed text-foreground">
+          {pendingMessage || "Seu cadastro foi recebido e está aguardando aprovação do administrador. Você receberá acesso em breve."}
+        </div>
+      </AuthLayout>
+    );
+  }
 
   // --- Etapa OTP ---
   if (step === 'otp') {

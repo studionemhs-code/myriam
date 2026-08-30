@@ -1285,6 +1285,35 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_otps_email ON public.whatsapp_otps(email
 CREATE INDEX IF NOT EXISTS idx_whatsapp_otps_expires ON public.whatsapp_otps(expires_at);
 
 -- ============================================================================
+-- 11. MODO DE CADASTRO (auto vs aprovação do admin)
+-- ============================================================================
+
+-- Adiciona coluna is_approved em profiles (default true para usuários existentes)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_approved BOOLEAN NOT NULL DEFAULT true;
+
+-- RegistrationSettings (singleton)
+CREATE TABLE IF NOT EXISTS public.registration_settings (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date    TIMESTAMPTZ DEFAULT now(),
+  updated_date    TIMESTAMPTZ DEFAULT now(),
+  created_by_id   UUID,
+  mode            TEXT NOT NULL DEFAULT 'auto' CHECK (mode IN ('auto', 'approval')),
+  pending_message TEXT NOT NULL DEFAULT 'Seu cadastro foi recebido e está aguardando aprovação do administrador. Você receberá acesso em breve.'
+);
+
+-- RLS — RegistrationSettings (read: public; write: admin)
+ALTER TABLE public.registration_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "reg_settings_read" ON public.registration_settings FOR SELECT USING (true);
+CREATE POLICY "reg_settings_insert" ON public.registration_settings FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "reg_settings_update" ON public.registration_settings FOR UPDATE USING (is_admin());
+CREATE POLICY "reg_settings_delete" ON public.registration_settings FOR DELETE USING (is_admin());
+
+-- Seed padrão (modo auto)
+INSERT INTO public.registration_settings (mode, pending_message)
+SELECT 'auto', 'Seu cadastro foi recebido e está aguardando aprovação do administrador. Você receberá acesso em breve.'
+WHERE NOT EXISTS (SELECT 1 FROM public.registration_settings);
+
+-- ============================================================================
 -- FIM DO SCRIPT
 -- 
 -- Após executar este script no Supabase:

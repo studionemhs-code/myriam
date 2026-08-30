@@ -25,6 +25,15 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const currentUser = await base44.auth.me();
+      // Admins sempre têm acesso; usuários comuns precisam estar aprovados
+      if (currentUser.role !== 'admin' && currentUser.is_approved === false) {
+        setUser(currentUser);
+        setIsAuthenticated(true);
+        setAuthError({ type: 'pending_approval', message: 'Cadastro aguardando aprovação' });
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        return currentUser;
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setAuthError(null);

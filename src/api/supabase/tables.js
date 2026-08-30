@@ -43,7 +43,8 @@ export const SUPABASE_TABLES = {
   WarrantySettings: 'warranty_settings',
   ConsecrationSettings: 'consecration_settings',
   WhatsappOtpSettings: 'whatsapp_otp_settings',
-  WhatsappOtp: 'whatsapp_otps'
+  WhatsappOtp: 'whatsapp_otps',
+  RegistrationSettings: 'registration_settings'
 };
 
 // Colunas array no Postgres (usadas em filtros de contenção).

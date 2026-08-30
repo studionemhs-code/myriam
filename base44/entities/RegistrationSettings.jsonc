@@ -1,0 +1,41 @@
+{
+  "name": "RegistrationSettings",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "approval"
+      ],
+      "default": "auto",
+      "description": "Modo de cadastro: 'auto' = login imediato ap\u00f3s cadastro; 'approval' = cadastro fica pendente at\u00e9 aprova\u00e7\u00e3o do admin"
+    },
+    "pending_message": {
+      "type": "string",
+      "default": "Seu cadastro foi recebido e est\u00e1 aguardando aprova\u00e7\u00e3o do administrador. Voc\u00ea receber\u00e1 acesso em breve.",
+      "description": "Mensagem exibida ao usu\u00e1rio quando o cadastro est\u00e1 pendente de aprova\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "mode"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { UserPlus, Trash2, Sparkles, Crown, KeyRound } from 'lucide-react';
+import { UserPlus, Trash2, Sparkles, Crown, KeyRound, ShieldCheck, Clock, CheckCircle2 } from 'lucide-react';
 import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/admin/ui';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/components/ui/use-toast';
@@ -23,14 +23,46 @@ export default function Users() {
   const [inviting, setInviting] = useState(false);
   const [msg, setMsg] = useState('');
   const [accessUser, setAccessUser] = useState(null);
+  const [regSettings, setRegSettings] = useState(null);
+  const [savingReg, setSavingReg] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const list = await base44.entities.User.list('-created_date', 200);
+    const [list, regList] = await Promise.all([
+      base44.entities.User.list('-created_date', 200),
+      base44.entities.RegistrationSettings.list('-created_date', 1),
+    ]);
     setUsers(list);
+    setRegSettings(regList[0] || null);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
+  const saveRegMode = async (mode) => {
+    setSavingReg(true);
+    try {
+      if (regSettings?.id) {
+        await base44.entities.RegistrationSettings.update(regSettings.id, { mode });
+      } else {
+        const created = await base44.entities.RegistrationSettings.create({ mode });
+        setRegSettings(created);
+      }
+      setRegSettings((prev) => ({ ...(prev || {}), mode }));
+      toast({ description: mode === 'approval' ? 'Cadastros agora exigem aprovação.' : 'Cadastros com acesso imediato.' });
+    } catch (e) {
+      toast({ variant: 'destructive', description: 'Erro ao salvar configuração.' });
+    } finally { setSavingReg(false); }
+  };
+
+  const approveUser = async (u) => {
+    try {
+      await base44.entities.User.update(u.id, { is_approved: true });
+      toast({ description: `${u.display_name || u.full_name || u.email} aprovado com sucesso!` });
+      await load();
+    } catch (e) {
+      toast({ variant: 'destructive', description: 'Erro ao aprovar usuário.' });
+    }
+  };
 
   const invite = async () => {
     if (!inviteEmail) return;
@@ -117,6 +149,44 @@ export default function Users() {
     <div>
       <AdminPageTitle title="Usuários" subtitle={`${users.length} membros cadastrados`} />
 
+      {/* Modo de cadastro */}
+      <div className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <p className="mb-1 flex items-center gap-2 text-sm font-medium"><ShieldCheck className="h-4 w-4 text-gold" /> Modo de cadastro</p>
+        <p className="mb-3 text-xs text-muted-foreground">Escolha como novos usuários acessam a plataforma ao se cadastrar.</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            onClick={() => saveRegMode('auto')}
+            disabled={savingReg}
+            className={`flex items-start gap-3 rounded-xl border p-4 text-left transition disabled:opacity-50 ${
+              regSettings?.mode !== 'approval'
+                ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                : 'border-border hover:border-primary/40'
+            }`}
+          >
+            <CheckCircle2 className={`mt-0.5 h-5 w-5 ${regSettings?.mode !== 'approval' ? 'text-primary' : 'text-muted-foreground'}`} />
+            <div>
+              <p className="text-sm font-medium">Acesso imediato</p>
+              <p className="text-xs text-muted-foreground">O usuário se cadastra e já pode entrar na hora, sem aprovação.</p>
+            </div>
+          </button>
+          <button
+            onClick={() => saveRegMode('approval')}
+            disabled={savingReg}
+            className={`flex items-start gap-3 rounded-xl border p-4 text-left transition disabled:opacity-50 ${
+              regSettings?.mode === 'approval'
+                ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                : 'border-border hover:border-primary/40'
+            }`}
+          >
+            <Clock className={`mt-0.5 h-5 w-5 ${regSettings?.mode === 'approval' ? 'text-primary' : 'text-muted-foreground'}`} />
+            <div>
+              <p className="text-sm font-medium">Aprovação do admin</p>
+              <p className="text-xs text-muted-foreground">O usuário se cadastra, mas fica bloqueado até você aprovar aqui.</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <div className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
         <p className="mb-3 flex items-center gap-2 text-sm font-medium"><UserPlus className="h-4 w-4 text-gold" /> Criar novo usuário</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -153,6 +223,7 @@ export default function Users() {
                 <th className="px-4 py-3">Nível</th>
                 <th className="px-4 py-3">Função</th>
                 <th className="px-4 py-3">Acesso exclusivo</th>
+                <th className="px-4 py-3">Aprovado</th>
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
@@ -199,6 +270,22 @@ export default function Users() {
                       <Sparkles className="h-3 w-3" />
                       {u.exclusive_access ? 'Ativado' : 'Conceder'}
                     </button>
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.role === 'admin' ? (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    ) : u.is_approved === false ? (
+                      <button
+                        onClick={() => approveUser(u)}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-medium text-gold transition hover:bg-gold/25"
+                      >
+                        <Clock className="h-3 w-3" /> Aprovar
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> Sim
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
