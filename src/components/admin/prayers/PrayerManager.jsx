@@ -18,13 +18,18 @@ export default function PrayerManager() {
 
   const load = async () => {
     setLoading(true);
-    const [p, c] = await Promise.all([
-      base44.entities.Prayer.list('-created_date', 200),
-      base44.entities.PrayerCategory.list('sort_order', 100)
-    ]);
-    setItems(p);
-    setCats(c);
-    setLoading(false);
+    try {
+      const [p, c] = await Promise.all([
+        base44.entities.Prayer.list('-created_date', 200),
+        base44.entities.PrayerCategory.list('sort_order', 100)
+      ]);
+      setItems(p);
+      setCats(c);
+    } catch (e) {
+      console.error('Failed to load prayers', e);
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
 

@@ -14,15 +14,20 @@ export default function Oracoes() {
 
   const load = async () => {
     setLoading(true);
-    const [cats, prs, favs] = await Promise.all([
-      base44.entities.PrayerCategory.list('sort_order', 100),
-      base44.entities.Prayer.list('sort_order', 200),
-      base44.entities.PrayerFavorite.list('-created_date', 500)
-    ]);
-    setCategories(cats);
-    setPrayers(prs);
-    setFavorites(favs);
-    setLoading(false);
+    try {
+      const [cats, prs, favs] = await Promise.all([
+        base44.entities.PrayerCategory.list('sort_order', 100),
+        base44.entities.Prayer.list('sort_order', 200),
+        base44.entities.PrayerFavorite.list('-created_date', 500)
+      ]);
+      setCategories(cats);
+      setPrayers(prs);
+      setFavorites(favs);
+    } catch (e) {
+      console.error('Failed to load prayers', e);
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
 

@@ -1314,6 +1314,107 @@ SELECT 'auto', 'Seu cadastro foi recebido e está aguardando aprovação do admi
 WHERE NOT EXISTS (SELECT 1 FROM public.registration_settings);
 
 -- ============================================================================
+-- 9. TABELAS DE ORAÇÕES (PrayerCategory, Prayer, PrayerFavorite)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.prayer_categories (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date    TIMESTAMPTZ DEFAULT now(),
+  updated_date    TIMESTAMPTZ DEFAULT now(),
+  created_by_id   UUID,
+  name            TEXT NOT NULL,
+  sort_order      INTEGER DEFAULT 0,
+  icon            TEXT,
+  color           TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.prayers (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date    TIMESTAMPTZ DEFAULT now(),
+  updated_date    TIMESTAMPTZ DEFAULT now(),
+  created_by_id   UUID,
+  title           TEXT NOT NULL,
+  category_id     TEXT NOT NULL,
+  content         TEXT,
+  audio_url       TEXT,
+  cover_url       TEXT,
+  sort_order      INTEGER DEFAULT 0,
+  is_published    BOOLEAN DEFAULT true
+);
+
+CREATE TABLE IF NOT EXISTS public.prayer_favorites (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date    TIMESTAMPTZ DEFAULT now(),
+  updated_date    TIMESTAMPTZ DEFAULT now(),
+  created_by_id   UUID,
+  prayer_id       TEXT NOT NULL
+);
+
+-- RLS: PrayerCategory (read: public; write: admin)
+ALTER TABLE public.prayer_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "prayer_cat_read" ON public.prayer_categories FOR SELECT USING (true);
+CREATE POLICY "prayer_cat_insert" ON public.prayer_categories FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "prayer_cat_update" ON public.prayer_categories FOR UPDATE USING (is_admin());
+CREATE POLICY "prayer_cat_delete" ON public.prayer_categories FOR DELETE USING (is_admin());
+
+-- RLS: Prayer (read: published OR admin; write: admin)
+ALTER TABLE public.prayers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "prayers_read" ON public.prayers FOR SELECT USING (is_published = true OR is_admin());
+CREATE POLICY "prayers_insert" ON public.prayers FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "prayers_update" ON public.prayers FOR UPDATE USING (is_admin());
+CREATE POLICY "prayers_delete" ON public.prayers FOR DELETE USING (is_admin());
+
+-- RLS: PrayerFavorite (read/write/delete: own only)
+ALTER TABLE public.prayer_favorites ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "prayer_fav_read" ON public.prayer_favorites FOR SELECT USING (created_by_id = auth.uid());
+CREATE POLICY "prayer_fav_insert" ON public.prayer_favorites FOR INSERT WITH CHECK (created_by_id = auth.uid());
+CREATE POLICY "prayer_fav_update" ON public.prayer_favorites FOR UPDATE USING (created_by_id = auth.uid());
+CREATE POLICY "prayer_fav_delete" ON public.prayer_favorites FOR DELETE USING (created_by_id = auth.uid());
+
+-- Triggers (updated_date + created_by_id)
+DO $$ BEGIN
+  CREATE TRIGGER set_updated_date_prayer_categories
+    BEFORE UPDATE ON public.prayer_categories
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_date();
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER set_updated_date_prayers
+    BEFORE UPDATE ON public.prayers
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_date();
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER set_updated_date_prayer_favorites
+    BEFORE UPDATE ON public.prayer_favorites
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_date();
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER set_created_by_prayer_categories
+    BEFORE INSERT ON public.prayer_categories
+    FOR EACH ROW EXECUTE FUNCTION public.set_created_by();
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER set_created_by_prayers
+    BEFORE INSERT ON public.prayers
+    FOR EACH ROW EXECUTE FUNCTION public.set_created_by();
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER set_created_by_prayer_favorites
+    BEFORE INSERT ON public.prayer_favorites
+    FOR EACH ROW EXECUTE FUNCTION public.set_created_by();
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_prayers_category ON public.prayers(category_id);
+CREATE INDEX IF NOT EXISTS idx_prayer_favorites_created_by ON public.prayer_favorites(created_by_id);
+CREATE INDEX IF NOT EXISTS idx_prayer_favorites_prayer ON public.prayer_favorites(prayer_id);
+
+-- ============================================================================
 -- FIM DO SCRIPT
 -- 
 -- Após executar este script no Supabase:

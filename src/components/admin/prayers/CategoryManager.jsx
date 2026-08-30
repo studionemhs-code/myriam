@@ -13,9 +13,14 @@ export default function CategoryManager() {
 
   const load = async () => {
     setLoading(true);
-    const data = await base44.entities.PrayerCategory.list('sort_order', 100);
-    setItems(data);
-    setLoading(false);
+    try {
+      const data = await base44.entities.PrayerCategory.list('sort_order', 100);
+      setItems(data);
+    } catch (e) {
+      console.error('Failed to load categories', e);
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
 
