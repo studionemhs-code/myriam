@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { X, ChevronLeft, ChevronRight, Loader2, StickyNote, MessageCircle, ZoomIn, ZoomOut } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { X, ChevronLeft, ChevronRight, Loader2, StickyNote, MessageCircle, ZoomIn, ZoomOut, BookOpen, ScrollText } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import ContentNotes from '@/components/acamf/ContentNotes';
 import ContentComments from '@/components/acamf/ContentComments';
@@ -10,21 +9,24 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 
 export default function AcamfPdfReader({ url, open, onClose, contentId, contentTitle }) {
   const containerRef = useRef(null);
+  const scrollRef = useRef(null);
   const pdfRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [rendering, setRendering] = useState(false);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1);
-  const [panel, setPanel] = useState(null); // null | 'notes' | 'comments'
+  const [viewMode, setViewMode] = useState('paginated'); // 'paginated' | 'continuous'
+  const [panel, setPanel] = useState(null);
   const { user } = useCurrentUser();
 
-  const renderPage = useCallback(async (pageNum) => {
-    if (!pdfRef.current || !containerRef.current) return;
-    const container = containerRef.current;
-    container.innerHTML = '';
+  const panState = useRef({ startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 });
+
+  const renderPageInto = useCallback(async (pageNum, target) => {
+    if (!pdfRef.current || !target) return;
     const page = await pdfRef.current.getPage(pageNum);
-    const containerWidth = container.clientWidth || 320;
+    const containerWidth = (scrollRef.current?.clientWidth || 320) - 24;
     const base = page.getViewport({ scale: 1 });
     const fitScale = Math.min(2, Math.max(0.5, containerWidth / base.width));
     const finalScale = fitScale * scale;
@@ -36,16 +38,39 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
     canvas.height = Math.floor(viewport.height * dpr);
     canvas.style.width = `${Math.floor(viewport.width)}px`;
     canvas.style.height = `${Math.floor(viewport.height)}px`;
-    canvas.className = 'rounded-lg shadow-sm bg-white mx-auto';
-    container.appendChild(canvas);
+    canvas.className = 'rounded-lg shadow-sm bg-white';
+    canvas.dataset.pageNum = String(pageNum);
+    target.appendChild(canvas);
     await page.render({ canvasContext: ctx, viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : undefined }).promise;
   }, [scale]);
 
+  const renderPaginated = useCallback(async (pageNum) => {
+    if (!containerRef.current) return;
+    containerRef.current.innerHTML = '';
+    await renderPageInto(pageNum, containerRef.current);
+  }, [renderPageInto]);
+
+  const renderContinuous = useCallback(async () => {
+    if (!pdfRef.current || !containerRef.current || !numPages) return;
+    setRendering(true);
+    const container = containerRef.current;
+    container.innerHTML = '';
+    for (let i = 1; i <= numPages; i++) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mb-4 flex justify-center';
+      container.appendChild(wrapper);
+      await renderPageInto(i, wrapper);
+    }
+    setRendering(false);
+  }, [numPages, renderPageInto]);
+
+  // Load PDF
   useEffect(() => {
     if (!open || !url) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setScale(1);
     (async () => {
       try {
         const pdf = await pdfjsLib.getDocument(url).promise;
@@ -53,7 +78,6 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
         pdfRef.current = pdf;
         setNumPages(pdf.numPages);
         setCurrentPage(1);
-        await renderPage(1);
       } catch (e) {
         if (!cancelled) setError('Não foi possível carregar o documento.');
       } finally {
@@ -63,16 +87,72 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
     return () => { cancelled = true; pdfRef.current = null; };
   }, [open, url]);
 
+  // Render on changes
   useEffect(() => {
-    if (open && pdfRef.current && currentPage) {
-      renderPage(currentPage);
+    if (!open || !pdfRef.current || loading) return;
+    if (viewMode === 'paginated') {
+      renderPaginated(currentPage);
+    } else {
+      renderContinuous();
     }
-  }, [scale, currentPage, open, renderPage]);
+  }, [scale, currentPage, open, viewMode, loading, renderPaginated, renderContinuous]);
+
+  // Track current page in continuous mode via scroll
+  const handleScroll = useCallback(() => {
+    if (viewMode !== 'continuous' || !scrollRef.current || !containerRef.current) return;
+    const el = scrollRef.current;
+    const center = el.scrollTop + el.clientHeight / 2;
+    const canvases = containerRef.current.querySelectorAll('canvas');
+    for (let i = 0; i < canvases.length; i++) {
+      const top = canvases[i].offsetTop;
+      const bottom = top + canvases[i].offsetHeight;
+      if (center >= top && center < bottom) {
+        setCurrentPage(i + 1);
+        break;
+      }
+    }
+  }, [viewMode]);
 
   if (!open) return null;
 
   const goPrev = () => currentPage > 1 && setCurrentPage(currentPage - 1);
   const goNext = () => currentPage < numPages && setCurrentPage(currentPage + 1);
+
+  // Touch panning for paginated mode
+  const onTouchStart = (e) => {
+    if (!scrollRef.current) return;
+    const t = e.touches[0];
+    panState.current = {
+      startX: t.clientX,
+      startY: t.clientY,
+      scrollLeft: scrollRef.current.scrollLeft,
+      scrollTop: scrollRef.current.scrollTop,
+    };
+  };
+  const onTouchMove = (e) => {
+    if (!scrollRef.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - panState.current.startX;
+    const dy = t.clientY - panState.current.startY;
+    scrollRef.current.scrollLeft = panState.current.scrollLeft - dx;
+    scrollRef.current.scrollTop = panState.current.scrollTop - dy;
+  };
+  const onTouchEnd = (e) => {
+    if (!scrollRef.current) return;
+    const el = scrollRef.current;
+    const scrolled = el.scrollLeft !== panState.current.scrollLeft || el.scrollTop !== panState.current.scrollTop;
+    // If no scroll happened (content fits), treat as swipe to change page
+    if (!scrolled) {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - panState.current.startX;
+      if (Math.abs(dx) > 60) {
+        if (dx > 0) goPrev();
+        else goNext();
+      }
+    }
+  };
+
+  const isPaginated = viewMode === 'paginated';
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -97,10 +177,29 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
       </div>
 
       <div className="relative flex flex-1 overflow-hidden">
-        {/* PDF area */}
         <div className="flex flex-1 flex-col">
           {/* Toolbar */}
-          <div className="flex items-center justify-center gap-3 border-b border-border bg-card/50 px-3 py-1.5">
+          <div className="flex items-center justify-center gap-2 border-b border-border bg-card/50 px-3 py-1.5">
+            {/* View mode toggle */}
+            <div className="flex items-center rounded-lg border border-border p-0.5">
+              <button
+                onClick={() => setViewMode('paginated')}
+                className={`rounded-md p-1 transition ${isPaginated ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                aria-label="Modo paginado"
+                title="Passar páginas"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode('continuous')}
+                className={`rounded-md p-1 transition ${!isPaginated ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                aria-label="Modo contínuo"
+                title="Rolar para baixo"
+              >
+                <ScrollText className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="mx-1 h-4 w-px bg-border" />
             <button onClick={() => setScale((s) => Math.max(0.5, s - 0.25))} className="rounded-lg p-1 hover:bg-muted" aria-label="Diminuir zoom">
               <ZoomOut className="h-4 w-4" />
             </button>
@@ -108,18 +207,30 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
             <button onClick={() => setScale((s) => Math.min(2.5, s + 0.25))} className="rounded-lg p-1 hover:bg-muted" aria-label="Aumentar zoom">
               <ZoomIn className="h-4 w-4" />
             </button>
-            <div className="mx-2 h-4 w-px bg-border" />
-            <button onClick={goPrev} disabled={currentPage <= 1} className="rounded-lg p-1 hover:bg-muted disabled:opacity-30">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="text-xs tabular-nums text-muted-foreground">{currentPage} / {numPages}</span>
-            <button onClick={goNext} disabled={currentPage >= numPages} className="rounded-lg p-1 hover:bg-muted disabled:opacity-30">
-              <ChevronRight className="h-4 w-4" />
-            </button>
+            {isPaginated && (
+              <>
+                <div className="mx-1 h-4 w-px bg-border" />
+                <button onClick={goPrev} disabled={currentPage <= 1} className="rounded-lg p-1 hover:bg-muted disabled:opacity-30">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-xs tabular-nums text-muted-foreground">{currentPage} / {numPages}</span>
+                <button onClick={goNext} disabled={currentPage >= numPages} className="rounded-lg p-1 hover:bg-muted disabled:opacity-30">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
 
           {/* PDF canvas */}
-          <div className="flex-1 overflow-auto bg-muted/30 p-3">
+          <div
+            ref={scrollRef}
+            className="relative flex-1 overflow-auto bg-muted/30 p-3"
+            onTouchStart={isPaginated ? onTouchStart : undefined}
+            onTouchMove={isPaginated ? onTouchMove : undefined}
+            onTouchEnd={isPaginated ? onTouchEnd : undefined}
+            onScroll={handleScroll}
+            style={{ touchAction: isPaginated ? 'none' : 'auto', WebkitOverflowScrolling: 'touch' }}
+          >
             {loading && (
               <div className="flex h-full items-center justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -130,7 +241,12 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
-            <div ref={containerRef} className="mx-auto max-w-2xl" />
+            {rendering && (
+              <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-card/80 px-3 py-1 text-xs text-muted-foreground shadow-sm">
+                <Loader2 className="h-3 w-3 animate-spin" /> Renderizando...
+              </div>
+            )}
+            <div ref={containerRef} className="mx-auto w-fit" />
           </div>
         </div>
 
