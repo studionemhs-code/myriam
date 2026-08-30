@@ -173,6 +173,7 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
   // Mouse drag start (desktop panning)
   const onMouseDown = (e) => {
     if (!scrollRef.current) return;
+    e.preventDefault();
     panState.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -256,11 +257,10 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
             ref={scrollRef}
             className={`relative flex-1 overflow-auto bg-muted/30 p-3 ${isPaginated ? 'cursor-grab active:cursor-grabbing' : ''}`}
             onTouchStart={isPaginated ? onTouchStart : undefined}
-            onTouchMove={isPaginated ? onTouchMove : undefined}
             onTouchEnd={isPaginated ? onTouchEnd : undefined}
             onMouseDown={isPaginated ? onMouseDown : undefined}
             onScroll={handleScroll}
-            style={{ touchAction: isPaginated ? 'none' : 'auto', WebkitOverflowScrolling: 'touch' }}
+            style={{ touchAction: isPaginated ? 'pan-x pan-y' : 'auto', WebkitOverflowScrolling: 'touch' }}
           >
             {loading && (
               <div className="flex h-full items-center justify-center">
@@ -277,7 +277,7 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
                 <Loader2 className="h-3 w-3 animate-spin" /> Renderizando...
               </div>
             )}
-            <div ref={containerRef} className="mx-auto w-fit" />
+            <div ref={containerRef} className="mx-auto w-max" />
           </div>
         </div>
 
