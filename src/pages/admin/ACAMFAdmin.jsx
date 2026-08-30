@@ -12,7 +12,7 @@ const empty = {
   title: '', subtitle: '', description: '', category_id: '', author: '',
   content_type: 'texto', level: 'iniciante', content: '', youtube_id: '',
   use_alternative_player: false,
-  file_url: '', cover_url: '', status: 'rascunho', recommended: false,
+  file_url: '', cover_url: '', status: 'publicado', recommended: false,
   duration: '', published_date: '', course_id: '', lesson_order: 0
 };
 
