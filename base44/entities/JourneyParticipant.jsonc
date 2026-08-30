@@ -20,6 +20,19 @@
       },
       "default": [],
       "description": "\u00cdndices das etapas conclu\u00eddas"
+    },
+    "intent": {
+      "type": "string",
+      "enum": [
+        "primeira_consagracao",
+        "renovacao"
+      ],
+      "description": "Inten\u00e7\u00e3o do participante: primeira consagra\u00e7\u00e3o ou renova\u00e7\u00e3o"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data em que o usu\u00e1rio registrou a conclus\u00e3o da jornada"
     }
   },
   "required": [

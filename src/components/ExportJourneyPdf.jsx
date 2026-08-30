@@ -135,9 +135,11 @@ export default function ExportJourneyPdf() {
           const j = journeyMap[jp.journey_id];
           ensure(60);
           write(j?.title || 'Jornada sem título', 11, 'bold', [90, 45, 130]);
+          const intentLabel = jp.intent === 'renovacao' ? 'Renovação' : jp.intent === 'primeira_consagracao' ? 'Primeira Consagração' : 'Não informada';
           const meta = [
             jp.joined_date ? `Entrou em: ${fmt(jp.joined_date)}` : null,
             j?.journey_type === 'renovacao' ? 'Renovação' : 'Consagração',
+            `Intenção: ${intentLabel}`,
             `Progresso: ${jp.progress || 0}%`
           ].filter(Boolean).join('  ·  ');
           if (meta) write(meta, 9, 'normal', [130, 120, 145]);
@@ -146,6 +148,9 @@ export default function ExportJourneyPdf() {
           }
           if (jp.completed_steps?.length > 0) {
             write(`Etapas concluídas: ${jp.completed_steps.length}`, 9, 'normal', [130, 120, 145]);
+          }
+          if (jp.completed_date) {
+            write(`Concluída e registrada em: ${fmt(jp.completed_date)}`, 9, 'normal', [130, 120, 145]);
           }
           y += 8;
         });

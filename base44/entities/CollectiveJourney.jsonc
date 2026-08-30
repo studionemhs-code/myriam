@@ -43,6 +43,10 @@
       "type": "string",
       "description": "Mensagem exibida ao iniciar a jornada"
     },
+    "presentation_text": {
+      "type": "string",
+      "description": "Texto de apresenta\u00e7\u00e3o exibido no banner fixo no topo da p\u00e1gina de Jornadas (edit\u00e1vel pelo Admin)"
+    },
     "steps": {
       "type": "array",
       "items": {
@@ -53,11 +57,69 @@
           },
           "description": {
             "type": "string"
+          },
+          "content_source": {
+            "type": "string",
+            "enum": [
+              "none",
+              "acamf",
+              "journey_library",
+              "inline"
+            ],
+            "default": "none",
+            "description": "Origem do conte\u00fado da etapa: ACAMF, biblioteca de jornada, ou conte\u00fado inline pr\u00f3prio"
+          },
+          "content_id": {
+            "type": "string",
+            "description": "ID do conte\u00fado ACAMF vinculado (quando content_source = 'acamf')"
+          },
+          "journey_content_id": {
+            "type": "string",
+            "description": "ID do conte\u00fado da biblioteca de jornada vinculado (quando content_source = 'journey_library')"
+          },
+          "content_data": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string",
+                "description": "Texto rico (HTML)"
+              },
+              "content_type": {
+                "type": "string",
+                "enum": [
+                  "texto",
+                  "pdf",
+                  "audio",
+                  "video",
+                  "imagem"
+                ],
+                "default": "texto"
+              },
+              "file_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "audio_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "cover_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "youtube_id": {
+                "type": "string"
+              }
+            },
+            "description": "Conte\u00fado inline \u00fanico da etapa (quando content_source = 'inline')"
           }
         }
       },
       "default": [],
-      "description": "Etapas gamificadas da jornada"
+      "description": "Etapas gamificadas da jornada, cada uma podendo ter conte\u00fado vinculado"
     },
     "content_ids": {
       "type": "array",

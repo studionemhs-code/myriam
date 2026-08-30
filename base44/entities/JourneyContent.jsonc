@@ -1,0 +1,75 @@
+{
+  "name": "JourneyContent",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "description": "Texto rico da ora\u00e7\u00e3o (HTML do ReactQuill)"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "texto",
+        "pdf",
+        "audio",
+        "video",
+        "imagem"
+      ],
+      "default": "texto"
+    },
+    "file_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "audio_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "cover_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "youtube_id": {
+      "type": "string"
+    },
+    "is_published": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.is_published": true
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

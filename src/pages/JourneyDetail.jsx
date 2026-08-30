@@ -1,37 +1,53 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Calendar, Users, BookOpen, Bell, Check, Play, Lock, Sparkles, Flower2, Target, Award } from 'lucide-react';
+import { ChevronLeft, Calendar, Users, BookOpen, Bell, Check, Play, Lock, Flower2, Award, FileText, Music, Video, Image as ImageIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { formatDate } from '@/lib/marianDates';
 import confetti from 'canvas-confetti';
 import MedalGrid from '@/components/caminho/MedalGrid';
 
+const typeIcons = { texto: FileText, pdf: FileText, audio: Music, video: Video, imagem: ImageIcon };
+
 export default function JourneyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useCurrentUser();
+  const { user, update: updateUser } = useCurrentUser();
   const [journey, setJourney] = useState(null);
-  const [contents, setContents] = useState([]);
+  const [acamfContents, setAcamfContents] = useState([]);
+  const [journeyLibraryContents, setJourneyLibraryContents] = useState([]);
   const [participant, setParticipant] = useState(null);
   const [participantCount, setParticipantCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(new Set());
   const [celebrated, setCelebrated] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [openStep, setOpenStep] = useState(null);
 
   const load = async () => {
     try {
       const list = await base44.entities.CollectiveJourney.filter({ id });
       const j = list[0];
       setJourney(j);
-      if (j?.content_ids?.length) {
+
+      // Coleta IDs de conteúdos ACAMF referenciados nas etapas + content_ids legado
+      const acamfIds = new Set(j?.content_ids || []);
+      (j?.steps || []).forEach((s) => { if (s.content_source === 'acamf' && s.content_id) acamfIds.add(s.content_id); });
+      if (acamfIds.size > 0) {
         const all = await base44.entities.ACAMFContent.list();
-        setContents(all.filter((c) => j.content_ids.includes(c.id)));
+        setAcamfContents(all.filter((c) => acamfIds.has(c.id)));
       }
+
+      // Carrega conteúdos da biblioteca de jornada referenciados nas etapas
+      const libIds = new Set((j?.steps || []).filter((s) => s.content_source === 'journey_library' && s.journey_content_id).map((s) => s.journey_content_id));
+      if (libIds.size > 0) {
+        const allLib = await base44.entities.JourneyContent.list('-created_date', 200);
+        setJourneyLibraryContents(allLib.filter((c) => libIds.has(c.id)));
+      }
+
       const parts = await base44.entities.JourneyParticipant.filter({ journey_id: id });
       setParticipantCount(parts.length);
       if (user) {
-        // created_by_id pode ser UUID (auth.uid()) ou legacy_id (MongoDB)
         const mine = parts.find((p) => p.created_by_id === user.id || p.created_by_id === user.legacy_id);
         setParticipant(mine || null);
       }
@@ -48,12 +64,11 @@ export default function JourneyDetail() {
         journey_id: id,
         joined_date: new Date().toISOString().slice(0, 10),
         progress: 0,
-        completed_steps: []
+        completed_steps: [],
+        intent: journey.journey_type === 'renovacao' ? 'renovacao' : 'primeira_consagracao'
       });
-      // Atualiza o participant_count localmente (RLS bloqueia update no servidor para não-admins)
       setParticipantCount((c) => c + 1);
     } catch (e) {
-      // Se já existe (duplicate key), apenas continua
       if (!e.message?.includes('duplicate key')) throw e;
     }
     await load();
@@ -75,13 +90,38 @@ export default function JourneyDetail() {
         progress
       });
       setParticipant(updated);
-      // Celebração ao concluir todas as etapas
       if (!isDone && totalSteps > 0 && newCompleted.length === totalSteps && !celebrated) {
         setCelebrated(true);
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
       }
     } finally {
       setToggling((s) => { const n = new Set(s); n.delete(stepIndex); return n; });
+    }
+  };
+
+  const registerCompletion = async () => {
+    if (!participant || !user) return;
+    setRegistering(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      // Marca a jornada como concluída
+      await base44.entities.JourneyParticipant.update(participant.id, { completed_date: today });
+
+      // Atualiza o perfil do usuário conforme a intenção
+      if (participant.intent === 'renovacao') {
+        const renewals = user.renewals || [];
+        await updateUser({ last_renewal_date: today, renewals: [...renewals, today] });
+      } else {
+        // Primeira consagração
+        await updateUser({ consecration_date: today, status: 'consagrado' });
+      }
+
+      await load();
+      confetti({ particleCount: 160, spread: 100, origin: { y: 0.5 } });
+    } catch (e) {
+      alert(e.message || 'Não foi possível registrar.');
+    } finally {
+      setRegistering(false);
     }
   };
 
@@ -94,6 +134,66 @@ export default function JourneyDetail() {
   const allDone = steps.length > 0 && completedSteps.length === steps.length;
   const isRenewal = journey.journey_type === 'renovacao';
   const typeLabel = isRenewal ? 'Renovação' : 'Consagração';
+  const intentLabel = participant?.intent === 'renovacao' ? 'Renovação' : participant?.intent === 'primeira_consagracao' ? 'Primeira Consagração' : null;
+
+  // Resolvedor de conteúdo por etapa
+  const resolveStepContent = (step) => {
+    if (step.content_source === 'acamf' && step.content_id) {
+      return { type: 'acamf', data: acamfContents.find((c) => c.id === step.content_id) };
+    }
+    if (step.content_source === 'journey_library' && step.journey_content_id) {
+      return { type: 'journey_library', data: journeyLibraryContents.find((c) => c.id === step.journey_content_id) };
+    }
+    if (step.content_source === 'inline' && step.content_data) {
+      return { type: 'inline', data: step.content_data };
+    }
+    return null;
+  };
+
+  const renderStepContent = (step, stepIndex) => {
+    const content = resolveStepContent(step);
+    if (!content || !content.data) return null;
+
+    const { type, data } = content;
+
+    if (type === 'acamf') {
+      return (
+        <Link to={`/acamf/${data.id}`} className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3 hover:border-gold/40">
+          {data.cover_url ? <img src={data.cover_url} className="h-10 w-10 rounded-lg object-cover" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
+          <div className="flex-1">
+            <p className="text-sm font-medium">{data.title}</p>
+            <p className="text-xs text-muted-foreground">Conteúdo ACAMF · Toque para abrir</p>
+          </div>
+          <ChevronLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
+        </Link>
+      );
+    }
+
+    // journey_library ou inline → renderiza inline
+    const ct = data.content_type || 'texto';
+    const Icon = typeIcons[ct] || FileText;
+    return (
+      <div className="mt-2 rounded-xl border border-border bg-muted/20 p-4">
+        {data.cover_url && <img src={data.cover_url} alt="" className="mb-3 h-32 w-full rounded-lg object-cover" />}
+        <div className="mb-2 flex items-center gap-2">
+          <Icon className="h-4 w-4 text-gold" />
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{type === 'inline' ? 'Conteúdo da etapa' : 'Biblioteca de jornada'}</p>
+        </div>
+        {data.content && <div className="rich-text text-sm" dangerouslySetInnerHTML={{ __html: data.content }} />}
+        {ct === 'audio' && data.audio_url && <audio controls src={data.audio_url} className="mt-3 w-full" />}
+        {ct === 'video' && data.youtube_id && (
+          <div className="mt-3 aspect-video w-full overflow-hidden rounded-lg">
+            <iframe src={`https://youtube.com/embed/${data.youtube_id}`} className="h-full w-full" allowFullScreen title={data.title} />
+          </div>
+        )}
+        {(ct === 'pdf' || ct === 'imagem') && data.file_url && (
+          <a href={data.file_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:border-gold/40">
+            <FileText className="h-4 w-4 text-gold" /> Abrir {ct === 'pdf' ? 'PDF' : 'imagem'}
+          </a>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -108,6 +208,7 @@ export default function JourneyDetail() {
           {typeLabel}
         </span>
         {participant && <span className="rounded-full bg-gold/15 px-3 py-1 text-xs font-medium text-gold">Participando</span>}
+        {intentLabel && <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{intentLabel}</span>}
       </div>
 
       <h1 className="mt-2 font-display text-2xl">{journey.title}</h1>
@@ -175,9 +276,18 @@ export default function JourneyDetail() {
               <Flower2 className="mx-auto h-8 w-8 text-gold" />
               <p className="mt-2 font-display text-lg text-gold">Jornada concluída!</p>
               <p className="mt-1 text-sm text-muted-foreground">Você completou todas as etapas. Que sua {typeLabel.toLowerCase()} seja abençoada.</p>
-              <Link to={isRenewal ? '/minha-consagracao' : '/consagracao'} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep">
-                <Flower2 className="h-4 w-4" /> {isRenewal ? 'Realizar renovação' : 'Registrar consagração'}
-              </Link>
+              {participant.completed_date ? (
+                <p className="mt-3 text-xs text-muted-foreground">Registrado em {formatDate(participant.completed_date)}</p>
+              ) : (
+                <button
+                  onClick={registerCompletion}
+                  disabled={registering}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-medium text-deep disabled:opacity-50"
+                >
+                  <Flower2 className="h-4 w-4" />
+                  {registering ? 'Registrando...' : `Registrar minha ${isRenewal ? 'renovação' : 'consagração'}`}
+                </button>
+              )}
               <Link to={`/certificado?type=jornada&journeyId=${journey.id}`} className="mt-2 inline-flex items-center gap-2 rounded-xl border border-gold/40 px-5 py-2.5 text-sm font-medium text-gold">
                 <Award className="h-4 w-4" /> Emitir Certificado
               </Link>
@@ -189,29 +299,41 @@ export default function JourneyDetail() {
               const done = completedSteps.includes(i);
               const busy = toggling.has(i);
               const prevDone = i === 0 || completedSteps.includes(i - 1);
-              const canToggle = prevDone || done; // só pode concluir se a anterior está feita
+              const canToggle = prevDone || done;
+              const isOpen = openStep === i;
               return (
-                <div key={i} className={`flex gap-3 rounded-xl border p-4 transition ${
+                <div key={i} className={`rounded-xl border transition ${
                   done ? 'border-gold/40 bg-gold/5' : canToggle ? 'border-border bg-card hover:border-gold/40' : 'border-border/50 bg-muted/20'
                 }`}>
-                  <button
-                    onClick={() => canToggle && toggleStep(i)}
-                    disabled={!canToggle || busy}
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition ${
-                      done ? 'bg-gold text-deep' :
-                      canToggle ? 'border-2 border-gold/50 text-gold hover:bg-gold/10' :
-                      'border border-border text-muted-foreground/40'
-                    }`}
-                  >
-                    {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> :
-                     done ? <Check className="h-5 w-5" /> :
-                     !canToggle ? <Lock className="h-4 w-4" /> :
-                     i + 1}
-                  </button>
-                  <div className="flex-1 pt-0.5">
-                    <p className={`font-medium ${done ? 'text-gold' : canToggle ? '' : 'text-muted-foreground'}`}>{s.title}</p>
-                    {s.description && <p className="mt-0.5 text-sm text-muted-foreground">{s.description}</p>}
+                  <div className="flex gap-3 p-4">
+                    <button
+                      onClick={() => canToggle && toggleStep(i)}
+                      disabled={!canToggle || busy}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition ${
+                        done ? 'bg-gold text-deep' :
+                        canToggle ? 'border-2 border-gold/50 text-gold hover:bg-gold/10' :
+                        'border border-border text-muted-foreground/40'
+                      }`}
+                    >
+                      {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> :
+                       done ? <Check className="h-5 w-5" /> :
+                       !canToggle ? <Lock className="h-4 w-4" /> :
+                       i + 1}
+                    </button>
+                    <div className="flex-1 pt-0.5">
+                      <button
+                        onClick={() => resolveStepContent(s) && setOpenStep(isOpen ? null : i)}
+                        className="flex w-full items-center justify-between text-left"
+                      >
+                        <p className={`font-medium ${done ? 'text-gold' : canToggle ? '' : 'text-muted-foreground'}`}>{s.title}</p>
+                        {resolveStepContent(s) && (
+                          <ChevronLeft className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? '-rotate-90' : ''}`} />
+                        )}
+                      </button>
+                      {s.description && <p className="mt-0.5 text-sm text-muted-foreground">{s.description}</p>}
+                    </div>
                   </div>
+                  {isOpen && renderStepContent(s, i)}
                 </div>
               );
             })}
@@ -219,12 +341,12 @@ export default function JourneyDetail() {
         </div>
       )}
 
-      {/* Conteúdos */}
-      {contents.length > 0 && (
+      {/* Conteúdos legados (content_ids) */}
+      {acamfContents.length > 0 && (journey.content_ids?.length > 0) && (
         <div className="mt-5">
           <h2 className="mb-2 flex items-center gap-2 font-display text-lg"><BookOpen className="h-4 w-4 text-gold" /> Conteúdos da jornada</h2>
           <div className="space-y-2">
-            {contents.map((c) => (
+            {acamfContents.filter((c) => journey.content_ids.includes(c.id)).map((c) => (
               <Link key={c.id} to={`/acamf/${c.id}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-gold/40">
                 {c.cover_url ? <img src={c.cover_url} className="h-10 w-10 rounded-lg object-cover" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
                 <p className="flex-1 text-sm">{c.title}</p>

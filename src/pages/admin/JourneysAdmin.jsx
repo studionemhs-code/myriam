@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
 import { AdminPageTitle, Loading, Badge } from '@/components/admin/ui';
 import JourneyEditor from '@/components/admin/JourneyEditor';
+import JourneyDetailsModal from '@/components/admin/JourneyDetailsModal';
 
 const statusLabels = { rascunho: 'Rascunho', ativa: 'Ativa', pausada: 'Pausada', encerrada: 'Encerrada' };
 const typeLabels = { consagracao: 'Consagração', renovacao: 'Renovação' };
@@ -11,6 +12,7 @@ export default function JourneysAdmin() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
+  const [details, setDetails] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -34,17 +36,14 @@ export default function JourneysAdmin() {
 
   const notifyNewJourney = async (journey) => {
     try {
-      const users = await base44.entities.User.list('-created_date', 500);
-      const notifs = users.map((u) => ({
-        user_id: u.id,
+      // Usa o edge function de broadcast (cria notificações in-app + dispara webhooks/WhatsApp)
+      await base44.functions.invoke('broadcastNotification', {
         category: 'jornadas',
         title: `Nova jornada: ${journey.title}`,
         body: journey.description || 'Uma nova jornada coletiva começou. Venha participar!',
         link: '/jornadas',
-        related_id: journey.id,
-        read: false,
-      }));
-      if (notifs.length) await base44.entities.Notification.bulkCreate(notifs);
+        related_id: journey.id
+      });
     } catch (e) { /* notificações são best-effort */ }
   };
 
@@ -80,9 +79,10 @@ export default function JourneysAdmin() {
                   <Badge tone={j.journey_type === 'renovacao' ? 'gold' : 'muted'}>{typeLabels[j.journey_type] || 'Consagração'}</Badge>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => setEditing({ ...j })} className="text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
-                <button onClick={() => remove(j.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+              <div className="flex gap-1">
+                <button onClick={() => setDetails(j)} title="Ver detalhes" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-primary"><Eye className="h-4 w-4" /></button>
+                <button onClick={() => setEditing({ ...j })} title="Editar" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-primary"><Pencil className="h-4 w-4" /></button>
+                <button onClick={() => remove(j.id)} title="Excluir" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
             {j.description && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{j.description}</p>}
@@ -99,6 +99,10 @@ export default function JourneysAdmin() {
 
       {editing && (
         <JourneyEditor journey={editing} onClose={() => setEditing(null)} onSave={handleSave} />
+      )}
+
+      {details && (
+        <JourneyDetailsModal journey={details} onClose={() => setDetails(null)} />
       )}
     </div>
   );

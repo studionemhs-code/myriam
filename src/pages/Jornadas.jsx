@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Calendar, Check, Sparkles, Lock } from 'lucide-react';
+import { Users, Calendar, Check, Sparkles, Info } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
 import AssociationRequestButton from '@/components/associacao/AssociationRequestButton';
+import IntentPopup from '@/components/jornadas/IntentPopup';
 import { formatDate, parseDate } from '@/lib/marianDates';
+
+const DEFAULT_PRESENTATION = 'As Jornadas Coletivas são caminhadas em comunidade, guiadas pela equipe Theotokos, com etapas, conteúdos e acompanhamento próprio — diferentes da sua Caminhada individual de 33 dias. Participe da que ressoa em seu coração.';
 
 export default function Jornadas() {
   const { user } = useCurrentUser();
@@ -13,14 +16,17 @@ export default function Jornadas() {
   const [journeys, setJourneys] = useState([]);
   const [participations, setParticipations] = useState([]);
   const [joiningId, setJoiningId] = useState(null);
+  const [pendingJourney, setPendingJourney] = useState(null);
+  const [presentationText, setPresentationText] = useState(DEFAULT_PRESENTATION);
 
   const load = async () => {
     try {
       const list = await base44.entities.CollectiveJourney.filter({ status: 'ativa' }, '-start_date', 50);
       setJourneys(list);
+      // Usa o presentation_text da primeira jornada ativa que o tiver definido
+      const withText = list.find((j) => j.presentation_text && j.presentation_text.trim());
+      if (withText) setPresentationText(withText.presentation_text);
       if (user) {
-        // created_by_id pode ser UUID (auth.uid()) ou legacy_id (MongoDB).
-        // Busca todas e filtra client-side para cobrir ambos os formatos.
         const allParts = await base44.entities.JourneyParticipant.list('-created_date', 500);
         const myParts = allParts.filter((p) =>
           p.created_by_id === user.id || p.created_by_id === user.legacy_id
@@ -33,27 +39,27 @@ export default function Jornadas() {
 
   const isParticipating = (jid) => participations.some((p) => p.journey_id === jid);
 
-  const join = async (journey) => {
-    if (isParticipating(journey.id) || joiningId) return;
+  const joinWithIntent = async (intent) => {
+    if (!pendingJourney) return;
+    const journey = pendingJourney;
     setJoiningId(journey.id);
+    setPendingJourney(null);
     try {
       const created = await base44.entities.JourneyParticipant.create({
         journey_id: journey.id,
         joined_date: new Date().toISOString().slice(0, 10),
-        progress: 0
+        progress: 0,
+        completed_steps: [],
+        intent
       });
-      // Atualiza o participant_count localmente (a RLS bloqueia update no servidor para não-admins).
       setJourneys((prev) => prev.map((j) =>
         j.id === journey.id ? { ...j, participant_count: (j.participant_count || 0) + 1 } : j
       ));
-      // Atualiza o estado local diretamente com o registro criado
       if (created) {
         setParticipations((prev) => [...prev, created]);
       }
-      // Navega para a página de detalhes da jornada
       navigate(`/jornadas/${journey.id}`);
     } catch (e) {
-      // Se já existe participação (unique constraint), apenas navega para os detalhes
       if (e.message && e.message.includes('duplicate key')) {
         setParticipations((prev) => [...prev, { journey_id: journey.id, created_by_id: user?.id }]);
         navigate(`/jornadas/${journey.id}`);
@@ -69,9 +75,16 @@ export default function Jornadas() {
     <div>
       <PageHeader title="Jornadas Coletivas" subtitle="Caminhe em comunidade rumo à Consagração" icon={Sparkles} />
 
-      <p className="mb-4 rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
-        As jornadas são organizadas pela equipe Theotokos. Participe da que ressoa em seu coração.
-      </p>
+      {/* Banner fixo de apresentação */}
+      <div className="mb-4 flex gap-3 rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/5 to-card p-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold/15">
+          <Info className="h-5 w-5 text-gold" />
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wider text-gold">O que são as Jornadas Coletivas?</p>
+          <p className="mt-1 text-sm text-muted-foreground">{presentationText}</p>
+        </div>
+      </div>
 
       <div className="mb-4">
         <AssociationRequestButton />
@@ -103,7 +116,7 @@ export default function Jornadas() {
                   </Link>
                 ) : (
                   <button
-                    onClick={() => join(j)}
+                    onClick={() => setPendingJourney(j)}
                     disabled={joiningId === j.id}
                     className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
                   >
@@ -114,6 +127,14 @@ export default function Jornadas() {
             </div>
           ))}
         </div>
+      )}
+
+      {pendingJourney && (
+        <IntentPopup
+          journeyTitle={pendingJourney.title}
+          onClose={() => setPendingJourney(null)}
+          onSelect={joinWithIntent}
+        />
       )}
     </div>
   );

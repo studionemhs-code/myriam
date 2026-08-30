@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { SectionCard, GoldDivider, Ornament } from '@/components/ui/marian';
+import JourneySummaryCard from '@/components/jornadas/JourneySummaryCard';
 import {
   getGreeting, daysSince, daysUntil, formatDate, formatDuration, nextRenewal,
   getNextMarianEvent, isToday } from
@@ -23,6 +24,8 @@ export default function Hoje() {
   const [indulgenceToday, setIndulgenceToday] = useState(null);
   const [days, setDays] = useState([]);
   const [contentLoaded, setContentLoaded] = useState(false);
+  const [activeJourney, setActiveJourney] = useState(null);
+  const [activeParticipant, setActiveParticipant] = useState(null);
 
   const status = user?.status || 'interessado';
 
@@ -54,6 +57,22 @@ export default function Hoje() {
         }
         const intents = await base44.entities.PrayerIntention.filter({ status: 'ativo' }, '-created_date', 3);
         setIntentions(intents);
+        // Busca jornada coletiva ativa do usuário (distinta da Caminhada de 33 dias)
+        try {
+          const myParts = await base44.entities.JourneyParticipant.filter({ created_by_id: user.id }, '-created_date', 50);
+          if (myParts.length > 0) {
+            const journeyIds = myParts.map((p) => p.journey_id).filter(Boolean);
+            const journeys = await base44.entities.CollectiveJourney.filter({ id: { $in: journeyIds } });
+            const journeyMap = {};
+            journeys.forEach((j) => { journeyMap[j.id] = j; });
+            // Encontra a participação mais recente sem completed_date
+            const active = myParts.find((p) => journeyMap[p.journey_id] && !p.completed_date);
+            if (active) {
+              setActiveJourney(journeyMap[active.journey_id]);
+              setActiveParticipant(active);
+            }
+          }
+        } catch { /* ignore */ }
         try {
           const res = await base44.functions.invoke('generateGreeting', {});
           if (res.data?.greeting) setAiGreeting(res.data.greeting);
@@ -115,6 +134,11 @@ export default function Hoje() {
       {status === 'consagrado' && <ConsecratedBlock user={user} />}
       {status === 'preparacao' && <PreparationBlock user={user} progress={progress} dayContent={dayContent} days={days} contentLoaded={contentLoaded} />}
       {status === 'interessado' && <DiscoverBlock />}
+
+      {/* Resumo de Jornada Coletiva ativa (distinto da Caminhada de 33 dias) */}
+      {activeJourney && activeParticipant && (
+        <JourneySummaryCard journey={activeJourney} participant={activeParticipant} />
+      )}
 
       <GoldDivider />
 

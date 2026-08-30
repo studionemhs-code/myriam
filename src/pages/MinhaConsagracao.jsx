@@ -18,6 +18,7 @@ export default function MinhaConsagracao() {
   const [registering, setRegistering] = useState(false);
   const [certificates, setCertificates] = useState([]);
   const [formula, setFormula] = useState(null);
+  const [completedJourneys, setCompletedJourneys] = useState([]);
 
   useEffect(() => {
     if (user) {
@@ -27,6 +28,20 @@ export default function MinhaConsagracao() {
       base44.entities.ConsecrationSettings.list('-created_date', 1)
         .then((list) => setFormula(list[0] || null))
         .catch(() => {});
+      // Busca jornadas coletivas concluídas para a linha do tempo
+      (async () => {
+        try {
+          const parts = await base44.entities.JourneyParticipant.filter({ created_by_id: user.id }, '-completed_date', 50);
+          const completed = parts.filter((p) => p.completed_date);
+          if (completed.length > 0) {
+            const ids = completed.map((p) => p.journey_id).filter(Boolean);
+            const journeys = await base44.entities.CollectiveJourney.filter({ id: { $in: ids } });
+            const jMap = {};
+            journeys.forEach((j) => { jMap[j.id] = j; });
+            setCompletedJourneys(completed.map((p) => ({ ...p, journey: jMap[p.journey_id] })).filter((p) => p.journey));
+          }
+        } catch { /* ignore */ }
+      })();
     }
   }, [user]);
 
@@ -111,17 +126,45 @@ export default function MinhaConsagracao() {
         <h2 className="mb-3 font-display text-lg">Histórico de Renovações</h2>
         <div className="space-y-2">
           {renewals.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma renovação registrada ainda.</p>}
-          {renewals.map((r, idx) => (
-            <div key={idx} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gold/15"><Check className="h-4 w-4 text-gold" /></div>
-              <div>
-                <p className="text-sm font-medium">{formatDate(r)}</p>
-                <p className="text-xs text-muted-foreground">{idx === 0 ? 'Consagração' : `Renovação ${idx}`}</p>
+          {renewals.map((r, idx) => {
+            // Verifica se há uma jornada concluída nesta data
+            const matchingJourney = completedJourneys.find((cj) => cj.completed_date === r);
+            return (
+              <div key={idx} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gold/15"><Check className="h-4 w-4 text-gold" /></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{formatDate(r)}</p>
+                  <p className="text-xs text-muted-foreground">{idx === 0 ? 'Consagração' : `Renovação ${idx}`}</p>
+                  {matchingJourney && (
+                    <p className="text-xs text-gold">Jornada: {matchingJourney.journey.title}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
+
+      {/* Jornadas Coletivas concluídas */}
+      {completedJourneys.length > 0 && (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 font-display text-lg"><Sparkles className="h-4 w-4 text-gold" /> Jornadas Coletivas Concluídas</h2>
+          <div className="space-y-2">
+            {completedJourneys.map((cj) => (
+              <div key={cj.id} className="flex items-center gap-3 rounded-xl border border-gold/30 bg-gold/5 p-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gold/15"><Check className="h-4 w-4 text-gold" /></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{cj.journey.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {cj.intent === 'renovacao' ? 'Renovação' : 'Primeira Consagração'} · Concluída em {formatDate(cj.completed_date)}
+                  </p>
+                </div>
+                <Link to={`/jornadas/${cj.journey_id}`} className="text-xs text-primary">Ver</Link>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Certificados emitidos */}
       {certificates.length > 0 && (

@@ -47,7 +47,8 @@ export const SUPABASE_TABLES = {
   PrayerCategory: 'prayer_categories',
   Prayer: 'prayers',
   PrayerFavorite: 'prayer_favorites',
-  RegistrationSettings: 'registration_settings'
+  RegistrationSettings: 'registration_settings',
+  JourneyContent: 'journey_contents'
 };
 
 // Colunas array no Postgres (usadas em filtros de contenção).

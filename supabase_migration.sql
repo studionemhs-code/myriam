@@ -1424,6 +1424,57 @@ CREATE INDEX IF NOT EXISTS idx_prayer_favorites_prayer ON public.prayer_favorite
 -- 4. Os triggers set_created_by e update_updated_date rodam em todas as tabelas
 -- 5. Os índices otimizam as consultas mais frequentes
 -- 
+-- ============================================================================
+-- 12. APRIMORAMENTO DAS JORNADAS COLETIVAS
+-- ============================================================================
+
+-- Novas colunas em collective_journeys (texto de apresentação do banner)
+ALTER TABLE public.collective_journeys ADD COLUMN IF NOT EXISTS presentation_text TEXT;
+
+-- Novas colunas em journey_participants (intenção do participante + data de conclusão)
+ALTER TABLE public.journey_participants ADD COLUMN IF NOT EXISTS intent TEXT;
+ALTER TABLE public.journey_participants ADD COLUMN IF NOT EXISTS completed_date DATE;
+
+-- Tabela de biblioteca de conteúdos de jornada (reutilizável entre jornadas)
+CREATE TABLE IF NOT EXISTS public.journey_contents (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_date    TIMESTAMPTZ DEFAULT now(),
+  updated_date    TIMESTAMPTZ DEFAULT now(),
+  created_by_id   UUID,
+  title           TEXT NOT NULL,
+  content         TEXT,
+  content_type    TEXT DEFAULT 'texto',
+  file_url        TEXT,
+  audio_url       TEXT,
+  cover_url       TEXT,
+  youtube_id      TEXT,
+  is_published    BOOLEAN DEFAULT true
+);
+
+-- RLS: JourneyContent (read: published OR admin; write: admin)
+ALTER TABLE public.journey_contents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "journey_content_read" ON public.journey_contents FOR SELECT USING (is_published = true OR is_admin());
+CREATE POLICY "journey_content_insert" ON public.journey_contents FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "journey_content_update" ON public.journey_contents FOR UPDATE USING (is_admin());
+CREATE POLICY "journey_content_delete" ON public.journey_contents FOR DELETE USING (is_admin());
+
+-- Triggers
+DO $$ BEGIN
+  CREATE TRIGGER set_updated_date_journey_contents
+    BEFORE UPDATE ON public.journey_contents
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_date();
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER set_created_by_journey_contents
+    BEFORE INSERT ON public.journey_contents
+    FOR EACH ROW EXECUTE FUNCTION public.set_created_by();
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_journey_contents_created ON public.journey_contents(created_date DESC);
+
+-- ============================================================================
 -- PRÓXIMOS PASSOS PARA MIGRAÇÃO COMPLETA DO APP:
 -- a) Instalar @supabase/supabase-js no projeto
 -- b) Substituir base44.entities.X por supabase.from('X') em todas as páginas
