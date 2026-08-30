@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Pencil, Trash2, X, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Loader2, AlertCircle } from 'lucide-react';
 import { Field, inputCls, Badge } from '@/components/admin/ui';
 import FileUpload from '@/components/admin/FileUpload';
 import ImageUpload from '@/components/admin/ImageUpload';
 import ReactQuill from 'react-quill-new';
+import { toast } from '@/components/ui/use-toast';
 import 'react-quill-new/dist/quill.snow.css';
 
 const typeLabels = { texto: 'Texto', pdf: 'PDF', audio: 'Áudio', video: 'Vídeo', imagem: 'Imagem' };
@@ -16,6 +17,7 @@ export default function JourneyContentManager() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -27,16 +29,25 @@ export default function JourneyContentManager() {
   };
   useEffect(() => { load(); }, []);
 
-  const set = (k, v) => setEditing((p) => ({ ...p, [k]: v }));
+  const set = (k, v) => { setSaveError(''); setEditing((p) => ({ ...p, [k]: v })); };
 
   const save = async () => {
-    if (!editing.title) return;
+    if (!editing.title) {
+      setSaveError('Informe um título para o conteúdo.');
+      return;
+    }
     setSaving(true);
+    setSaveError('');
     try {
       if (editing.id) await base44.entities.JourneyContent.update(editing.id, editing);
       else await base44.entities.JourneyContent.create(editing);
       setEditing(null);
       await load();
+      toast({ title: editing.id ? 'Conteúdo atualizado' : 'Conteúdo criado' });
+    } catch (e) {
+      const msg = e?.message || String(e);
+      setSaveError(msg);
+      toast({ title: 'Erro ao salvar', description: msg, variant: 'destructive' });
     } finally { setSaving(false); }
   };
 
@@ -54,7 +65,7 @@ export default function JourneyContentManager() {
           <h4 className="font-display text-sm">Biblioteca de Conteúdos de Jornada</h4>
           <p className="text-xs text-muted-foreground">Conteúdos reutilizáveis entre jornadas (sem ligação com a ACAMF).</p>
         </div>
-        <button onClick={() => setEditing({ ...empty })} className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
+        <button onClick={() => { setSaveError(''); setEditing({ ...empty }); }} className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
           <Plus className="h-3.5 w-3.5" /> Novo
         </button>
       </div>
@@ -76,7 +87,7 @@ export default function JourneyContentManager() {
                   {!it.is_published && <Badge tone="muted">Rascunho</Badge>}
                 </div>
               </div>
-              <button onClick={() => setEditing({ ...empty, ...it })} className="rounded p-1.5 text-muted-foreground hover:text-primary"><Pencil className="h-3.5 w-3.5" /></button>
+              <button onClick={() => { setSaveError(''); setEditing({ ...empty, ...it }); }} className="rounded p-1.5 text-muted-foreground hover:text-primary"><Pencil className="h-3.5 w-3.5" /></button>
               <button onClick={() => remove(it.id)} className="rounded p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
           ))}
@@ -121,6 +132,12 @@ export default function JourneyContentManager() {
                 Publicado
               </label>
             </div>
+            {saveError && (
+              <div className="mt-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span className="break-words">{saveError}</span>
+              </div>
+            )}
             <div className="mt-6 flex justify-end gap-3">
               <button onClick={() => setEditing(null)} className="rounded-lg px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
               <button onClick={save} disabled={saving} className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">
