@@ -6,6 +6,7 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/admin/ui';
 import ImageUpload from '@/components/admin/ImageUpload';
+import FileUpload from '@/components/admin/FileUpload';
 
 const empty = {
   title: '', subtitle: '', description: '', category_id: '', author: '',
@@ -178,7 +179,45 @@ export default function ACAMFAdmin() {
               <Field label="Duração"><input className={inputCls} placeholder="ex.: 12 min" value={editing.duration} onChange={(e) => set('duration', e.target.value)} /></Field>
               <Field label="Dia recomendado (1-33)"><input type="number" min="1" max="33" className={inputCls} value={editing.related_day_number || ''} onChange={(e) => set('related_day_number', e.target.value ? parseInt(e.target.value) : null)} placeholder="Ex.: 12" /></Field>
               <Field label="Data de Publicação"><input type="date" className={inputCls} value={editing.published_date} onChange={(e) => set('published_date', e.target.value)} /></Field>
-              <Field label="URL do Arquivo"><input className={inputCls} value={editing.file_url} onChange={(e) => set('file_url', e.target.value)} /></Field>
+              {(editing.content_type === 'pdf' || editing.content_type === 'ebook') && (
+                <div className="col-span-2">
+                  <FileUpload
+                    value={editing.file_url}
+                    onChange={(v) => set('file_url', v)}
+                    accept="application/pdf"
+                    contentType={editing.content_type}
+                    label={editing.content_type === 'pdf' ? 'Arquivo PDF' : 'Arquivo E-book'}
+                    hint="Envie um PDF ou cole a URL direta do arquivo."
+                  />
+                </div>
+              )}
+
+              {editing.content_type === 'audio' && (
+                <div className="col-span-2">
+                  <FileUpload
+                    value={editing.file_url}
+                    onChange={(v) => set('file_url', v)}
+                    accept="audio/*"
+                    contentType="audio"
+                    label="Arquivo de Áudio"
+                    hint="Envie um arquivo de áudio (mp3, wav, ogg) ou cole a URL direta."
+                  />
+                </div>
+              )}
+
+              {editing.content_type === 'imagem' && (
+                <div className="col-span-2">
+                  <FileUpload
+                    value={editing.file_url}
+                    onChange={(v) => set('file_url', v)}
+                    accept="image/*"
+                    contentType="imagem"
+                    label="Arquivo de Imagem"
+                    hint="Envie uma imagem ou cole a URL direta."
+                  />
+                </div>
+              )}
+
               {editing.content_type === 'video' && (
                 <div className="col-span-2 space-y-4 rounded-xl border border-border bg-muted/30 p-4">
                   <Field label="Qual fornecedor de vídeos você utiliza?">
@@ -204,6 +243,17 @@ export default function ACAMFAdmin() {
                   <Field label="URL do vídeo" hint="Cole o link do YouTube — o ID é extraído automaticamente">
                     <input className={inputCls} placeholder="https://youtube.com/watch?v=... ou https://youtu.be/..." value={editing.youtube_id} onChange={(e) => set('youtube_id', extractYouTubeId(e.target.value))} />
                   </Field>
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="mb-2 text-xs font-medium text-muted-foreground">Ou envie um arquivo de vídeo próprio (alternativo ao YouTube):</p>
+                    <FileUpload
+                      value={editing.file_url}
+                      onChange={(v) => set('file_url', v)}
+                      accept="video/*"
+                      contentType="video"
+                      label="Arquivo de Vídeo"
+                      hint="Se enviar um arquivo, ele substitui o vídeo do YouTube."
+                    />
+                  </div>
                 </div>
               )}
               <div className="col-span-2">
