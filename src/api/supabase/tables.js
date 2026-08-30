@@ -44,6 +44,9 @@ export const SUPABASE_TABLES = {
   ConsecrationSettings: 'consecration_settings',
   WhatsappOtpSettings: 'whatsapp_otp_settings',
   WhatsappOtp: 'whatsapp_otps',
+  PrayerCategory: 'prayer_categories',
+  Prayer: 'prayers',
+  PrayerFavorite: 'prayer_favorites',
   RegistrationSettings: 'registration_settings'
 };
 

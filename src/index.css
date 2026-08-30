@@ -142,6 +142,19 @@
   }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .rich-text p { margin-bottom: 0.75rem; line-height: 1.7; }
+  .rich-text h1, .rich-text h2, .rich-text h3 { font-family: var(--font-display); margin-top: 1.25rem; margin-bottom: 0.5rem; font-weight: 600; }
+  .rich-text h1 { font-size: 1.5rem; }
+  .rich-text h2 { font-size: 1.25rem; }
+  .rich-text h3 { font-size: 1.1rem; }
+  .rich-text ul, .rich-text ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+  .rich-text ul { list-style: disc; }
+  .rich-text ol { list-style: decimal; }
+  .rich-text li { margin-bottom: 0.25rem; }
+  .rich-text strong { font-weight: 600; }
+  .rich-text em { font-style: italic; }
+  .rich-text a { color: hsl(var(--primary)); text-decoration: underline; }
+  .rich-text blockquote { border-left: 3px solid hsl(var(--gold)); padding-left: 1rem; margin: 0.75rem 0; font-style: italic; color: hsl(var(--muted-foreground)); }
   .sidebar-scroll {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--sidebar-border)) transparent;

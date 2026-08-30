@@ -1,0 +1,42 @@
+{
+  "name": "PrayerCategory",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0
+    },
+    "icon": {
+      "type": "string",
+      "description": "Nome do \u00edcone lucide-react"
+    },
+    "color": {
+      "type": "string",
+      "description": "Cor hexadecimal da categoria"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

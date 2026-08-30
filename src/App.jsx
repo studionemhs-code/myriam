@@ -57,6 +57,7 @@ import Historico from '@/pages/Historico';
 import Associacao from '@/pages/Associacao';
 import AgentChat from '@/pages/AgentChat';
 import SolicitarCadeiazinha from '@/pages/SolicitarCadeiazinha';
+import Oracoes from '@/pages/Oracoes';
 import OrcamentosDashboard from '@/pages/admin/OrcamentosDashboard';
 import OrcamentosPedidos from '@/pages/admin/OrcamentosPedidos';
 import OrcamentosCatalogo from '@/pages/admin/OrcamentosCatalogo';
@@ -67,6 +68,7 @@ import WebhooksAdmin from '@/pages/admin/WebhooksAdmin';
 import GarantiaAdmin from '@/pages/admin/GarantiaAdmin';
 import GarantiaConfig from '@/pages/admin/GarantiaConfig';
 import OtpWhatsappAdmin from '@/pages/admin/OtpWhatsappAdmin';
+import OracoesAdmin from '@/pages/admin/OracoesAdmin';
 import OAuthConsent from '@/pages/OAuthConsent';
 
 const AuthenticatedApp = () => {
@@ -135,6 +137,7 @@ const AuthenticatedApp = () => {
           <Route path="/associacao" element={<Associacao />} />
           <Route path="/agentes" element={<AgentChat />} />
           <Route path="/solicitar-cadeiazinha" element={<SolicitarCadeiazinha />} />
+          <Route path="/oracoes" element={<Oracoes />} />
         </Route>
       </Route>
 
@@ -165,6 +168,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/garantia" element={<GarantiaAdmin />} />
           <Route path="/admin/garantia/config" element={<GarantiaConfig />} />
           <Route path="/admin/otp-whatsapp" element={<OtpWhatsappAdmin />} />
+          <Route path="/admin/oracoes" element={<OracoesAdmin />} />
         </Route>
       </Route>
 

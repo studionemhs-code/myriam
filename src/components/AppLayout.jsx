@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
-  Home, Flower2, BookOpen, Leaf, User, ShoppingBag,
+  Home, Flower2, BookOpen, Leaf, User, ShoppingBag, Heart,
   Bell, Calendar, Settings, LogOut, ChevronRight, ChevronLeft, Sparkles, Bot, Gift, Menu
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -21,6 +21,7 @@ const navItems = [
   { to: '/', label: 'Hoje', icon: Home },
   { to: '/caminho', label: 'Caminho', icon: Flower2 },
   { to: '/acamf', label: 'ACAMF', icon: BookOpen, feature: 'acamf' },
+  { to: '/oracoes', label: 'Orações', icon: Heart },
   { to: '/myriam', label: 'Myriam', icon: MyriamIcon, feature: 'myriam' },
   { to: '/perfil', label: 'Perfil', icon: User },
 ];
