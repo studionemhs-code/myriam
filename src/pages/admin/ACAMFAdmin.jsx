@@ -90,7 +90,8 @@ export default function ACAMFAdmin() {
       />
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-        <table className="w-full text-sm">
+        {/* Desktop table */}
+        <table className="hidden w-full text-sm md:table">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Título</th>
@@ -131,6 +132,39 @@ export default function ACAMFAdmin() {
             ))}
           </tbody>
         </table>
+
+        {/* Mobile cards */}
+        <div className="divide-y divide-border md:hidden">
+          {items.map((it) => (
+            <div key={it.id} className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 font-medium">
+                    {it.recommended && <Star className="h-3.5 w-3.5 text-gold" />}
+                    <span className="truncate">{it.title}</span>
+                  </div>
+                  {it.subtitle && <p className="mt-0.5 truncate text-xs text-muted-foreground">{it.subtitle}</p>}
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span>{catName(it.category_id)}</span>
+                    <span>·</span>
+                    <span>{courses.find((c) => c.id === it.course_id)?.title || '—'}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Badge tone="muted">{typeLabels[it.content_type]}</Badge>
+                    <Badge tone="muted">{levelLabels[it.level]}</Badge>
+                    <Badge tone={it.status === 'publicado' ? 'green' : it.status === 'arquivado' ? 'muted' : 'gold'}>
+                      {it.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <button type="button" onClick={() => setEditing({ ...empty, ...it })} className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-primary active:bg-muted/70"><Pencil className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => remove(it.id)} className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive active:bg-muted/70"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {editing && (
