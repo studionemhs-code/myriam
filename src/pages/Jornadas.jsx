@@ -19,8 +19,13 @@ export default function Jornadas() {
       const list = await base44.entities.CollectiveJourney.filter({ status: 'ativa' }, '-start_date', 50);
       setJourneys(list);
       if (user) {
-        const parts = await base44.entities.JourneyParticipant.filter({ created_by_id: user.id });
-        setParticipations(parts);
+        // created_by_id pode ser UUID (auth.uid()) ou legacy_id (MongoDB).
+        // Busca todas e filtra client-side para cobrir ambos os formatos.
+        const allParts = await base44.entities.JourneyParticipant.list('-created_date', 500);
+        const myParts = allParts.filter((p) =>
+          p.created_by_id === user.id || p.created_by_id === user.legacy_id
+        );
+        setParticipations(myParts);
       }
     } catch (e) { /* ignore */ }
   };
@@ -48,7 +53,13 @@ export default function Jornadas() {
       // Navega para a página de detalhes da jornada
       navigate(`/jornadas/${journey.id}`);
     } catch (e) {
-      alert(e.message || 'Não foi possível participar da jornada.');
+      // Se já existe participação (unique constraint), apenas navega para os detalhes
+      if (e.message && e.message.includes('duplicate key')) {
+        setParticipations((prev) => [...prev, { journey_id: journey.id, created_by_id: user?.id }]);
+        navigate(`/jornadas/${journey.id}`);
+      } else {
+        alert(e.message || 'Não foi possível participar da jornada.');
+      }
     } finally {
       setJoiningId(null);
     }

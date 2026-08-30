@@ -31,7 +31,8 @@ export default function JourneyDetail() {
       const parts = await base44.entities.JourneyParticipant.filter({ journey_id: id });
       setParticipantCount(parts.length);
       if (user) {
-        const mine = parts.find((p) => p.created_by_id === user.id);
+        // created_by_id pode ser UUID (auth.uid()) ou legacy_id (MongoDB)
+        const mine = parts.find((p) => p.created_by_id === user.id || p.created_by_id === user.legacy_id);
         setParticipant(mine || null);
       }
     } catch (e) { /* ignore */ }
@@ -42,13 +43,19 @@ export default function JourneyDetail() {
 
   const join = async () => {
     if (!user) return;
-    await base44.entities.JourneyParticipant.create({
-      journey_id: id,
-      joined_date: new Date().toISOString().slice(0, 10),
-      progress: 0,
-      completed_steps: []
-    });
-    await base44.entities.CollectiveJourney.update(id, { participant_count: (journey.participant_count || 0) + 1 });
+    try {
+      await base44.entities.JourneyParticipant.create({
+        journey_id: id,
+        joined_date: new Date().toISOString().slice(0, 10),
+        progress: 0,
+        completed_steps: []
+      });
+      // Atualiza o participant_count localmente (RLS bloqueia update no servidor para não-admins)
+      setParticipantCount((c) => c + 1);
+    } catch (e) {
+      // Se já existe (duplicate key), apenas continua
+      if (!e.message?.includes('duplicate key')) throw e;
+    }
     await load();
   };
 
