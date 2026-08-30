@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Users, Calendar, Check, Sparkles, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
@@ -9,6 +9,7 @@ import { formatDate, parseDate } from '@/lib/marianDates';
 
 export default function Jornadas() {
   const { user } = useCurrentUser();
+  const navigate = useNavigate();
   const [journeys, setJourneys] = useState([]);
   const [participations, setParticipations] = useState([]);
   const [joiningId, setJoiningId] = useState(null);
@@ -31,7 +32,7 @@ export default function Jornadas() {
     if (isParticipating(journey.id) || joiningId) return;
     setJoiningId(journey.id);
     try {
-      await base44.entities.JourneyParticipant.create({
+      const created = await base44.entities.JourneyParticipant.create({
         journey_id: journey.id,
         joined_date: new Date().toISOString().slice(0, 10),
         progress: 0
@@ -40,8 +41,12 @@ export default function Jornadas() {
       setJourneys((prev) => prev.map((j) =>
         j.id === journey.id ? { ...j, participant_count: (j.participant_count || 0) + 1 } : j
       ));
-      const parts = await base44.entities.JourneyParticipant.filter({ created_by_id: user.id });
-      setParticipations(parts);
+      // Atualiza o estado local diretamente com o registro criado
+      if (created) {
+        setParticipations((prev) => [...prev, created]);
+      }
+      // Navega para a página de detalhes da jornada
+      navigate(`/jornadas/${journey.id}`);
     } catch (e) {
       alert(e.message || 'Não foi possível participar da jornada.');
     } finally {
