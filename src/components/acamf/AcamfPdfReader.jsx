@@ -21,7 +21,7 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
   const [panel, setPanel] = useState(null);
   const { user } = useCurrentUser();
 
-  const panState = useRef({ startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 });
+  const panState = useRef({ startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0, panning: false });
 
   const renderPageInto = useCallback(async (pageNum, target) => {
     if (!pdfRef.current || !target) return;
@@ -87,15 +87,33 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
     return () => { cancelled = true; pdfRef.current = null; };
   }, [open, url]);
 
-  // Render on changes
+  // Render paginated (re-renders on page/scale change)
   useEffect(() => {
-    if (!open || !pdfRef.current || loading) return;
-    if (viewMode === 'paginated') {
-      renderPaginated(currentPage);
-    } else {
-      renderContinuous();
-    }
-  }, [scale, currentPage, open, viewMode, loading, renderPaginated, renderContinuous]);
+    if (!open || !pdfRef.current || loading || viewMode !== 'paginated') return;
+    renderPaginated(currentPage);
+  }, [scale, currentPage, open, viewMode, loading, renderPaginated]);
+
+  // Render continuous — only on scale/viewMode change, NOT on currentPage (which is driven by scroll)
+  useEffect(() => {
+    if (!open || !pdfRef.current || loading || viewMode !== 'continuous') return;
+    renderContinuous();
+  }, [scale, open, viewMode, loading, renderContinuous]);
+
+  // Mouse drag panning (desktop) — document-level listeners so drag works outside the container
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!panState.current.panning || !scrollRef.current) return;
+      scrollRef.current.scrollLeft = panState.current.scrollLeft - (e.clientX - panState.current.startX);
+      scrollRef.current.scrollTop = panState.current.scrollTop - (e.clientY - panState.current.startY);
+    };
+    const handleMouseUp = () => { panState.current.panning = false; };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   // Track current page in continuous mode via scroll
   const handleScroll = useCallback(() => {
@@ -150,6 +168,18 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
         else goNext();
       }
     }
+  };
+
+  // Mouse drag start (desktop panning)
+  const onMouseDown = (e) => {
+    if (!scrollRef.current) return;
+    panState.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      scrollLeft: scrollRef.current.scrollLeft,
+      scrollTop: scrollRef.current.scrollTop,
+      panning: true,
+    };
   };
 
   const isPaginated = viewMode === 'paginated';
@@ -224,10 +254,11 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
           {/* PDF canvas */}
           <div
             ref={scrollRef}
-            className="relative flex-1 overflow-auto bg-muted/30 p-3"
+            className={`relative flex-1 overflow-auto bg-muted/30 p-3 ${isPaginated ? 'cursor-grab active:cursor-grabbing' : ''}`}
             onTouchStart={isPaginated ? onTouchStart : undefined}
             onTouchMove={isPaginated ? onTouchMove : undefined}
             onTouchEnd={isPaginated ? onTouchEnd : undefined}
+            onMouseDown={isPaginated ? onMouseDown : undefined}
             onScroll={handleScroll}
             style={{ touchAction: isPaginated ? 'none' : 'auto', WebkitOverflowScrolling: 'touch' }}
           >
