@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Play, ChevronRight, BookOpen, Sparkles, Info, Lock, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { StandaloneContentSection } from '@/components/acamf/StandaloneContentSection';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
 
@@ -73,6 +74,13 @@ export default function ACAMF() {
     .map((cat) => ({ category: cat, courses: notStarted.filter((c) => c.category_id === cat.id) }))
     .filter((g) => g.courses.length > 0);
   const uncategorized = notStarted.filter((c) => !c.category_id);
+
+  // Conteúdos avulsos (sem course_id) — agrupados por categoria
+  const standaloneLessons = lessons.filter((l) => !l.course_id);
+  const standaloneByCategory = categories
+    .map((cat) => ({ category: cat, items: standaloneLessons.filter((l) => l.category_id === cat.id) }))
+    .filter((g) => g.items.length > 0);
+  const standaloneUncategorized = standaloneLessons.filter((l) => !l.category_id);
 
   // Tags únicas extraídas das aulas
   const allTags = [...new Set(lessons.flatMap((l) => l.tags || []))].sort();
@@ -223,6 +231,29 @@ export default function ACAMF() {
               ))}
             </Carousel>
           </Section>
+        )}
+
+        {/* Conteúdos avulsos por categoria */}
+        {standaloneByCategory.map((g) => (
+          <StandaloneContentSection
+            key={`sa-${g.category.id}`}
+            title={g.category.name}
+            accent={g.category.color || '#663399'}
+            items={g.items}
+            userAccess={userAccess}
+            onLockedClick={setLockedCourse}
+          />
+        ))}
+
+        {/* Conteúdos avulsos sem categoria */}
+        {standaloneUncategorized.length > 0 && (
+          <StandaloneContentSection
+            title="Outros conteúdos"
+            accent="#663399"
+            items={standaloneUncategorized}
+            userAccess={userAccess}
+            onLockedClick={setLockedCourse}
+          />
         )}
           </>
         )}
