@@ -29,15 +29,16 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
     const fitScale = Math.min(2, Math.max(0.5, containerWidth / base.width));
     const finalScale = fitScale * scale;
     const viewport = page.getViewport({ scale: finalScale });
+    const dpr = window.devicePixelRatio || 1;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    canvas.style.width = '100%';
-    canvas.style.height = 'auto';
+    canvas.width = Math.floor(viewport.width * dpr);
+    canvas.height = Math.floor(viewport.height * dpr);
+    canvas.style.width = `${Math.floor(viewport.width)}px`;
+    canvas.style.height = `${Math.floor(viewport.height)}px`;
     canvas.className = 'rounded-lg shadow-sm bg-white mx-auto';
     container.appendChild(canvas);
-    await page.render({ canvasContext: ctx, viewport }).promise;
+    await page.render({ canvasContext: ctx, viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : undefined }).promise;
   }, [scale]);
 
   useEffect(() => {
