@@ -122,9 +122,9 @@ export default function ACAMFAdmin() {
                   </Badge>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => setEditing({ ...empty, ...it })} className="text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
-                    <button onClick={() => remove(it.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  <div className="flex justify-end gap-1">
+                    <button type="button" onClick={() => setEditing({ ...empty, ...it })} className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-primary active:bg-muted/70"><Pencil className="h-4 w-4" /></button>
+                    <button type="button" onClick={() => remove(it.id)} className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted hover:text-destructive active:bg-muted/70"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </td>
               </tr>
