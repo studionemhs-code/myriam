@@ -1494,6 +1494,9 @@ ALTER TABLE public.webhook_automations ADD COLUMN IF NOT EXISTS orcamento_status
 -- Telefone persistido para disparos de teste do webhook
 ALTER TABLE public.webhook_automations ADD COLUMN IF NOT EXISTS test_phone TEXT;
 
+-- Índice para localizar rapidamente pedidos pelo código na página pública de rastreio
+CREATE INDEX IF NOT EXISTS idx_quote_requests_tracking_code ON public.quote_requests(tracking_code);
+
 -- ============================================================================
 -- PRÓXIMOS PASSOS PARA MIGRAÇÃO COMPLETA DO APP:
 -- a) Instalar @supabase/supabase-js no projeto

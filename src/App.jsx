@@ -70,6 +70,7 @@ import GarantiaConfig from '@/pages/admin/GarantiaConfig';
 import OtpWhatsappAdmin from '@/pages/admin/OtpWhatsappAdmin';
 import OracoesAdmin from '@/pages/admin/OracoesAdmin';
 import OAuthConsent from '@/pages/OAuthConsent';
+import Rastreio from '@/pages/Rastreio';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/aprovacao/:token" element={<AprovacaoAutoridade />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
+      <Route path="/rastreio/:codigo?" element={<Rastreio />} />
 
       <Route path="/onboarding" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route index element={<Onboarding />} />

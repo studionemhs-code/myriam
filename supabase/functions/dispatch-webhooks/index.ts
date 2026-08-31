@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
     if (!user || user.role !== 'admin') return json({ error: 'Forbidden' }, 403);
 
     const db = admin();
-    const { trigger_type, entity_id, status } = await req.json();
+    const { trigger_type, entity_id, status, app_url } = await req.json();
     if (!trigger_type || !entity_id) return json({ error: 'Missing trigger_type or entity_id' }, 400);
 
     let payload: Record<string, unknown>;
@@ -46,7 +46,8 @@ Deno.serve(async (req) => {
         status: orderStatus,
         status_pedido: orderStatus,
         pedido_id: order.id,
-        link_app: APP_URL,
+        link_app: app_url || APP_URL,
+        link_rastreio: order.tracking_code ? `${app_url || APP_URL}/rastreio/${order.tracking_code}` : '',
         data: new Date().toISOString()
       };
     } else {

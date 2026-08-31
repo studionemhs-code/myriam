@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { SectionCard, GoldDivider, Ornament } from '@/components/ui/marian';
 import JourneySummaryCard from '@/components/jornadas/JourneySummaryCard';
+import HomeShipmentWidget from '@/components/tracking/HomeShipmentWidget';
 import {
   getGreeting, daysSince, daysUntil, formatDate, formatDuration, nextRenewal,
   getNextMarianEvent, isToday } from
@@ -134,6 +135,8 @@ export default function Hoje() {
       {status === 'consagrado' && <ConsecratedBlock user={user} />}
       {status === 'preparacao' && <PreparationBlock user={user} progress={progress} dayContent={dayContent} days={days} contentLoaded={contentLoaded} />}
       {status === 'interessado' && <DiscoverBlock />}
+
+      <HomeShipmentWidget />
 
       {/* Resumo de Jornada Coletiva ativa (distinto da Caminhada de 33 dias) */}
       {activeJourney && activeParticipant && (

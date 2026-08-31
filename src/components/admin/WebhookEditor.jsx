@@ -19,7 +19,7 @@ const TRIGGER_OPTIONS = [
 const PLACEHOLDERS = [
   '{remetente_nome}', '{destinatario_nome}', '{destinatario_email}', '{destinatario_telefone}',
   '{mensagem_texto}', '{categoria}', '{titulo}', '{corpo}',
-  '{link_app}', '{conversation_id}', '{data}',
+  '{link_app}', '{link_rastreio}', '{conversation_id}', '{data}',
   '{cliente_nome}', '{codigo_rastreio}', '{status}', '{status_pedido}', '{pedido_id}'
 ];
 

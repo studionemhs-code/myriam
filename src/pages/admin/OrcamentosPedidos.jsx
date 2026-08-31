@@ -47,7 +47,7 @@ export default function OrcamentosPedidos() {
   const dispatchOrcamentoWebhook = async (id, status) => {
     try {
       const { error } = await supabase.functions.invoke('dispatch-webhooks', {
-        body: { trigger_type: 'orcamento', entity_id: id, status }
+        body: { trigger_type: 'orcamento', entity_id: id, status, app_url: window.location.origin }
       });
       if (error) throw error;
     } catch { /* webhook falhou — não bloqueia o fluxo do admin */ }
