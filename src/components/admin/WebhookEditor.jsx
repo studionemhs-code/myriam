@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Webhook, Code, Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabase';
 import { ORDER_STATUSES, STATUS_LABEL } from '@/lib/quoteUtils';
 
 const TRIGGER_OPTIONS = [
@@ -20,7 +20,7 @@ const PLACEHOLDERS = [
   '{remetente_nome}', '{destinatario_nome}', '{destinatario_email}', '{destinatario_telefone}',
   '{mensagem_texto}', '{categoria}', '{titulo}', '{corpo}',
   '{link_app}', '{conversation_id}', '{data}',
-  '{cliente_nome}', '{codigo_rastreio}', '{status_pedido}'
+  '{cliente_nome}', '{codigo_rastreio}', '{status}', '{status_pedido}', '{pedido_id}'
 ];
 
 export default function WebhookEditor({ webhook, onClose, onSaved }) {
@@ -72,12 +72,15 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
     setTestResult(null);
     setError('');
     try {
-      const res = await base44.functions.invoke('testWebhook', {
-        url: form.url,
-        custom_headers: parsedHeaders,
-        message_template: form.message_template
+      const { data, error: invokeError } = await supabase.functions.invoke('test-webhook', {
+        body: {
+          url: form.url,
+          custom_headers: parsedHeaders,
+          message_template: form.message_template
+        }
       });
-      setTestResult(res.data);
+      if (invokeError) throw invokeError;
+      setTestResult(data);
     } catch (e) {
       setTestResult({ error: e.message || 'Erro ao testar conexão.' });
     }
@@ -119,9 +122,16 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
     try {
       const data = { ...form, custom_headers: parsedHeaders };
       if (webhook?.id) {
-        await base44.entities.WebhookAutomation.update(webhook.id, data);
+        const { error: updateError } = await supabase
+          .from('webhook_automations')
+          .update(data)
+          .eq('id', webhook.id);
+        if (updateError) throw updateError;
       } else {
-        await base44.entities.WebhookAutomation.create(data);
+        const { error: insertError } = await supabase
+          .from('webhook_automations')
+          .insert(data);
+        if (insertError) throw insertError;
       }
       onSaved();
     } catch (e) {

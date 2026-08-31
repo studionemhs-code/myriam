@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabase';
 import { AdminPageTitle, Loading, Badge } from '@/components/admin/ui';
 import { STATUS_LABEL, STATUS_TONE, ORDER_STATUSES, exportOrdersCsv } from '@/lib/quoteUtils';
 import { Download, Eye, ExternalLink, Trash2 } from 'lucide-react';
@@ -13,11 +13,21 @@ export default function OrcamentosPedidos() {
   const [selected, setSelected] = useState(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
 
+  const loadOrders = async () => {
+    const { data, error } = await supabase
+      .from('quote_requests')
+      .select('*')
+      .order('created_date', { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return data || [];
+  };
+
   React.useEffect(() => {
-    base44.entities.QuoteRequest.list('-created_date', 200).then(setOrders).catch(() => setOrders([]));
+    loadOrders().then(setOrders).catch(() => setOrders([]));
   }, []);
 
-  const reload = () => base44.entities.QuoteRequest.list('-created_date', 200).then(setOrders);
+  const reload = async () => setOrders(await loadOrders());
 
   const filtered = useMemo(() => {
     if (!orders) return [];
@@ -36,16 +46,30 @@ export default function OrcamentosPedidos() {
 
   const dispatchOrcamentoWebhook = async (id, status) => {
     try {
-      await base44.functions.invoke('dispatchWebhooks', { trigger_type: 'orcamento', entity_id: id, status });
+      const { error } = await supabase.functions.invoke('dispatch-webhooks', {
+        body: { trigger_type: 'orcamento', entity_id: id, status }
+      });
+      if (error) throw error;
     } catch { /* webhook falhou — não bloqueia o fluxo do admin */ }
   };
 
   const updateStatus = async (id, status, extra = {}) => {
-    await base44.entities.QuoteRequest.update(id, { status, ...extra });
-    setSelected({ ...selected, status, ...extra });
-    reload();
-    toast({ title: 'Status atualizado', description: `Pedido marcado como ${STATUS_LABEL[status]}.` });
-    dispatchOrcamentoWebhook(id, status);
+    try {
+      const { data, error } = await supabase
+        .from('quote_requests')
+        .update({ status, ...extra })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+
+      setSelected(data);
+      await reload();
+      toast({ title: 'Status atualizado', description: `Pedido marcado como ${STATUS_LABEL[status]}.` });
+      void dispatchOrcamentoWebhook(id, status);
+    } catch (error) {
+      toast({ title: 'Não foi possível atualizar o status', description: error.message, variant: 'destructive' });
+    }
   };
 
   const onStatusSelect = (newStatus) => {
@@ -53,7 +77,7 @@ export default function OrcamentosPedidos() {
       setPendingStatus('enviado');
       setTrackingCode(selected.tracking_code || '');
     } else {
-      updateStatus(selected.id, newStatus);
+      void updateStatus(selected.id, newStatus);
     }
   };
 
@@ -64,9 +88,13 @@ export default function OrcamentosPedidos() {
 
   const deleteOrder = async (id) => {
     if (!await confirm({ title: 'Remover pedido?', description: 'Esta ação não pode ser desfeita.', confirmLabel: 'Remover', destructive: true })) return;
-    await base44.entities.QuoteRequest.delete(id);
+    const { error } = await supabase.from('quote_requests').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Não foi possível remover o pedido', description: error.message, variant: 'destructive' });
+      return;
+    }
     setSelected(null);
-    reload();
+    await reload();
     toast({ title: 'Pedido removido', description: 'O pedido foi excluído com sucesso.' });
   };
 

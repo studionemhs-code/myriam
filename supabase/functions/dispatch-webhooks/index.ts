@@ -1,8 +1,11 @@
-import { json, preflight, admin, findProfile, fillTemplate, APP_URL } from '../_shared/utils.ts';
+import { json, preflight, admin, currentUser, findProfile, fillTemplate, APP_URL } from '../_shared/utils.ts';
 
 Deno.serve(async (req) => {
   const pf = preflight(req); if (pf) return pf;
   try {
+    const user = await currentUser(req);
+    if (!user || user.role !== 'admin') return json({ error: 'Forbidden' }, 403);
+
     const db = admin();
     const { trigger_type, entity_id, status } = await req.json();
     if (!trigger_type || !entity_id) return json({ error: 'Missing trigger_type or entity_id' }, 400);
@@ -40,6 +43,7 @@ Deno.serve(async (req) => {
       payload = {
         cliente_nome: order.customer_name || '',
         codigo_rastreio: order.tracking_code || '',
+        status: orderStatus,
         status_pedido: orderStatus,
         pedido_id: order.id,
         link_app: APP_URL,

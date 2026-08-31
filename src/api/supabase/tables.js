@@ -54,6 +54,6 @@ export const SUPABASE_TABLES = {
 // Colunas array no Postgres (usadas em filtros de contenção).
 export const SUPABASE_ARRAY_COLUMNS = new Set([
   'participants', 'participant_names', 'participant_photos', 'read_by',
-  'tags', 'trigger_types', 'trigger_categories', 'completed_days',
+  'tags', 'trigger_types', 'trigger_categories', 'orcamento_statuses', 'completed_days',
   'content_ids', 'related_content_ids', 'viewers', 'photos'
 ]);

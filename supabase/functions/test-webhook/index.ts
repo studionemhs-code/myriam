@@ -22,6 +22,7 @@ Deno.serve(async (req) => {
       conversation_id: 'test-conv-id',
       cliente_nome: 'Cliente Teste',
       codigo_rastreio: 'OP123456789BR',
+      status: 'enviado',
       status_pedido: 'enviado',
       pedido_id: 'test-order-id',
       data: new Date().toISOString()

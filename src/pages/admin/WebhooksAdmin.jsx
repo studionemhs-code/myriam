@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Webhook, Plus, Trash2, Edit2, Send, Power, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabase';
 import WebhookEditor from '@/components/admin/WebhookEditor';
 
 const TRIGGER_LABELS = {
@@ -19,8 +19,13 @@ export default function WebhooksAdmin() {
 
   const load = useCallback(async () => {
     try {
-      const list = await base44.entities.WebhookAutomation.list('-created_date', 100);
-      setWebhooks(list);
+      const { data, error } = await supabase
+        .from('webhook_automations')
+        .select('*')
+        .order('created_date', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      setWebhooks(data || []);
     } catch (e) { /* ignore */ }
     setLoading(false);
   }, []);
@@ -39,7 +44,11 @@ export default function WebhooksAdmin() {
 
   const toggleEnabled = async (webhook) => {
     try {
-      await base44.entities.WebhookAutomation.update(webhook.id, { enabled: !webhook.enabled });
+      const { error } = await supabase
+        .from('webhook_automations')
+        .update({ enabled: !webhook.enabled })
+        .eq('id', webhook.id);
+      if (error) throw error;
       setWebhooks((prev) => prev.map((w) => w.id === webhook.id ? { ...w, enabled: !w.enabled } : w));
     } catch (e) { alert('Erro ao alterar status.'); }
   };
@@ -47,7 +56,8 @@ export default function WebhooksAdmin() {
   const remove = async (webhook) => {
     if (!confirm(`Excluir o webhook "${webhook.name}"?`)) return;
     try {
-      await base44.entities.WebhookAutomation.delete(webhook.id);
+      const { error } = await supabase.from('webhook_automations').delete().eq('id', webhook.id);
+      if (error) throw error;
       setWebhooks((prev) => prev.filter((w) => w.id !== webhook.id));
     } catch (e) { alert('Erro ao excluir.'); }
   };
@@ -56,12 +66,15 @@ export default function WebhooksAdmin() {
     setTestingId(webhook.id);
     setTestResult(null);
     try {
-      const res = await base44.functions.invoke('testWebhook', {
-        url: webhook.url,
-        custom_headers: webhook.custom_headers,
-        message_template: webhook.message_template
+      const { data, error } = await supabase.functions.invoke('test-webhook', {
+        body: {
+          url: webhook.url,
+          custom_headers: webhook.custom_headers,
+          message_template: webhook.message_template
+        }
       });
-      setTestResult({ id: webhook.id, ...res.data });
+      if (error) throw error;
+      setTestResult({ id: webhook.id, ...data });
     } catch (e) {
       setTestResult({ id: webhook.id, error: e.message });
     }
