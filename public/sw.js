@@ -1,37 +1,76 @@
-// Service Worker — Theotokos PWA
-// Versão do cache: incrementar a cada deploy para invalidar caches antigos.
-const CACHE_VERSION = 'theotokos-v2-20260827';
-const PRECACHE = ['/', '/index.html', '/manifest.json'];
+// Myriam Service Worker — v2 (cache-busting reset)
+// Garante que versões antigas do bundle sejam descartadas e o app
+// sempre carregue o código mais recente após um deploy.
+const CACHE_VERSION = 'myriam-sw-v2';
+const CACHE_STATIC = `${CACHE_VERSION}-static`;
+
+const PRECACHE_URLS = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(PRECACHE)).catch(() => {})
-  );
-  // Força a ativação imediata sem esperar as abas fecharem.
+  // Assume o controle imediatamente, sem esperar o SW antigo morrer.
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_STATIC).then((cache) => cache.addAll(PRECACHE_URLS).catch(() => {}))
+  );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    (async () => {
+      // Remove TODOS os caches antigos (de qualquer versão anterior do SW).
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter((k) => k !== CACHE_STATIC).map((k) => caches.delete(k))
+      );
+      // Assume o controle de todas as abas abertas imediatamente.
+      await self.clients.claim();
+    })()
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  const { request } = event;
+  if (request.method !== 'GET') return;
 
-  // Estratégia: stale-while-revalidate — serve do cache e atualiza em paralelo.
+  const url = new URL(request.url);
+  // Ignora requisições de outras origens (CDNs, APIs externas, etc.).
+  if (url.origin !== self.location.origin) return;
+
+  // Navegação (HTML): network-first — sempre busca o HTML mais recente.
+  // Isso garante que o index.html referencie o bundle com hash novo.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(request);
+          const cache = await caches.open(CACHE_STATIC);
+          cache.put('/index.html', fresh.clone()).catch(() => {});
+          return fresh;
+        } catch (e) {
+          const cached = (await caches.match(request)) || (await caches.match('/index.html'));
+          return cached || Response.error();
+        }
+      })()
+    );
+    return;
+  }
+
+  // Assets estáticos (JS/CSS/imagens com hash): stale-while-revalidate.
+  // Como o HTML é sempre fresco, ele referencia o hash correto do bundle,
+  // então o cache só serve versões válidas.
   event.respondWith(
-    caches.open(CACHE_VERSION).then(async (cache) => {
-      const cached = await cache.match(req);
-      const network = fetch(req).then((res) => {
-        if (res && res.status === 200) cache.put(req, res.clone());
-        return res;
-      }).catch(() => cached);
-      return cached || network;
-    })
+    (async () => {
+      const cached = await caches.match(request);
+      const networkPromise = fetch(request)
+        .then((res) => {
+          if (res && res.status === 200 && res.type === 'basic') {
+            const resClone = res.clone();
+            caches.open(CACHE_STATIC).then((c) => c.put(request, resClone));
+          }
+          return res;
+        })
+        .catch(() => cached);
+      return cached || networkPromise;
+    })()
   );
 });
