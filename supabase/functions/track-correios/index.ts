@@ -80,6 +80,8 @@ async function registrationForOrder(order: Record<string, any> | null) {
 Deno.serve(async (req) => {
   const pf = preflight(req); if (pf) return pf;
   try {
+    const { data: flag } = await admin().from('feature_flags').select('visible').eq('feature', 'rastreamento_correios').maybeSingle();
+    if (flag?.visible === false) return json({ disabled: true, shipment: null });
     const input = await req.json().catch(() => ({}));
     const order = input.mode === 'mine'
       ? await orderForCurrentUser(req)

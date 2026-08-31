@@ -1507,3 +1507,10 @@ CREATE INDEX IF NOT EXISTS idx_quote_requests_tracking_code ON public.quote_requ
 -- f) Migrar os dados existentes (export do Base44 → import no Supabase)
 -- g) Configurar Storage do Supabase para uploads de arquivos
 -- ============================================================================
+
+-- Controle administrativo do rastreamento de pedidos
+INSERT INTO public.feature_flags (feature, label, visible)
+SELECT 'rastreamento_correios', 'Rastreamento de pedidos (Correios)', true
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.feature_flags WHERE feature = 'rastreamento_correios'
+);

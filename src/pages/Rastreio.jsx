@@ -8,6 +8,7 @@ import ShipmentCard from '@/components/tracking/ShipmentCard';
 export default function Rastreio() {
   const { codigo = '' } = useParams();
   const navigate = useNavigate();
+  const [enabled, setEnabled] = useState(null);
   const [state, setState] = useState({ loading: false, shipment: null, registered: false, error: '' });
   const search = async (code) => {
     navigate(`/rastreio/${code}`, { replace: true });
@@ -15,7 +16,18 @@ export default function Rastreio() {
     const { data, error } = await supabase.functions.invoke('track-correios', { body: { code } });
     setState({ loading: false, shipment: data?.shipment || null, registered: Boolean(data?.registered), error: data?.error || error?.message || (!data?.shipment ? 'Objeto não encontrado.' : '') });
   };
-  useEffect(() => { if (codigo) search(codigo); }, []);
+  useEffect(() => {
+    supabase.from('feature_flags').select('visible').eq('feature', 'rastreamento_correios').maybeSingle().then(({ data }) => {
+      const isEnabled = data?.visible !== false;
+      setEnabled(isEnabled);
+      if (isEnabled && codigo) search(codigo);
+    });
+  }, []);
+  if (enabled === false) return (
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+      <div className="max-w-md text-center"><PackageSearch className="mx-auto h-9 w-9 text-muted-foreground" /><h1 className="mt-3 font-display text-xl">Rastreamento indisponível</h1><p className="mt-2 text-sm text-muted-foreground">A consulta de pedidos não está disponível no momento.</p><Link to="/" className="mt-5 inline-flex items-center gap-2 text-sm text-primary"><ArrowLeft className="h-4 w-4" /> Voltar</Link></div>
+    </main>
+  );
   return (
     <main className="min-h-screen bg-background px-4 py-6 text-foreground">
       <div className="mx-auto max-w-2xl">

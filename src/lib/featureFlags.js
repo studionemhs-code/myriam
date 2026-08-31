@@ -12,4 +12,5 @@ export const FEATURE_LIST = [
   { feature: 'cadeiazinha', label: 'Solicite sua cadeiazinha' },
   { feature: 'garantia_cadeiazinha', label: 'Cadeiazinha Theotokos (Garantia)' },
   { feature: 'assistente_ia_flutuante', label: 'Assistente IA (botão flutuante)' },
+  { feature: 'rastreamento_correios', label: 'Rastreamento de pedidos (Correios)' },
 ];

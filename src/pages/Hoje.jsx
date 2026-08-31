@@ -136,7 +136,7 @@ export default function Hoje() {
       {status === 'preparacao' && <PreparationBlock user={user} progress={progress} dayContent={dayContent} days={days} contentLoaded={contentLoaded} />}
       {status === 'interessado' && <DiscoverBlock />}
 
-      <HomeShipmentWidget />
+      {isVisible('rastreamento_correios') && <HomeShipmentWidget />}
 
       {/* Resumo de Jornada Coletiva ativa (distinto da Caminhada de 33 dias) */}
       {activeJourney && activeParticipant && (
