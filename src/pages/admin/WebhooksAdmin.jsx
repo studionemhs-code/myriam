@@ -63,6 +63,7 @@ export default function WebhooksAdmin() {
   };
 
   const testWebhook = async (webhook) => {
+    const test_phone = prompt('Telefone para teste (com DDI, ex: +5511987654321). Deixe vazio para usar o número padrão:', '');
     setTestingId(webhook.id);
     setTestResult(null);
     try {
@@ -70,7 +71,8 @@ export default function WebhooksAdmin() {
         body: {
           url: webhook.url,
           custom_headers: webhook.custom_headers,
-          message_template: webhook.message_template
+          message_template: webhook.message_template,
+          test_phone: (test_phone || '').trim()
         }
       });
       if (error) throw error;

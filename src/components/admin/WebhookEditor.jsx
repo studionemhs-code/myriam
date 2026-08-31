@@ -39,6 +39,7 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
   const [error, setError] = useState('');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
+  const [testPhone, setTestPhone] = useState('');
 
   useEffect(() => {
     if (webhook) {
@@ -76,7 +77,8 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
         body: {
           url: form.url,
           custom_headers: parsedHeaders,
-          message_template: form.message_template
+          message_template: form.message_template,
+          test_phone: testPhone.trim()
         }
       });
       if (invokeError) throw invokeError;
@@ -302,14 +304,23 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-4">
-          <button
-            onClick={testConnection}
-            disabled={testing}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-40"
-          >
-            {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {testing ? 'Testando...' : 'Testar Conexão'}
-          </button>
+          <div className="flex flex-col gap-2">
+            <input
+              type="tel"
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              placeholder="Telefone p/ teste (ex: +5511987654321)"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <button
+              onClick={testConnection}
+              disabled={testing}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-40"
+            >
+              {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {testing ? 'Testando...' : 'Testar Conexão'}
+            </button>
+          </div>
           <div className="flex gap-2">
             <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-muted-foreground hover:bg-muted">Cancelar</button>
             <button

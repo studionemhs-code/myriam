@@ -6,14 +6,14 @@ Deno.serve(async (req) => {
     const user = await currentUser(req);
     if (!user || user.role !== 'admin') return json({ error: 'Forbidden' }, 403);
 
-    const { url, custom_headers, message_template } = await req.json();
+    const { url, custom_headers, message_template, test_phone } = await req.json();
     if (!url) return json({ error: 'Missing url' }, 400);
 
     const samplePayload = {
       remetente_nome: 'Usuário Teste',
       destinatario_nome: 'Destinatário Teste',
       destinatario_email: 'teste@exemplo.com',
-      destinatario_telefone: '+5511999999999',
+      destinatario_telefone: test_phone || '+5511999999999',
       mensagem_texto: 'Esta é uma mensagem de teste do webhook.',
       categoria: 'chat',
       titulo: 'Notificação de Teste',
