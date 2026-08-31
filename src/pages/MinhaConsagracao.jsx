@@ -88,8 +88,8 @@ export default function MinhaConsagracao() {
         <div className="flex items-center gap-2 text-gold">
           <Flower2 className="h-5 w-5" /><span className="text-xs uppercase tracking-[0.2em]">Sua Consagração</span>
         </div>
-        <p className="mt-3 font-display text-3xl">Você se consagrou há <span className="text-gold">{since.toLocaleString('pt-BR')}</span> dias.</p>
-        <p className="mt-1 text-sm text-primary-foreground/70">Consagrado há {formatDuration(cDate)}.</p>
+        <p className="mt-3 font-display text-3xl">Você se consagrou há <span className="text-gold">{formatDuration(cDate)}</span>.</p>
+        <p className="mt-1 text-sm text-primary-foreground/70">{since.toLocaleString('pt-BR')} dias desde a sua consagração.</p>
         <div className="gold-line my-4 w-16 opacity-40" />
         <p className="text-sm">Data da Consagração: <span className="text-gold">{formatDate(cDate)}</span></p>
       </section>

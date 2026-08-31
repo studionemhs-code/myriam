@@ -27,7 +27,7 @@ export function daysSince(date) {
 export function daysUntil(date) {
   const d = parseDate(date);
   if (!d) return 0;
-  return daysBetween(new Date(), d);
+  return Math.max(0, daysBetween(new Date(), d));
 }
 
 export function addYears(date, years) {
@@ -41,13 +41,7 @@ export function addYears(date, years) {
 export function nextRenewal(consecrationDate, lastRenewalDate) {
   const base = parseDate(lastRenewalDate) || parseDate(consecrationDate);
   if (!base) return null;
-  const now = new Date();
-  let candidate = new Date(base);
-  candidate.setFullYear(now.getFullYear());
-  if (candidate.getTime() < startOfDay(now).getTime()) {
-    candidate.setFullYear(now.getFullYear() + 1);
-  }
-  return candidate;
+  return addYears(base, 1);
 }
 
 export function formatDate(date, opts = { day: 'numeric', month: 'long', year: 'numeric' }) {
