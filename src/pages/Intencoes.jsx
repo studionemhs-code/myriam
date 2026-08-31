@@ -31,7 +31,11 @@ export default function Intencoes() {
     if (!text.trim()) return;
     setSaving(true);
     try {
-      await base44.entities.PrayerIntention.create({ text, category, image_url: image || undefined, status: 'ativo', prayer_count: 0 });
+      const created = await base44.entities.PrayerIntention.create({ text, category, image_url: image || undefined, status: 'ativo', prayer_count: 0 });
+      // Avisa os membros que optaram por receber notificações de intenções
+      try {
+        await base44.functions.invoke('notifyNewIntention', { intention_id: created.id, text });
+      } catch (e) { /* não bloqueia a publicação */ }
       setText(''); setCategory('outros'); setImage(''); setShowForm(false);
       load();
     } finally { setSaving(false); }
