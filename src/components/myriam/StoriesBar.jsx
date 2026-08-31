@@ -13,8 +13,10 @@ export default function StoriesBar() {
 
   const load = async () => {
     try {
-      const list = await base44.entities.MyriamStory.list('-created_date', 50);
-      setStories(list);
+      const list = await base44.entities.MyriamStory.list('-created_date', 100);
+      // Stories expiram em 24h (como no Instagram)
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      setStories((list || []).filter((s) => new Date(s.created_date).getTime() > cutoff));
     } catch (e) { /* ignore */ }
   };
   useEffect(() => { load(); }, []);
