@@ -17,7 +17,7 @@ export default function JourneyDetailsModal({ journey, onClose }) {
         let userMap = {};
         if (userIds.length) {
           const users = await base44.entities.User.list('-created_date', 500);
-          users.forEach((u) => { userMap[u.id] = u; });
+          users.forEach((u) => { userMap[u.id] = u; if (u.legacy_id) userMap[u.legacy_id] = u; });
         }
         const enriched = parts.map((p) => {
           const u = userMap[p.created_by_id];
@@ -25,7 +25,9 @@ export default function JourneyDetailsModal({ journey, onClose }) {
             ...p,
             user_name: u?.display_name || u?.full_name || u?.email || 'Usuário',
             user_photo: u?.photo_url,
-            user_status: u?.status
+            user_status: u?.status,
+            user_email: u?.email,
+            user_phone: u?.phone
           };
         });
         setParticipants(enriched);
@@ -48,11 +50,13 @@ export default function JourneyDetailsModal({ journey, onClose }) {
   };
 
   const renderTable = (list) => (
-    <div className="overflow-hidden rounded-xl border border-border">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-xl border border-border">
+      <table className="w-full min-w-[760px] text-sm">
         <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
           <tr>
             <th className="px-3 py-2">Participante</th>
+            <th className="px-3 py-2">E-mail</th>
+            <th className="px-3 py-2">WhatsApp</th>
             <th className="px-3 py-2">Etapa atual</th>
             <th className="px-3 py-2">Progresso</th>
             <th className="px-3 py-2">Entrou em</th>
@@ -60,6 +64,7 @@ export default function JourneyDetailsModal({ journey, onClose }) {
         </thead>
         <tbody className="divide-y divide-border">
           {list.map((p) => (
+
             <tr key={p.id} className="hover:bg-muted/30">
               <td className="px-3 py-2">
                 <div className="flex items-center gap-2">
@@ -70,6 +75,14 @@ export default function JourneyDetailsModal({ journey, onClose }) {
                     {p.user_status && <p className="text-[10px] text-muted-foreground capitalize">{p.user_status}</p>}
                   </div>
                 </div>
+              </td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{p.user_email || '—'}</td>
+              <td className="px-3 py-2 text-xs">
+                {p.user_phone ? (
+                  <a href={`https://wa.me/${p.user_phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    {p.user_phone}
+                  </a>
+                ) : <span className="text-muted-foreground">—</span>}
               </td>
               <td className="px-3 py-2 text-muted-foreground">{stepLabel(p)}</td>
               <td className="px-3 py-2">
@@ -91,7 +104,7 @@ export default function JourneyDetailsModal({ journey, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="font-display text-xl">{journey.title}</h2>

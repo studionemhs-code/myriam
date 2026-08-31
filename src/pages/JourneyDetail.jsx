@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Calendar, Users, BookOpen, Bell, Check, Play, Lock, Flower2, Award, FileText, Music, Video, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, Calendar, Users, BookOpen, Bell, Play, Flower2, Award } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { formatDate } from '@/lib/marianDates';
 import confetti from 'canvas-confetti';
 import MedalGrid from '@/components/caminho/MedalGrid';
-
-const typeIcons = { texto: FileText, pdf: FileText, audio: Music, video: Video, imagem: ImageIcon };
+import JourneyStepCard from '@/components/jornadas/JourneyStepCard';
 
 export default function JourneyDetail() {
   const { id } = useParams();
@@ -150,51 +149,6 @@ export default function JourneyDetail() {
     return null;
   };
 
-  const renderStepContent = (step, stepIndex) => {
-    const content = resolveStepContent(step);
-    if (!content || !content.data) return null;
-
-    const { type, data } = content;
-
-    if (type === 'acamf') {
-      return (
-        <Link to={`/acamf/${data.id}`} className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3 hover:border-gold/40">
-          {data.cover_url ? <img src={data.cover_url} className="h-10 w-10 rounded-lg object-cover" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
-          <div className="flex-1">
-            <p className="text-sm font-medium">{data.title}</p>
-            <p className="text-xs text-muted-foreground">Conteúdo ACAMF · Toque para abrir</p>
-          </div>
-          <ChevronLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
-        </Link>
-      );
-    }
-
-    // journey_library ou inline → renderiza inline
-    const ct = data.content_type || 'texto';
-    const Icon = typeIcons[ct] || FileText;
-    return (
-      <div className="mt-2 rounded-xl border border-border bg-muted/20 p-4">
-        {data.cover_url && <img src={data.cover_url} alt="" className="mb-3 h-32 w-full rounded-lg object-cover" />}
-        <div className="mb-2 flex items-center gap-2">
-          <Icon className="h-4 w-4 text-gold" />
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{type === 'inline' ? 'Conteúdo da etapa' : 'Biblioteca de jornada'}</p>
-        </div>
-        {data.content && <div className="rich-text text-sm" dangerouslySetInnerHTML={{ __html: data.content }} />}
-        {ct === 'audio' && data.audio_url && <audio controls src={data.audio_url} className="mt-3 w-full" />}
-        {ct === 'video' && data.youtube_id && (
-          <div className="mt-3 aspect-video w-full overflow-hidden rounded-lg">
-            <iframe src={`https://youtube.com/embed/${data.youtube_id}`} className="h-full w-full" allowFullScreen title={data.title} />
-          </div>
-        )}
-        {(ct === 'pdf' || ct === 'imagem') && data.file_url && (
-          <a href={data.file_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:border-gold/40">
-            <FileText className="h-4 w-4 text-gold" /> Abrir {ct === 'pdf' ? 'PDF' : 'imagem'}
-          </a>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div>
       <button onClick={() => navigate('/jornadas')} className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground">
@@ -297,44 +251,22 @@ export default function JourneyDetail() {
           <div className="space-y-3">
             {steps.map((s, i) => {
               const done = completedSteps.includes(i);
-              const busy = toggling.has(i);
               const prevDone = i === 0 || completedSteps.includes(i - 1);
-              const canToggle = prevDone || done;
-              const isOpen = openStep === i;
+              const locked = !done && !prevDone;
               return (
-                <div key={i} className={`rounded-xl border transition ${
-                  done ? 'border-gold/40 bg-gold/5' : canToggle ? 'border-border bg-card hover:border-gold/40' : 'border-border/50 bg-muted/20'
-                }`}>
-                  <div className="flex gap-3 p-4">
-                    <button
-                      onClick={() => canToggle && toggleStep(i)}
-                      disabled={!canToggle || busy}
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition ${
-                        done ? 'bg-gold text-deep' :
-                        canToggle ? 'border-2 border-gold/50 text-gold hover:bg-gold/10' :
-                        'border border-border text-muted-foreground/40'
-                      }`}
-                    >
-                      {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> :
-                       done ? <Check className="h-5 w-5" /> :
-                       !canToggle ? <Lock className="h-4 w-4" /> :
-                       i + 1}
-                    </button>
-                    <div className="flex-1 pt-0.5">
-                      <button
-                        onClick={() => resolveStepContent(s) && setOpenStep(isOpen ? null : i)}
-                        className="flex w-full items-center justify-between text-left"
-                      >
-                        <p className={`font-medium ${done ? 'text-gold' : canToggle ? '' : 'text-muted-foreground'}`}>{s.title}</p>
-                        {resolveStepContent(s) && (
-                          <ChevronLeft className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? '-rotate-90' : ''}`} />
-                        )}
-                      </button>
-                      {s.description && <p className="mt-0.5 text-sm text-muted-foreground">{s.description}</p>}
-                    </div>
-                  </div>
-                  {isOpen && renderStepContent(s, i)}
-                </div>
+                <JourneyStepCard
+                  key={i}
+                  step={s}
+                  index={i}
+                  done={done}
+                  locked={locked}
+                  busy={toggling.has(i)}
+                  isOpen={openStep === i}
+                  content={resolveStepContent(s)}
+                  onToggleOpen={() => setOpenStep(openStep === i ? null : i)}
+                  onComplete={() => toggleStep(i)}
+                  onUndo={() => toggleStep(i)}
+                />
               );
             })}
           </div>
