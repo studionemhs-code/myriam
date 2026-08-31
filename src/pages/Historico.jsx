@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PageHeader, GoldDivider, EmptyState } from '@/components/ui/marian';
 import { formatDate } from '@/lib/marianDates';
+import ExportJourneyPdf from '@/components/ExportJourneyPdf';
 
 const typeLabel = { preparacao: 'Preparação (33 dias)', jornada: 'Jornada Coletiva', renovacao: 'Renovação' };
 const typeIcon = { preparacao: Flower2, jornada: BookOpen, renovacao: Sparkles };
@@ -21,10 +22,11 @@ export default function Historico() {
     if (!user) return;
     (async () => {
       try {
+        const ids = [user.id, user.legacy_id].filter(Boolean);
         const [progList, parts, certs] = await Promise.all([
-          base44.entities.UserProgress.filter({ created_by_id: user.id }),
-          base44.entities.JourneyParticipant.filter({ created_by_id: user.id }, '-joined_date', 50),
-          base44.entities.Certificate.filter({ user_id: user.id }, '-issue_date', 50)
+          base44.entities.UserProgress.filter({ created_by_id: { $in: ids } }),
+          base44.entities.JourneyParticipant.filter({ created_by_id: { $in: ids } }, '-joined_date', 50),
+          base44.entities.Certificate.filter({ user_id: { $in: ids } }, '-issue_date', 50)
         ]);
         setProgress(progList[0] || null);
         setCertificates(certs);
@@ -52,10 +54,11 @@ export default function Historico() {
   journeys.forEach((j) => { journeyMap[j.id] = j; });
 
   const completedJourneys = participants.filter((p) => {
+    if (p.completed_date) return true;
     const j = journeyMap[p.journey_id];
-    if (!j) return false;
+    if (!j) return (p.progress || 0) >= 100;
     const totalSteps = (j.steps || []).length;
-    if (totalSteps === 0) return p.progress >= 100;
+    if (totalSteps === 0) return (p.progress || 0) >= 100;
     return (p.completed_steps || []).length >= totalSteps;
   });
   const inProgressJourneys = participants.filter((p) => !completedJourneys.includes(p));
@@ -65,6 +68,10 @@ export default function Historico() {
   return (
     <div className="space-y-6">
       <PageHeader title="Histórico" subtitle="Suas jornadas e certificados em um só lugar" icon={Award} />
+
+      <div className="flex flex-wrap gap-2">
+        <ExportJourneyPdf label="Exportar em PDF" />
+      </div>
 
       {/* Resumo */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">

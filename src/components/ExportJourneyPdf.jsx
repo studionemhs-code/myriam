@@ -3,8 +3,9 @@ import { FileDown, Loader2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { daysSince, nextRenewal, formatDuration, parseDate } from '@/lib/marianDates';
+import { daysSince, nextRenewal, formatDuration } from '@/lib/marianDates';
 import { downloadPdf, isMobile, blobUrlFromDoc } from '@/lib/savePdf';
+import ExportOptionsDialog, { EXPORT_SECTIONS } from '@/components/export/ExportOptionsDialog';
 
 const fmt = (d) => {
   if (!d) return '—';
@@ -16,9 +17,13 @@ const fmt = (d) => {
   }
 };
 
-export default function ExportJourneyPdf() {
+const ALL_ON = Object.fromEntries(EXPORT_SECTIONS.map((s) => [s.key, true]));
+
+export default function ExportJourneyPdf({ label = 'Exportar minha caminhada (PDF)' }) {
   const { user } = useCurrentUser();
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [options, setOptions] = useState(ALL_ON);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfName, setPdfName] = useState('');
 
@@ -26,12 +31,14 @@ export default function ExportJourneyPdf() {
     if (!user) return;
     setLoading(true);
     try {
-      const [progressList, reflections, daysList, journeyParts, journeys] = await Promise.all([
-        base44.entities.UserProgress.filter({ created_by_id: user.id }).catch(() => []),
-        base44.entities.Reflection.filter({ created_by_id: user.id }, 'day_number').catch(() => []),
+      const ids = [user.id, user.legacy_id].filter(Boolean);
+      const [progressList, reflections, daysList, journeyParts, journeys, certificates] = await Promise.all([
+        base44.entities.UserProgress.filter({ created_by_id: { $in: ids } }).catch(() => []),
+        options.reflexoes ? base44.entities.Reflection.filter({ created_by_id: { $in: ids } }, 'day_number').catch(() => []) : [],
         base44.entities.PreparationDay.list('day_number', 33).catch(() => []),
-        base44.entities.JourneyParticipant.filter({ created_by_id: user.id }).catch(() => []),
-        base44.entities.CollectiveJourney.list('-created_date', 50).catch(() => [])
+        options.jornadas ? base44.entities.JourneyParticipant.filter({ created_by_id: { $in: ids } }).catch(() => []) : [],
+        options.jornadas ? base44.entities.CollectiveJourney.list('-created_date', 100).catch(() => []) : [],
+        options.certificados ? base44.entities.Certificate.filter({ user_id: { $in: ids } }, '-issue_date', 50).catch(() => []) : []
       ]);
       const progress = progressList[0];
       const dayTitles = {};
@@ -78,24 +85,26 @@ export default function ExportJourneyPdf() {
       doc.setDrawColor(201, 161, 74); doc.setLineWidth(1);
       doc.line(margin, y, pageW - margin, y); y += 22;
 
-      // Estado atual e dados da consagração
-      section('Estado atual e Consagração');
-      write(`Nome: ${user.display_name || user.full_name || user.email || '—'}`, 11);
-      const statusLabel = { interessado: 'Interessado', preparacao: 'Em preparação', consagrado: 'Consagrado' }[user.status] || '—';
-      write(`Estado atual: ${statusLabel}`, 11);
-      if (user.consecration_date) {
-        write(`Data da Consagração: ${fmt(user.consecration_date)}`, 11);
-        const since = daysSince(user.consecration_date);
-        write(`Dias de consagrado: ${since.toLocaleString('pt-BR')} (${formatDuration(user.consecration_date)})`, 11);
+      // Consagração
+      if (options.consagracao) {
+        section('Estado atual e Consagração');
+        write(`Nome: ${user.display_name || user.full_name || user.email || '—'}`, 11);
+        const statusLabel = { interessado: 'Interessado', preparacao: 'Em preparação', consagrado: 'Consagrado' }[user.status] || '—';
+        write(`Estado atual: ${statusLabel}`, 11);
+        if (user.consecration_date) {
+          write(`Data da Consagração: ${fmt(user.consecration_date)}`, 11);
+          const since = daysSince(user.consecration_date);
+          write(`Dias de consagrado: ${since.toLocaleString('pt-BR')} (${formatDuration(user.consecration_date)})`, 11);
+        }
+        if (user.preparation_start_date) write(`Início da preparação: ${fmt(user.preparation_start_date)}`, 11);
+        if (user.target_consecration_date) write(`Previsão da Consagração: ${fmt(user.target_consecration_date)}`, 11);
+        if (progress?.completed_date) write(`Conclusão da preparação: ${fmt(progress.completed_date)}`, 11);
       }
-      if (user.preparation_start_date) write(`Início da preparação: ${fmt(user.preparation_start_date)}`, 11);
-      if (user.target_consecration_date) write(`Previsão da Consagração: ${fmt(user.target_consecration_date)}`, 11);
-      if (progress?.completed_date) write(`Conclusão da preparação: ${fmt(progress.completed_date)}`, 11);
 
       // Renovações
-      if (user.consecration_date) {
+      if (options.renovacoes) {
         section('Renovações');
-        const renewal = nextRenewal(user.consecration_date, user.last_renewal_date);
+        const renewal = user.consecration_date ? nextRenewal(user.consecration_date, user.last_renewal_date) : null;
         if (user.last_renewal_date) write(`Última renovação: ${fmt(user.last_renewal_date)}`, 11);
         if (renewal) write(`Próxima renovação: ${fmt(renewal.toISOString().slice(0, 10))}`, 11);
         const renewals = user.renewals || [];
@@ -110,68 +119,92 @@ export default function ExportJourneyPdf() {
       }
 
       // Preparação (Caminho)
-      section('Preparação (Caminho de 33 dias)');
-      if (progress) {
-        const completed = progress.completed_days || [];
-        write(`Dia atual: ${progress.current_day || 1} de 33`, 11);
-        write(`Dias concluídos: ${completed.length}/33`, 11);
-        write(`Status: ${progress.status === 'concluida' ? 'Concluída' : progress.status === 'pausada' ? 'Pausada' : 'Ativa'}`, 11);
-        if (completed.length > 0) {
-          write('Dias concluídos:', 11, 'bold');
-          for (let i = 0; i < completed.length; i += 6) {
-            write(completed.slice(i, i + 6).map((n) => `Dia ${n}${dayTitles[n] ? ' · ' + dayTitles[n] : ''}`).join('    '), 10);
+      if (options.preparacao) {
+        section('Preparação (Caminho de 33 dias)');
+        if (progress) {
+          const completed = progress.completed_days || [];
+          write(`Dia atual: ${progress.current_day || 1} de 33`, 11);
+          write(`Dias concluídos: ${completed.length}/33`, 11);
+          write(`Status: ${progress.status === 'concluida' ? 'Concluída' : progress.status === 'pausada' ? 'Pausada' : 'Ativa'}`, 11);
+          if (completed.length > 0) {
+            write('Conteúdos vistos:', 11, 'bold');
+            completed.forEach((n) => {
+              write(`  Dia ${n}${dayTitles[n] ? ' — ' + dayTitles[n] : ''}`, 10, 'normal', [100, 90, 120]);
+            });
           }
+        } else {
+          write('Preparação ainda não iniciada.', 11, 'normal', [130, 120, 145]);
         }
-      } else {
-        write('Preparação ainda não iniciada.', 11, 'normal', [130, 120, 145]);
       }
 
       // Jornadas Coletivas participadas
-      section(`Jornadas Coletivas participadas (${journeyParts.length})`);
-      if (journeyParts.length === 0) {
-        write('Nenhuma jornada coletiva participada.', 11, 'normal', [130, 120, 145]);
-      } else {
-        journeyParts.forEach((jp) => {
-          const j = journeyMap[jp.journey_id];
-          ensure(60);
-          write(j?.title || 'Jornada sem título', 11, 'bold', [90, 45, 130]);
-          const intentLabel = jp.intent === 'renovacao' ? 'Renovação' : jp.intent === 'primeira_consagracao' ? 'Primeira Consagração' : 'Não informada';
-          const meta = [
-            jp.joined_date ? `Entrou em: ${fmt(jp.joined_date)}` : null,
-            j?.journey_type === 'renovacao' ? 'Renovação' : 'Consagração',
-            `Intenção: ${intentLabel}`,
-            `Progresso: ${jp.progress || 0}%`
-          ].filter(Boolean).join('  ·  ');
-          if (meta) write(meta, 9, 'normal', [130, 120, 145]);
-          if (j?.start_date && j?.end_date) {
-            write(`Período: ${fmt(j.start_date)} a ${fmt(j.end_date)}`, 9, 'normal', [130, 120, 145]);
-          }
-          if (jp.completed_steps?.length > 0) {
-            write(`Etapas concluídas: ${jp.completed_steps.length}`, 9, 'normal', [130, 120, 145]);
-          }
-          if (jp.completed_date) {
-            write(`Concluída e registrada em: ${fmt(jp.completed_date)}`, 9, 'normal', [130, 120, 145]);
-          }
-          y += 8;
-        });
+      if (options.jornadas) {
+        section(`Jornadas Coletivas participadas (${journeyParts.length})`);
+        if (journeyParts.length === 0) {
+          write('Nenhuma jornada coletiva participada.', 11, 'normal', [130, 120, 145]);
+        } else {
+          journeyParts.forEach((jp) => {
+            const j = journeyMap[jp.journey_id];
+            ensure(60);
+            write(j?.title || 'Jornada sem título', 11, 'bold', [90, 45, 130]);
+            const intentLabel = jp.intent === 'renovacao' ? 'Renovação' : jp.intent === 'primeira_consagracao' ? 'Primeira Consagração' : 'Não informada';
+            const meta = [
+              jp.joined_date ? `Entrou em: ${fmt(jp.joined_date)}` : null,
+              j?.journey_type === 'renovacao' ? 'Renovação' : 'Consagração',
+              `Intenção: ${intentLabel}`,
+              `Progresso: ${jp.progress || 0}%`
+            ].filter(Boolean).join('  ·  ');
+            if (meta) write(meta, 9, 'normal', [130, 120, 145]);
+            if (j?.start_date && j?.end_date) {
+              write(`Período: ${fmt(j.start_date)} a ${fmt(j.end_date)}`, 9, 'normal', [130, 120, 145]);
+            }
+            const doneSteps = jp.completed_steps || [];
+            if (doneSteps.length > 0) {
+              write(`Etapas/conteúdos concluídos (${doneSteps.length}):`, 9, 'bold', [100, 90, 120]);
+              doneSteps.forEach((i) => {
+                const st = (j?.steps || [])[i];
+                write(`   • Etapa ${i + 1}${st?.title ? ' — ' + st.title : ''}`, 9, 'normal', [130, 120, 145]);
+              });
+            }
+            if (jp.completed_date) {
+              write(`Concluída e registrada em: ${fmt(jp.completed_date)}`, 9, 'normal', [130, 120, 145]);
+            }
+            y += 8;
+          });
+        }
       }
 
       // Reflexões
-      section(`Reflexões da preparação (${reflections.length})`);
-      if (reflections.length === 0) {
-        write('Nenhuma reflexão registrada durante a preparação.', 11, 'normal', [130, 120, 145]);
-      } else {
-        reflections.forEach((r) => {
-          ensure(70);
-          write(`Dia ${r.day_number}${dayTitles[r.day_number] ? ' — ' + dayTitles[r.day_number] : ''}`, 11, 'bold', [90, 45, 130]);
-          const meta = [
-            r.created_date ? `Registrada em: ${fmt(r.created_date)}` : null,
-            r.mood ? `Estado de espírito: ${r.mood}` : null
-          ].filter(Boolean).join('  ·  ');
-          if (meta) write(meta, 9, 'normal', [130, 120, 145]);
-          write(r.content || '—', 11);
-          y += 10;
-        });
+      if (options.reflexoes) {
+        section(`Reflexões da preparação (${reflections.length})`);
+        if (reflections.length === 0) {
+          write('Nenhuma reflexão registrada durante a preparação.', 11, 'normal', [130, 120, 145]);
+        } else {
+          reflections.forEach((r) => {
+            ensure(70);
+            write(`Dia ${r.day_number}${dayTitles[r.day_number] ? ' — ' + dayTitles[r.day_number] : ''}`, 11, 'bold', [90, 45, 130]);
+            const meta = [
+              r.created_date ? `Registrada em: ${fmt(r.created_date)}` : null,
+              r.mood ? `Estado de espírito: ${r.mood}` : null
+            ].filter(Boolean).join('  ·  ');
+            if (meta) write(meta, 9, 'normal', [130, 120, 145]);
+            write(r.content || '—', 11);
+            y += 10;
+          });
+        }
+      }
+
+      // Certificados
+      if (options.certificados) {
+        section(`Certificados emitidos (${certificates.length})`);
+        if (certificates.length === 0) {
+          write('Nenhum certificado emitido.', 11, 'normal', [130, 120, 145]);
+        } else {
+          const certLabel = { preparacao: 'Preparação (33 dias)', jornada: 'Jornada Coletiva', renovacao: 'Renovação' };
+          certificates.forEach((c) => {
+            write(`${certLabel[c.certificate_type] || 'Certificado'}${c.journey_title ? ' · ' + c.journey_title : ''} — emitido em ${fmt(c.issue_date)}`, 10, 'normal', [100, 90, 120]);
+          });
+        }
       }
 
       // Rodapé
@@ -190,6 +223,7 @@ export default function ExportJourneyPdf() {
       } else {
         downloadPdf(doc, fileName);
       }
+      setOpen(false);
     } catch (e) {
       console.error(e);
       alert('Não foi possível gerar o PDF. Tente novamente.');
@@ -202,12 +236,12 @@ export default function ExportJourneyPdf() {
     <>
       <button
         type="button"
-        onClick={buildPdf}
-        disabled={loading || !user}
+        onClick={() => setOpen(true)}
+        disabled={!user}
         className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium hover:border-gold/40 disabled:opacity-50"
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin text-gold" /> : <FileDown className="h-4 w-4 text-gold" />}
-        {loading ? 'Gerando PDF...' : 'Exportar minha caminhada (PDF)'}
+        <FileDown className="h-4 w-4 text-gold" />
+        {label}
       </button>
       {pdfUrl && (
         <a
@@ -220,6 +254,15 @@ export default function ExportJourneyPdf() {
           <FileDown className="h-4 w-4" />
           Abrir / Baixar PDF
         </a>
+      )}
+      {open && (
+        <ExportOptionsDialog
+          options={options}
+          setOptions={setOptions}
+          onConfirm={buildPdf}
+          onClose={() => !loading && setOpen(false)}
+          loading={loading}
+        />
       )}
     </>
   );

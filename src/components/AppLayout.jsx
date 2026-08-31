@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   Home, Flower2, BookOpen, Leaf, User, ShoppingBag, Heart,
-  Bell, Calendar, Settings, LogOut, ChevronRight, ChevronLeft, Sparkles, Bot, Gift, Menu
+  Bell, Calendar, Settings, LogOut, ChevronRight, ChevronLeft, ArrowLeft, Sparkles, Bot, Gift, Menu
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -161,6 +161,15 @@ export default function AppLayout() {
             >
               <Menu className="h-5 w-5" />
             </button>
+            {location.pathname !== '/' && (
+              <button
+                onClick={() => navigate(-1)}
+                className="text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                aria-label="Voltar"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            )}
             <Link to="/">
               <Logo size="sm" variant="dark" subtitle={false} />
             </Link>
@@ -189,7 +198,7 @@ export default function AppLayout() {
       {menuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMenuOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-72 bg-deep flex flex-col">{SidebarContent}</div>
+          <div className="absolute left-0 top-0 h-full w-72 bg-deep flex flex-col" onClick={() => setMenuOpen(false)}>{SidebarContent}</div>
         </div>
       )}
 
@@ -202,6 +211,15 @@ export default function AppLayout() {
           >
             {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </button>
+          {location.pathname !== '/' && (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm text-muted-foreground hover:bg-muted"
+              title="Voltar"
+            >
+              <ArrowLeft className="h-4 w-4" /> Voltar
+            </button>
+          )}
           <div className="flex-1">
             <GlobalSearch />
           </div>
