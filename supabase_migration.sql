@@ -1475,6 +1475,23 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_journey_contents_created ON public.journey_contents(created_date DESC);
 
 -- ============================================================================
+-- 13. WEBHOOK DE ORÇAMENTO (status do pedido + código de rastreio)
+-- ============================================================================
+
+-- Novos valores no enum de status do pedido
+ALTER TYPE public.quote_status ADD VALUE IF NOT EXISTS 'enviado';
+ALTER TYPE public.quote_status ADD VALUE IF NOT EXISTS 'saiu_para_entrega';
+
+-- Gatilho 'orcamento' no enum de triggers de webhook
+ALTER TYPE public.webhook_trigger_type ADD VALUE IF NOT EXISTS 'orcamento';
+
+-- Código de rastreio do pedido (inserido pelo admin ao marcar como 'enviado')
+ALTER TABLE public.quote_requests ADD COLUMN IF NOT EXISTS tracking_code TEXT;
+
+-- Status de pedido que disparam o webhook (filtro configurável por webhook)
+ALTER TABLE public.webhook_automations ADD COLUMN IF NOT EXISTS orcamento_statuses TEXT[] DEFAULT '{}';
+
+-- ============================================================================
 -- PRÓXIMOS PASSOS PARA MIGRAÇÃO COMPLETA DO APP:
 -- a) Instalar @supabase/supabase-js no projeto
 -- b) Substituir base44.entities.X por supabase.from('X') em todas as páginas

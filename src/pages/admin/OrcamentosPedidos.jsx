@@ -31,11 +31,35 @@ export default function OrcamentosPedidos() {
     });
   }, [orders, statusFilter, q]);
 
-  const updateStatus = async (id, status) => {
-    await base44.entities.QuoteRequest.update(id, { status });
-    setSelected({ ...selected, status });
+  const [pendingStatus, setPendingStatus] = useState(null);
+  const [trackingCode, setTrackingCode] = useState('');
+
+  const dispatchOrcamentoWebhook = async (id, status) => {
+    try {
+      await base44.functions.invoke('dispatchWebhooks', { trigger_type: 'orcamento', entity_id: id, status });
+    } catch { /* webhook falhou — não bloqueia o fluxo do admin */ }
+  };
+
+  const updateStatus = async (id, status, extra = {}) => {
+    await base44.entities.QuoteRequest.update(id, { status, ...extra });
+    setSelected({ ...selected, status, ...extra });
     reload();
     toast({ title: 'Status atualizado', description: `Pedido marcado como ${STATUS_LABEL[status]}.` });
+    dispatchOrcamentoWebhook(id, status);
+  };
+
+  const onStatusSelect = (newStatus) => {
+    if (newStatus === 'enviado') {
+      setPendingStatus('enviado');
+      setTrackingCode(selected.tracking_code || '');
+    } else {
+      updateStatus(selected.id, newStatus);
+    }
+  };
+
+  const confirmEnviado = async () => {
+    await updateStatus(selected.id, 'enviado', { tracking_code: trackingCode.trim() });
+    setPendingStatus(null);
   };
 
   const deleteOrder = async (id) => {
@@ -92,7 +116,7 @@ export default function OrcamentosPedidos() {
                   <td className="p-3"><Badge tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status] || o.status}</Badge></td>
                   <td className="p-3">
                     <div className="flex justify-end gap-1">
-                      <button onClick={() => setSelected(o)} className="rounded-lg p-2 hover:bg-muted"><Eye className="h-4 w-4" /></button>
+                      <button onClick={() => { setSelected(o); setPendingStatus(null); }} className="rounded-lg p-2 hover:bg-muted"><Eye className="h-4 w-4" /></button>
                       <a href={`https://wa.me/${o.whatsapp?.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="rounded-lg p-2 hover:bg-muted"><ExternalLink className="h-4 w-4" /></a>
                     </div>
                   </td>
@@ -113,11 +137,35 @@ export default function OrcamentosPedidos() {
             </div>
 
             <div className="mb-4 flex flex-wrap items-center gap-3">
-              <select value={selected.status} onChange={(e) => updateStatus(selected.id, e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <select value={selected.status} onChange={(e) => onStatusSelect(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
                 {ORDER_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
               <span className="text-xs text-muted-foreground">{new Date(selected.created_date).toLocaleString('pt-BR')}</span>
             </div>
+
+            {pendingStatus === 'enviado' && (
+              <div className="mb-4 rounded-lg border border-gold/30 bg-gold/5 p-3">
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Código de rastreio</label>
+                <input
+                  type="text"
+                  value={trackingCode}
+                  onChange={(e) => setTrackingCode(e.target.value)}
+                  placeholder="Ex: OP123456789BR"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+                <div className="mt-2 flex gap-2">
+                  <button onClick={() => setPendingStatus(null)} className="flex-1 rounded-lg border border-border px-4 py-2 text-sm">Cancelar</button>
+                  <button onClick={confirmEnviado} className="flex-1 rounded-lg bg-gold px-4 py-2 text-sm font-medium text-deep">Confirmar envio</button>
+                </div>
+              </div>
+            )}
+
+            {selected.tracking_code && pendingStatus !== 'enviado' && (
+              <div className="mb-4 text-sm">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Código de rastreio</p>
+                <p className="mt-0.5">{selected.tracking_code}</p>
+              </div>
+            )}
 
             <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
               <Info label="WhatsApp" value={selected.whatsapp} />

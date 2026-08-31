@@ -4,7 +4,7 @@ Deno.serve(async (req) => {
   const pf = preflight(req); if (pf) return pf;
   try {
     const db = admin();
-    const { trigger_type, entity_id } = await req.json();
+    const { trigger_type, entity_id, status } = await req.json();
     if (!trigger_type || !entity_id) return json({ error: 'Missing trigger_type or entity_id' }, 400);
 
     let payload: Record<string, unknown>;
@@ -33,6 +33,18 @@ Deno.serve(async (req) => {
         conversation_id: msg.conversation_id || '',
         data: new Date().toISOString()
       };
+    } else if (trigger_type === 'orcamento') {
+      const { data: order } = await db.from('quote_requests').select('*').eq('id', entity_id).maybeSingle();
+      if (!order) return json({ skipped: true, reason: 'order not found' });
+      const orderStatus = status || order.status;
+      payload = {
+        cliente_nome: order.customer_name || '',
+        codigo_rastreio: order.tracking_code || '',
+        status_pedido: orderStatus,
+        pedido_id: order.id,
+        link_app: APP_URL,
+        data: new Date().toISOString()
+      };
     } else {
       const { data: notif } = await db.from('notifications').select('*').eq('id', entity_id).maybeSingle();
       if (!notif) return json({ skipped: true, reason: 'notification not found' });
@@ -55,7 +67,14 @@ Deno.serve(async (req) => {
     }
 
     const { data: webhooks } = await db.from('webhook_automations').select('*').eq('enabled', true);
-    const matching = (webhooks || []).filter((w) => (w.trigger_types || []).includes(trigger_type));
+    const matching = (webhooks || []).filter((w) => {
+      if (!(w.trigger_types || []).includes(trigger_type)) return false;
+      if (trigger_type === 'orcamento') {
+        const statuses = w.orcamento_statuses || [];
+        return statuses.length === 0 || statuses.includes(payload.status_pedido);
+      }
+      return true;
+    });
     if (!matching.length) return json({ dispatched: 0, reason: 'no matching webhooks' });
 
     const results = [];

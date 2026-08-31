@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Webhook, Code, Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { ORDER_STATUSES, STATUS_LABEL } from '@/lib/quoteUtils';
 
 const TRIGGER_OPTIONS = [
   { value: 'chat', label: 'Chat (Mensagens Myriam)' },
@@ -11,13 +12,15 @@ const TRIGGER_OPTIONS = [
   { value: 'acamf', label: 'ACAMF' },
   { value: 'jornadas', label: 'Jornadas' },
   { value: 'novidades', label: 'Novidades' },
-  { value: 'associacao', label: 'Associação' }
+  { value: 'associacao', label: 'Associação' },
+  { value: 'orcamento', label: 'Orçamento (Pedidos)' }
 ];
 
 const PLACEHOLDERS = [
   '{remetente_nome}', '{destinatario_nome}', '{destinatario_email}', '{destinatario_telefone}',
   '{mensagem_texto}', '{categoria}', '{titulo}', '{corpo}',
-  '{link_app}', '{conversation_id}', '{data}'
+  '{link_app}', '{conversation_id}', '{data}',
+  '{cliente_nome}', '{codigo_rastreio}', '{status_pedido}'
 ];
 
 export default function WebhookEditor({ webhook, onClose, onSaved }) {
@@ -27,6 +30,7 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
     enabled: true,
     message_template: 'Você recebeu uma nova mensagem de {remetente_nome}: {mensagem_texto}',
     trigger_types: ['chat'],
+    orcamento_statuses: [],
     wait_seconds: 30,
     custom_headers: {}
   });
@@ -44,6 +48,7 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
         enabled: webhook.enabled ?? true,
         message_template: webhook.message_template || '',
         trigger_types: webhook.trigger_types || ['chat'],
+        orcamento_statuses: webhook.orcamento_statuses || [],
         wait_seconds: webhook.wait_seconds || 30,
         custom_headers: webhook.custom_headers || {}
       });
@@ -85,6 +90,15 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
       trigger_types: f.trigger_types.includes(val)
         ? f.trigger_types.filter((t) => t !== val)
         : [...f.trigger_types, val]
+    }));
+  };
+
+  const toggleOrcamentoStatus = (val) => {
+    setForm((f) => ({
+      ...f,
+      orcamento_statuses: (f.orcamento_statuses || []).includes(val)
+        ? f.orcamento_statuses.filter((s) => s !== val)
+        : [...(f.orcamento_statuses || []), val]
     }));
   };
 
@@ -168,6 +182,29 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
                 </button>
               ))}
             </div>
+
+            {form.trigger_types.includes('orcamento') && (
+              <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="mb-2 text-xs font-medium text-muted-foreground">Disparar para quais status do pedido?</p>
+                <div className="flex flex-wrap gap-2">
+                  {ORDER_STATUSES.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => toggleOrcamentoStatus(s)}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                        (form.orcamento_statuses || []).includes(s)
+                          ? 'bg-gold text-deep'
+                          : 'bg-background text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {STATUS_LABEL[s] || s}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">Deixe vazio para disparar em qualquer status do pedido.</p>
+              </div>
+            )}
           </div>
 
           <div>

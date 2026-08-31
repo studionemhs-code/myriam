@@ -5,7 +5,8 @@ import WebhookEditor from '@/components/admin/WebhookEditor';
 
 const TRIGGER_LABELS = {
   chat: 'Chat', caminho: 'Caminho', renovacao: 'Renovação', myriam: 'Myriam',
-  intencoes: 'Intenções', acamf: 'ACAMF', jornadas: 'Jornadas', novidades: 'Novidades', associacao: 'Associação'
+  intencoes: 'Intenções', acamf: 'ACAMF', jornadas: 'Jornadas', novidades: 'Novidades', associacao: 'Associação',
+  orcamento: 'Orçamento'
 };
 
 export default function WebhooksAdmin() {

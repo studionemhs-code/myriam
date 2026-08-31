@@ -116,11 +116,17 @@
     "notes": {
       "type": "string"
     },
+    "tracking_code": {
+      "type": "string",
+      "description": "C\u00f3digo de rastreio inserido manualmente pelo admin ao marcar o pedido como 'enviado'"
+    },
     "status": {
       "type": "string",
       "enum": [
         "novo",
         "em_andamento",
+        "enviado",
+        "saiu_para_entrega",
         "atendido",
         "fechado",
         "cancelado"

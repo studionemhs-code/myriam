@@ -10,11 +10,13 @@ export const PRODUCT_CATEGORIES = [
   { id: 'scapular', label: 'Escapulários' }
 ];
 
-export const ORDER_STATUSES = ['novo', 'em_andamento', 'atendido', 'fechado', 'cancelado'];
+export const ORDER_STATUSES = ['novo', 'em_andamento', 'enviado', 'saiu_para_entrega', 'atendido', 'fechado', 'cancelado'];
 
 export const STATUS_LABEL = {
   novo: 'Novo',
   em_andamento: 'Em andamento',
+  enviado: 'Enviado',
+  saiu_para_entrega: 'Saiu para entrega',
   atendido: 'Atendido',
   fechado: 'Fechado',
   cancelado: 'Cancelado'
@@ -23,6 +25,8 @@ export const STATUS_LABEL = {
 export const STATUS_TONE = {
   novo: 'blue',
   em_andamento: 'gold',
+  enviado: 'gold',
+  saiu_para_entrega: 'purple',
   atendido: 'purple',
   fechado: 'green',
   cancelado: 'red'

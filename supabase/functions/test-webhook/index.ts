@@ -20,6 +20,10 @@ Deno.serve(async (req) => {
       corpo: 'Corpo da notificação de teste.',
       link_app: APP_URL,
       conversation_id: 'test-conv-id',
+      cliente_nome: 'Cliente Teste',
+      codigo_rastreio: 'OP123456789BR',
+      status_pedido: 'enviado',
+      pedido_id: 'test-order-id',
       data: new Date().toISOString()
     };
 
