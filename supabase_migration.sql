@@ -1491,6 +1491,9 @@ ALTER TABLE public.quote_requests ADD COLUMN IF NOT EXISTS tracking_code TEXT;
 -- Status de pedido que disparam o webhook (filtro configurável por webhook)
 ALTER TABLE public.webhook_automations ADD COLUMN IF NOT EXISTS orcamento_statuses TEXT[] DEFAULT '{}';
 
+-- Telefone persistido para disparos de teste do webhook
+ALTER TABLE public.webhook_automations ADD COLUMN IF NOT EXISTS test_phone TEXT;
+
 -- ============================================================================
 -- PRÓXIMOS PASSOS PARA MIGRAÇÃO COMPLETA DO APP:
 -- a) Instalar @supabase/supabase-js no projeto

@@ -32,6 +32,7 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
     trigger_types: ['chat'],
     orcamento_statuses: [],
     wait_seconds: 30,
+    test_phone: '',
     custom_headers: {}
   });
   const [headersText, setHeadersText] = useState('{}');
@@ -39,7 +40,6 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
   const [error, setError] = useState('');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
-  const [testPhone, setTestPhone] = useState('');
 
   useEffect(() => {
     if (webhook) {
@@ -51,6 +51,7 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
         trigger_types: webhook.trigger_types || ['chat'],
         orcamento_statuses: webhook.orcamento_statuses || [],
         wait_seconds: webhook.wait_seconds || 30,
+        test_phone: webhook.test_phone || '',
         custom_headers: webhook.custom_headers || {}
       });
       setHeadersText(JSON.stringify(webhook.custom_headers || {}, null, 2));
@@ -78,7 +79,7 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
           url: form.url,
           custom_headers: parsedHeaders,
           message_template: form.message_template,
-          test_phone: testPhone.trim()
+          test_phone: form.test_phone.trim()
         }
       });
       if (invokeError) throw invokeError;
@@ -307,8 +308,8 @@ export default function WebhookEditor({ webhook, onClose, onSaved }) {
           <div className="flex flex-col gap-2">
             <input
               type="tel"
-              value={testPhone}
-              onChange={(e) => setTestPhone(e.target.value)}
+              value={form.test_phone}
+              onChange={(e) => setForm({ ...form, test_phone: e.target.value })}
               placeholder="Telefone p/ teste (ex: +5511987654321)"
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
