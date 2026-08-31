@@ -7,6 +7,8 @@ import { formatDate } from '@/lib/marianDates';
 import confetti from 'canvas-confetti';
 import MedalGrid from '@/components/caminho/MedalGrid';
 import JourneyStepCard from '@/components/jornadas/JourneyStepCard';
+import RenewalConfirmDialog from '@/components/consagracao/RenewalConfirmDialog';
+import { isConsecrated, registerConsecrationOrRenewal, today as todayStr } from '@/lib/consecration';
 
 export default function JourneyDetail() {
   const { id } = useParams();
@@ -22,6 +24,7 @@ export default function JourneyDetail() {
   const [celebrated, setCelebrated] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [openStep, setOpenStep] = useState(null);
+  const [confirmRenewal, setConfirmRenewal] = useState(false);
 
   const load = async () => {
     try {
@@ -100,21 +103,25 @@ export default function JourneyDetail() {
 
   const registerCompletion = async () => {
     if (!participant || !user) return;
+    // Já consagrado + intenção de "primeira consagração" → confirmar conversão em renovação
+    if (participant.intent !== 'renovacao' && isConsecrated(user)) {
+      setConfirmRenewal(true);
+      return;
+    }
+    await persistCompletion();
+  };
+
+  const persistCompletion = async () => {
     setRegistering(true);
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      const day = todayStr();
       // Marca a jornada como concluída
-      await base44.entities.JourneyParticipant.update(participant.id, { completed_date: today });
+      await base44.entities.JourneyParticipant.update(participant.id, { completed_date: day });
 
-      // Atualiza o perfil do usuário conforme a intenção
-      if (participant.intent === 'renovacao') {
-        const renewals = user.renewals || [];
-        await updateUser({ last_renewal_date: today, renewals: [...renewals, today] });
-      } else {
-        // Primeira consagração
-        await updateUser({ consecration_date: today, status: 'consagrado' });
-      }
+      // A primeira data de consagração é imutável: se já existe, a data de hoje vira renovação
+      await updateUser(registerConsecrationOrRenewal(user, day));
 
+      setConfirmRenewal(false);
       await load();
       confetti({ particleCount: 160, spread: 100, origin: { y: 0.5 } });
     } catch (e) {
@@ -272,6 +279,15 @@ export default function JourneyDetail() {
           </div>
         </div>
       )}
+
+      <RenewalConfirmDialog
+        open={confirmRenewal}
+        onOpenChange={setConfirmRenewal}
+        originalDate={user?.consecration_date}
+        newDate={new Date().toISOString().slice(0, 10)}
+        onConfirm={persistCompletion}
+        loading={registering}
+      />
 
       {/* Conteúdos legados (content_ids) */}
       {acamfContents.length > 0 && (journey.content_ids?.length > 0) && (

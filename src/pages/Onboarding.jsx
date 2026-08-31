@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from '@/components/ui/use-toast';
 import Logo from '@/components/Logo';
+import { registerConsecrationOrRenewal } from '@/lib/consecration';
 
 const TOTAL_STEPS = 4;
 
@@ -78,9 +79,7 @@ export default function Onboarding() {
           return;
         }
         await update({
-          status: 'consagrado',
-          consecration_date: consecrationDate,
-          last_renewal_date: consecrationDate,
+          ...registerConsecrationOrRenewal(user, consecrationDate),
           onboarding_completed: true
         });
         window.location.href = '/';
