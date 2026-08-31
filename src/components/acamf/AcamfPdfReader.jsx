@@ -207,8 +207,8 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
         </button>
       </div>
 
-      <div className="relative flex flex-1 overflow-hidden">
-        <div className="flex flex-1 flex-col">
+      <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* Toolbar */}
           <div className="flex items-center justify-center gap-2 border-b border-border bg-card/50 px-3 py-1.5">
             {/* View mode toggle */}
@@ -255,10 +255,10 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
           {/* PDF canvas */}
           <div
             ref={scrollRef}
-            className={`relative flex-1 overflow-auto bg-muted/30 p-3 ${isPaginated ? 'cursor-grab active:cursor-grabbing' : ''}`}
+            className="relative min-h-0 min-w-0 flex-1 cursor-grab overflow-auto overscroll-contain bg-muted/30 p-3 active:cursor-grabbing"
             onTouchStart={isPaginated ? onTouchStart : undefined}
             onTouchEnd={isPaginated ? onTouchEnd : undefined}
-            onMouseDown={isPaginated ? onMouseDown : undefined}
+            onMouseDown={onMouseDown}
             onScroll={handleScroll}
             style={{ touchAction: isPaginated ? 'pan-x pan-y' : 'auto', WebkitOverflowScrolling: 'touch' }}
           >
@@ -277,7 +277,10 @@ export default function AcamfPdfReader({ url, open, onClose, contentId, contentT
                 <Loader2 className="h-3 w-3 animate-spin" /> Renderizando...
               </div>
             )}
-            <div ref={containerRef} className="mx-auto w-max" />
+            <div
+              ref={containerRef}
+              className={isPaginated ? 'flex min-w-full w-max justify-center' : 'min-w-full w-max'}
+            />
           </div>
         </div>
 
