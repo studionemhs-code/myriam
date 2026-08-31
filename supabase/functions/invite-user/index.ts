@@ -13,12 +13,10 @@ Deno.serve(async (req) => {
   try {
     const user = await currentUser(req);
     if (!user) return json({ error: 'Unauthorized' }, 401);
+    if (user.role !== 'admin') return json({ error: 'Forbidden' }, 403);
 
     const { email, role = 'user', full_name, password: providedPassword } = await req.json();
     if (!email) return json({ error: 'E-mail obrigatório' }, 400);
-
-    // Somente admins podem criar administradores.
-    if (role === 'admin' && user.role !== 'admin') return json({ error: 'Forbidden' }, 403);
 
     const password = providedPassword && providedPassword.length >= 6 ? providedPassword : genPassword();
     const db = admin();
