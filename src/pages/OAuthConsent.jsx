@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { appParams } from "@/lib/app-params";
+// Inline app params — replaces the removed @/lib/app-params helper (MCP consent only).
+const appParams = {
+  token: new URLSearchParams(window.location.search).get("access_token") || localStorage.getItem("base44_access_token") || localStorage.getItem("token"),
+  appId: import.meta.env.VITE_BASE44_APP_ID || "",
+};
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";

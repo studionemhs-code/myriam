@@ -2,14 +2,12 @@
   "name": "Theotokos — Mãe de Deus",
   "short_name": "Theotokos",
   "description": "Hub digital da Total Consagração a Jesus por Maria: jornada, formação, calendário mariano e comunidade.",
-  "lang": "pt-BR",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#673ab7",
+  "background_color": "#ffffff",
   "theme_color": "#673ab7",
-  "categories": ["lifestyle", "education", "social"],
+  "lang": "pt-BR",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "https://strrnkxrpyjyaewfpiwh.supabase.co/storage/v1/object/public/uploads/brand/logo-theotokos.png",
