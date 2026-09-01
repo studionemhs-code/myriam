@@ -22,13 +22,11 @@
     },
     "gender": {
       "type": "string",
-      "description": "Sexo alvo do conte\u00fado. 'ambos' aparece para todos os usu\u00e1rios.",
+      "description": "Sexo alvo do conte\u00fado. O usu\u00e1rio s\u00f3 v\u00ea conte\u00fados do seu pr\u00f3prio sexo.",
       "enum": [
         "masculino",
-        "feminino",
-        "ambos"
-      ],
-      "default": "ambos"
+        "feminino"
+      ]
     },
     "text": {
       "type": "string",
@@ -94,7 +92,8 @@
   },
   "required": [
     "day_number",
-    "title"
+    "title",
+    "gender"
   ],
   "rls": {
     "read": {

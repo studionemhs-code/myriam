@@ -35,7 +35,7 @@ export default function PreparationDayEditor({ day, phases, onClose, onSaved }) 
   const removeLink = (i) => set('links', (form.links || []).filter((_, idx) => idx !== i));
 
   const save = async () => {
-    if (!form.title?.trim() || !form.day_number) return;
+    if (!form.title?.trim() || !form.day_number || !form.gender) return;
     setSaving(true);
     try {
       const payload = { ...form, day_number: parseInt(form.day_number) };
@@ -81,9 +81,9 @@ export default function PreparationDayEditor({ day, phases, onClose, onSaved }) 
               <option value="nao">Não (rascunho)</option>
             </select>
           </Field>
-          <Field label="Sexo alvo">
-            <select className={inputCls} value={form.gender || 'ambos'} onChange={(e) => set('gender', e.target.value)}>
-              <option value="ambos">Ambos</option>
+          <Field label="Sexo alvo *">
+            <select className={inputCls} value={form.gender || ''} onChange={(e) => set('gender', e.target.value)}>
+              <option value="">Selecione</option>
               <option value="masculino">Masculino</option>
               <option value="feminino">Feminino</option>
             </select>

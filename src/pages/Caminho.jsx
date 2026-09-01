@@ -34,18 +34,11 @@ export default function Caminho() {
         base44.entities.PreparationDay.list('day_number', 100),
         base44.entities.PreparationPhase.list('sort_order', 50)
       ]);
-      // Filtra dias por sexo: prefere conteúdo do sexo exato do usuário, depois 'ambos'/sem sexo
+      // Filtra dias por sexo: apenas conteúdo do sexo exato do usuário
       const userGender = user.gender;
-      const dayMap = {};
-      allDays.forEach((d) => {
-        const existing = dayMap[d.day_number];
-        if (!existing) {
-          dayMap[d.day_number] = d;
-        } else if (d.gender === userGender && existing.gender !== userGender) {
-          dayMap[d.day_number] = d;
-        }
-      });
-      const filteredDays = Object.values(dayMap).sort((a, b) => a.day_number - b.day_number);
+      const filteredDays = allDays
+        .filter((d) => d.gender === userGender)
+        .sort((a, b) => a.day_number - b.day_number);
       setDays(filteredDays);
       setPhases(phaseList);
       setContentLoaded(true);
@@ -71,6 +64,11 @@ export default function Caminho() {
   }
 
   const isPreparing = user.status === 'preparacao' || !!progress;
+
+  // Usuário em preparação sem sexo selecionado — precisa escolher antes de ver o conteúdo
+  if (isPreparing && !user.gender) {
+    return <GenderRequired user={user} update={update} onDone={loadProgress} />;
+  }
 
   if (!isPreparing && !showSetup) {
     return (
@@ -407,4 +405,46 @@ function addDays(date, n) {
   const d = new Date(date);
   d.setDate(d.getDate() + n);
   return d;
+}
+
+function GenderRequired({ user, update, onDone }) {
+  const [gender, setGender] = useState(user.gender || '');
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!gender) return;
+    setSaving(true);
+    try {
+      await update({ gender });
+      await onDone();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <PageHeader title="Selecione seu sexo" subtitle="Necessário para personalizar sua caminhada" icon={Flower2} />
+      <p className="mb-4 text-sm text-muted-foreground">
+        Para que possamos exibir o conteúdo da preparação de acordo com você, precisamos saber seu sexo:
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <button onClick={() => setGender('masculino')} className={`rounded-xl border p-6 text-left transition ${gender === 'masculino' ? 'border-gold bg-gold/5' : 'border-border bg-card'}`}>
+          <span className="text-3xl text-gold">♂</span>
+          <p className="mt-3 font-medium">Masculino</p>
+        </button>
+        <button onClick={() => setGender('feminino')} className={`rounded-xl border p-6 text-left transition ${gender === 'feminino' ? 'border-gold bg-gold/5' : 'border-border bg-card'}`}>
+          <span className="text-3xl text-gold">♀</span>
+          <p className="mt-3 font-medium">Feminino</p>
+        </button>
+      </div>
+      <button
+        onClick={save}
+        disabled={!gender || saving}
+        className="mt-6 w-full rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground disabled:opacity-40"
+      >
+        {saving ? 'Salvando...' : 'Confirmar e ver minha caminhada'}
+      </button>
+    </div>
+  );
 }
