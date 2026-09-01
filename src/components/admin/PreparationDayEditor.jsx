@@ -81,6 +81,13 @@ export default function PreparationDayEditor({ day, phases, onClose, onSaved }) 
               <option value="nao">Não (rascunho)</option>
             </select>
           </Field>
+          <Field label="Sexo alvo">
+            <select className={inputCls} value={form.gender || 'ambos'} onChange={(e) => set('gender', e.target.value)}>
+              <option value="ambos">Ambos</option>
+              <option value="masculino">Masculino</option>
+              <option value="feminino">Feminino</option>
+            </select>
+          </Field>
           <div className="col-span-2">
             <Field label="Descrição">
               <input className={inputCls} value={form.description || ''} onChange={(e) => set('description', e.target.value)} placeholder="Breve descrição do tema" />

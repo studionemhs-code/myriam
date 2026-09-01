@@ -20,6 +20,16 @@
       "type": "string",
       "description": "Nome da fase (referencia uma PreparationPhase)"
     },
+    "gender": {
+      "type": "string",
+      "description": "Sexo alvo do conte\u00fado. 'ambos' aparece para todos os usu\u00e1rios.",
+      "enum": [
+        "masculino",
+        "feminino",
+        "ambos"
+      ],
+      "default": "ambos"
+    },
     "text": {
       "type": "string",
       "description": "Conte\u00fado textual do dia (formato rico/markdown)"

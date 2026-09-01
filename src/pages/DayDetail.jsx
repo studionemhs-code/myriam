@@ -23,7 +23,8 @@ export default function DayDetail() {
     if (!user) return;
     (async () => {
       const all = await base44.entities.PreparationDay.filter({ day_number: dayNum });
-      const dayRecord = all[0] || null;
+      const userGender = user.gender;
+      const dayRecord = all.find((d) => d.gender === userGender) || all.find((d) => !d.gender || d.gender === 'ambos') || all[0] || null;
       setDayData(dayRecord);
       const prog = await base44.entities.UserProgress.filter({ created_by_id: user.id });
       setProgress(prog[0] || null);

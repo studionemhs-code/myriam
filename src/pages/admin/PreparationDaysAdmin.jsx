@@ -55,7 +55,7 @@ export default function PreparationDaysAdmin() {
                 <div>
                   <p className="text-sm font-medium">{d.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {d.phase || 'Sem fase'} · {d.is_published ? 'Publicado' : 'Rascunho'}
+                    {d.phase || 'Sem fase'} · {d.is_published ? 'Publicado' : 'Rascunho'} · {d.gender === 'masculino' ? 'Masculino' : d.gender === 'feminino' ? 'Feminino' : 'Ambos'}
                     {(d.youtube_id || d.video_url || d.audio_url || d.pdf_url) && ' · com mídia'}
                     {(d.links?.length > 0) && ` · ${d.links.length} link${d.links.length > 1 ? 's' : ''}`}
                   </p>

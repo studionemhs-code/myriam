@@ -1550,3 +1550,7 @@ ALTER TYPE public.user_status ADD VALUE IF NOT EXISTS 'usuario_escolhe';
 
 -- Categoria de notificação para mensagens do assistente de IA
 ALTER TYPE public.notification_category ADD VALUE IF NOT EXISTS 'assistente_ia';
+
+-- Sexo do usuário e do conteúdo da caminhada (preparação personalizada por sexo)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender TEXT CHECK (gender IN ('masculino', 'feminino'));
+ALTER TABLE public.preparation_days ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT 'ambos' CHECK (gender IN ('masculino', 'feminino', 'ambos'));

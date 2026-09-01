@@ -31,10 +31,22 @@ export default function Caminho() {
       const list = await base44.entities.UserProgress.filter({ created_by_id: user.id });
       const p = list[0] || null;
       const [allDays, phaseList] = await Promise.all([
-        base44.entities.PreparationDay.list('day_number', 33),
+        base44.entities.PreparationDay.list('day_number', 100),
         base44.entities.PreparationPhase.list('sort_order', 50)
       ]);
-      setDays(allDays);
+      // Filtra dias por sexo: prefere conteúdo do sexo exato do usuário, depois 'ambos'/sem sexo
+      const userGender = user.gender;
+      const dayMap = {};
+      allDays.forEach((d) => {
+        const existing = dayMap[d.day_number];
+        if (!existing) {
+          dayMap[d.day_number] = d;
+        } else if (d.gender === userGender && existing.gender !== userGender) {
+          dayMap[d.day_number] = d;
+        }
+      });
+      const filteredDays = Object.values(dayMap).sort((a, b) => a.day_number - b.day_number);
+      setDays(filteredDays);
       setPhases(phaseList);
       setContentLoaded(true);
       // Sincroniza current_day com o valor baseado em tempo
@@ -278,6 +290,7 @@ export default function Caminho() {
 }
 
 function SetupPreparation({ user, update, onDone, onCancel }) {
+  const [gender, setGender] = useState(user.gender || '');
   const [mode, setMode] = useState('target');
   const [targetDate, setTargetDate] = useState('');
   const [saving, setSaving] = useState(false);
@@ -295,13 +308,14 @@ function SetupPreparation({ user, update, onDone, onCancel }) {
   const target = mode === 'soon' ? (start ? addDays(start, 33) : null) : parseDate(targetDate);
 
   const begin = async () => {
-    if (!start) return;
+    if (!start || !gender) return;
     setSaving(true);
     try {
       const startStr = start.toISOString().slice(0, 10);
       const targetStr = target ? target.toISOString().slice(0, 10) : null;
       await update({
         status: 'preparacao',
+        gender,
         preparation_start_date: startStr,
         target_consecration_date: targetStr
       });
@@ -321,6 +335,21 @@ function SetupPreparation({ user, update, onDone, onCancel }) {
   return (
     <div>
       <PageHeader title="Começar preparação" subtitle="Configure sua jornada de 33 dias" icon={Calendar} />
+
+      <div className="mb-5">
+        <p className="mb-3 text-sm text-muted-foreground">Para personalizar sua caminhada, precisamos saber seu sexo:</p>
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={() => setGender('masculino')} className={`rounded-xl border p-4 text-left transition ${gender === 'masculino' ? 'border-gold bg-gold/5' : 'border-border bg-card'}`}>
+            <span className="text-2xl text-gold">♂</span>
+            <p className="mt-2 font-medium">Masculino</p>
+          </button>
+          <button onClick={() => setGender('feminino')} className={`rounded-xl border p-4 text-left transition ${gender === 'feminino' ? 'border-gold bg-gold/5' : 'border-border bg-card'}`}>
+            <span className="text-2xl text-gold">♀</span>
+            <p className="mt-2 font-medium">Feminino</p>
+          </button>
+        </div>
+      </div>
+
       <p className="mb-4 text-sm text-muted-foreground">Quando você deseja realizar sua Consagração?</p>
       <div className="grid grid-cols-2 gap-3">
         <button onClick={() => setMode('target')} className={`rounded-xl border p-4 text-left ${mode === 'target' ? 'border-gold bg-gold/5' : 'border-border bg-card'}`}>
@@ -364,7 +393,7 @@ function SetupPreparation({ user, update, onDone, onCancel }) {
         <button onClick={onCancel} className="rounded-xl border border-border px-5 py-3 text-sm">Voltar</button>
         <button
           onClick={begin}
-          disabled={!start || saving}
+          disabled={!start || !gender || saving}
           className="flex-1 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground disabled:opacity-40"
         >
           {saving ? 'Iniciando...' : 'Iniciar minha caminhada'}
