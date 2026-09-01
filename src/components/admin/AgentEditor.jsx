@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Field, inputCls } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain } from 'lucide-react';
+import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain, BookHeart, Sparkles, Footprints } from 'lucide-react';
 
 export default function AgentEditor({ agent, onSave, onCancel }) {
   const [form, setForm] = useState({
@@ -216,7 +216,7 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
       <div className="rounded-xl border border-border bg-muted/20 p-4">
         <p className="mb-3 flex items-center gap-2 text-sm font-medium"><Brain className="h-4 w-4 text-gold" /> Capacidades Avançadas</p>
 
-        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Ferramentas</p>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Ferramentas gerais</p>
         <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
           <ToolToggle
             icon={Calculator}
@@ -234,10 +234,42 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
           />
           <ToolToggle
             icon={Database}
-            label="Copiloto do Sistema"
-            description="Consulta dados do app"
+            label="Estatísticas do Sistema"
+            description="Total de membros, intenções..."
             checked={form.tools_enabled.includes('system_query')}
             onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'system_query'] : form.tools_enabled.filter(t => t !== 'system_query'))}
+          />
+        </div>
+
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Integração com o sistema (copiloto espiritual)</p>
+        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <ToolToggle
+            icon={Footprints}
+            label="Exercícios da Caminhada"
+            description="Busca conteúdo do dia atual da preparação"
+            checked={form.tools_enabled.includes('get_preparation_day')}
+            onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'get_preparation_day'] : form.tools_enabled.filter(t => t !== 'get_preparation_day'))}
+          />
+          <ToolToggle
+            icon={BookHeart}
+            label="Conteúdos ACAMF"
+            description="Lista e recomenda conteúdos publicados"
+            checked={form.tools_enabled.includes('list_acamf_content')}
+            onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'list_acamf_content'] : form.tools_enabled.filter(t => t !== 'list_acamf_content'))}
+          />
+          <ToolToggle
+            icon={Sparkles}
+            label="Orações"
+            description="Lista orações disponíveis por categoria"
+            checked={form.tools_enabled.includes('list_prayers')}
+            onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'list_prayers'] : form.tools_enabled.filter(t => t !== 'list_prayers'))}
+          />
+          <ToolToggle
+            icon={Footprints}
+            label="Jornadas Coletivas"
+            description="Lista jornadas ativas e participação"
+            checked={form.tools_enabled.includes('get_active_journeys')}
+            onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'get_active_journeys'] : form.tools_enabled.filter(t => t !== 'get_active_journeys'))}
           />
         </div>
 

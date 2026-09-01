@@ -77,11 +77,15 @@
         "enum": [
           "calculator",
           "web_search",
-          "system_query"
+          "system_query",
+          "get_preparation_day",
+          "list_acamf_content",
+          "list_prayers",
+          "get_active_journeys"
         ]
       },
       "default": [],
-      "description": "Ferramentas ativas no agente: calculadora, pesquisa na internet, copiloto do sistema"
+      "description": "Ferramentas ativas no agente: calculadora, pesquisa na internet, copiloto do sistema, exerc\u00edcios da caminhada, conte\u00fados ACAMF, ora\u00e7\u00f5es, jornadas"
     },
     "reasoning_enabled": {
       "type": "boolean",
