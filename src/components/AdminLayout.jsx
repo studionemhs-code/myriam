@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Logo from '@/components/Logo';
+import AdminGlobalSearch from '@/components/admin/AdminGlobalSearch';
 
 const items = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -94,6 +95,9 @@ export default function AdminLayout() {
       )}
 
       <main className="lg:pl-60">
+        <div className="border-b border-border bg-card px-4 py-3 lg:px-8">
+          <AdminGlobalSearch />
+        </div>
         <div className="mx-auto max-w-6xl px-4 py-6 lg:px-8">
           <button
             onClick={() => navigate('/admin')}
