@@ -18,7 +18,8 @@ export default function Onboarding() {
   const [photoUrl, setPhotoUrl] = useState(user?.photo_url || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [consecrationDate, setConsecrationDate] = useState('');
+  const isConsecratedLevel = user?.status === 'consagrado' || user?.status === 'aprofundamento';
+  const [consecrationDate, setConsecrationDate] = useState(user?.consecration_date ? String(user.consecration_date).slice(0, 10) : '');
   const [showConsecrationForm, setShowConsecrationForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -41,6 +42,9 @@ export default function Onboarding() {
     if (displayName.trim()) data.display_name = displayName.trim();
     if (photoUrl) data.photo_url = photoUrl;
     if (phone.trim()) data.phone = phone.trim();
+    if (!needsLevelChoice && isConsecratedLevel && consecrationDate) {
+      Object.assign(data, registerConsecrationOrRenewal(user, consecrationDate));
+    }
     if (Object.keys(data).length > 0) {
       await update(data);
     }
@@ -235,6 +239,22 @@ export default function Onboarding() {
               <p className="mt-2 text-xs text-muted-foreground">
                 Usado para enviar notificações por WhatsApp quando você não ler as mensagens no app.
               </p>
+
+              {/* Data da Consagração — exibida apenas para usuários já consagrados (nível definido pelo admin) */}
+              {!needsLevelChoice && isConsecratedLevel && (
+                <label className="mt-4 block">
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Data da sua Consagração Total a Jesus por Maria</span>
+                  <input
+                    type="date"
+                    value={consecrationDate}
+                    onChange={(e) => setConsecrationDate(e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-base"
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Registre a data em que você fez sua Consagração Total. Se já houver uma data registrada, esta será tratada como renovação.
+                  </p>
+                </label>
+              )}
             </div>
           </div>
         )}
