@@ -16,10 +16,10 @@ Deno.serve(async (req) => {
     const { data: webhooks } = await admin().from('webhook_automations').select('*').eq('enabled', true);
     const matchingWebhooks = (webhooks || []).filter((w) => (w.trigger_types || []).includes(category));
 
-    const { data: profiles } = await admin().from('profiles').select('id, legacy_id, display_name, full_name, email, phone').limit(500);
+    const { data: profiles } = await admin().from('profiles').select('id, display_name, full_name, email, phone').limit(500);
     let created = 0, skipped = 0, webhooksDispatched = 0;
     for (const p of profiles || []) {
-      const result = await notifyUser(p.legacy_id || p.id, category, title, body, link, related_id, video_url, youtube_id);
+      const result = await notifyUser(p.id, category, title, body, link, related_id, video_url, youtube_id);
       if (result.ok) {
         created++;
         // Dispara webhooks (WhatsApp/externo) se houver automações configuradas para a categoria

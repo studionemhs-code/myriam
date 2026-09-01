@@ -29,32 +29,34 @@ export default function FloatingAgentButton() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onPointerDown = (e) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
+  // Arraste vertical apenas no desktop (mouse). No mobile, clique simples abre o chat.
+  const onMouseDown = (e) => {
     dragRef.current = { dragging: true, startY: e.clientY, startBottom: bottomPx, moved: false };
+    const onMove = (ev) => {
+      if (!dragRef.current.dragging) return;
+      const dy = ev.clientY - dragRef.current.startY;
+      if (Math.abs(dy) > DRAG_THRESHOLD) dragRef.current.moved = true;
+      let next = dragRef.current.startBottom - dy;
+      const maxBottom = Math.max(80, window.innerHeight - 70);
+      next = Math.max(8, Math.min(maxBottom, next));
+      setBottomPx(next);
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      if (dragRef.current.dragging && dragRef.current.moved) {
+        try { localStorage.setItem(POS_KEY, String(bottomPx)); } catch {}
+      }
+      dragRef.current.dragging = false;
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   };
 
-  const onPointerMove = (e) => {
-    if (!dragRef.current.dragging) return;
-    const dy = e.clientY - dragRef.current.startY;
-    if (Math.abs(dy) > DRAG_THRESHOLD) dragRef.current.moved = true;
-    // Arrastar para cima (dy negativo) aumenta o bottom
-    let next = dragRef.current.startBottom - dy;
-    const maxBottom = Math.max(80, window.innerHeight - 70);
-    next = Math.max(8, Math.min(maxBottom, next));
-    setBottomPx(next);
-  };
-
-  const onPointerUp = (e) => {
-    if (!dragRef.current.dragging) return;
-    const wasDrag = dragRef.current.moved;
-    dragRef.current.dragging = false;
-    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
-    if (wasDrag) {
-      try { localStorage.setItem(POS_KEY, String(bottomPx)); } catch {}
-    } else {
-      setOpen(true);
-    }
+  const onClick = () => {
+    // No desktop, se houve arraste, não abre o chat.
+    if (dragRef.current.moved) { dragRef.current.moved = false; return; }
+    setOpen(true);
   };
 
   if (!isVisible('assistente_ia_flutuante') || !agent) return null;
@@ -62,13 +64,12 @@ export default function FloatingAgentButton() {
   return (
     <>
       <button
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        style={{ bottom: `${bottomPx}px`, touchAction: 'none' }}
-        className="group fixed right-4 z-40 flex h-14 w-14 cursor-grab touch-none items-center justify-center overflow-hidden rounded-full shadow-lg ring-2 ring-gold/30 transition hover:scale-105 hover:shadow-xl active:cursor-grabbing active:scale-95 lg:right-6"
+        onClick={onClick}
+        onMouseDown={onMouseDown}
+        style={{ bottom: `${bottomPx}px` }}
+        className="group fixed right-4 z-40 flex h-14 w-14 cursor-pointer items-center justify-center overflow-hidden rounded-full shadow-lg ring-2 ring-gold/30 transition hover:scale-105 hover:shadow-xl active:scale-95 lg:right-6"
         aria-label={`Conversar com ${agent.name}`}
-        title={`${agent.name} · arraste para mover`}
+        title={`${agent.name}`}
       >
         {agent.icon_url ? (
           <img src={agent.icon_url} alt="" className="h-full w-full object-cover" draggable={false} />
