@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, CheckCheck, Flower2, RefreshCw, Leaf, Heart, BookOpen, Sparkles, Gift } from 'lucide-react';
+import { Bell, CheckCheck, Flower2, RefreshCw, Leaf, Heart, BookOpen, Sparkles, Gift, Bot } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import AssociationRequestButton from '@/components/associacao/AssociationRequestButton';
 import NotificationVideoModal from '@/components/notifications/NotificationVideoModal';
@@ -15,6 +15,7 @@ const categoryMeta = {
   acamf: { icon: BookOpen, label: 'ACAMF' },
   jornadas: { icon: Sparkles, label: 'Jornadas' },
   novidades: { icon: Gift, label: 'Novidades' },
+  assistente_ia: { icon: Bot, label: 'Assistente IA' },
 };
 
 export default function Notificacoes() {

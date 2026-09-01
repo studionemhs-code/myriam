@@ -11,7 +11,8 @@ const PREFS = [
   { key: 'myriam', label: 'Atividade no Myriam' },
   { key: 'intencoes', label: 'Intenções de oração' },
   { key: 'acamf', label: 'Novos conteúdos ACAMF' },
-  { key: 'jornadas', label: 'Avisos de jornadas' }
+  { key: 'jornadas', label: 'Avisos de jornadas' },
+  { key: 'assistente_ia', label: 'Mensagens do assistente de IA' }
 ];
 
 export default function Configuracoes() {

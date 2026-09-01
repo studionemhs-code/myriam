@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { X, Send, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import FloatingAgentIcon from './FloatingAgentIcon';
 
 export default function FloatingAgentChat({ agent, onClose }) {
+  const { user } = useCurrentUser();
+  const qc = useQueryClient();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -53,6 +57,20 @@ export default function FloatingAgentChat({ agent, onClose }) {
         setMessages(m => [...m, { role: 'assistant', content: reply }]);
       }
       if (res.data.conversation_id) setConvId(res.data.conversation_id);
+
+      // Cria notificação se o usuário optou por receber (padrão: ativado)
+      if (user?.notification_prefs?.assistente_ia !== false) {
+        try {
+          await base44.entities.Notification.create({
+            user_id: user.id,
+            category: 'assistente_ia',
+            title: agent.name,
+            body: reply.substring(0, 150),
+            link: '/agentes'
+          });
+          qc.invalidateQueries({ queryKey: ['notifications', user.id] });
+        } catch { /* silencioso */ }
+      }
     } catch (err) {
       setMessages(m => [...m, { role: 'assistant', content: '⚠️ Erro: ' + (err.message || 'tente novamente') }]);
     } finally {

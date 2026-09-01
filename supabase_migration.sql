@@ -1547,3 +1547,6 @@ CREATE POLICY "prayer_read" ON public.prayer_intentions FOR SELECT USING (auth.u
 -- Quando o admin cria/edita um usuário com esse nível, o onboarding reabre a etapa
 -- de escolha de nível para o usuário decidir entre Interessado/Preparação/Consagrado.
 ALTER TYPE public.user_status ADD VALUE IF NOT EXISTS 'usuario_escolhe';
+
+-- Categoria de notificação para mensagens do assistente de IA
+ALTER TYPE public.notification_category ADD VALUE IF NOT EXISTS 'assistente_ia';
