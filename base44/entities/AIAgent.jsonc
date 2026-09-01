@@ -92,6 +92,11 @@
       "default": false,
       "description": "Ativa modo de racioc\u00ednio profundo \u2014 usa modelo mais capaz e instru\u00e7\u00e3o para pensar passo a passo"
     },
+    "architect_mode_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ativa o Modo Arquiteto: o agente ganha ferramentas de CRUD total no sistema (criar/editar/excluir conte\u00fados, ora\u00e7\u00f5es, notifica\u00e7\u00f5es, usu\u00e1rios, etc.). Funciona APENAS para contas admin."
+    },
     "message_delay_ms": {
       "type": "integer",
       "default": 0,

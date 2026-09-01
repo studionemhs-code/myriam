@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Field, inputCls } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain, BookHeart, Sparkles, Footprints } from 'lucide-react';
+import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain, BookHeart, Sparkles, Footprints, Hammer } from 'lucide-react';
 
 export default function AgentEditor({ agent, onSave, onCancel }) {
   const [form, setForm] = useState({
@@ -20,6 +20,7 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     is_floating_main: agent?.is_floating_main ?? false,
     tools_enabled: agent?.tools_enabled || [],
     reasoning_enabled: agent?.reasoning_enabled ?? false,
+    architect_mode_enabled: agent?.architect_mode_enabled ?? false,
     message_delay_ms: agent?.message_delay_ms ?? 0
   });
   const [saving, setSaving] = useState(false);
@@ -277,6 +278,18 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
           <input type="checkbox" checked={form.reasoning_enabled} onChange={e => set('reasoning_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" />
           <span className="text-sm">Raciocínio Avançado — usa modelo mais capaz e pensa passo a passo</span>
         </label>
+
+        <div className="mb-3 rounded-lg border border-amber-300/40 bg-amber-50/50 p-3 dark:border-amber-500/30 dark:bg-amber-950/20">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={form.architect_mode_enabled} onChange={e => set('architect_mode_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" />
+            <span className="flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400">
+              <Hammer className="h-4 w-4" /> Modo Arquiteto (admin only)
+            </span>
+          </label>
+          <p className="mt-1.5 pl-6 text-xs text-amber-600/80 dark:text-amber-500/70">
+            Dá ao agente liberdade total para criar, editar e excluir conteúdos, orações, notificações, jornadas, usuários e configurações do sistema. Funciona apenas para contas admin.
+          </p>
+        </div>
 
         <Field label={`Atraso entre partes da resposta: ${form.message_delay_ms}ms`} hint="Quebra mensagens longas em partes e envia com pausa. 0 = resposta instantânea.">
           <input type="range" min="0" max="3000" step="200" value={form.message_delay_ms} onChange={e => set('message_delay_ms', parseInt(e.target.value))} className="w-full" />

@@ -1554,3 +1554,6 @@ ALTER TYPE public.notification_category ADD VALUE IF NOT EXISTS 'assistente_ia';
 -- Sexo do usuário e do conteúdo da caminhada (preparação personalizada por sexo)
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender TEXT CHECK (gender IN ('masculino', 'feminino'));
 ALTER TABLE public.preparation_days ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT 'ambos' CHECK (gender IN ('masculino', 'feminino', 'ambos'));
+
+-- Modo Arquiteto: agente de IA com CRUD total no sistema (apenas para admins)
+ALTER TABLE public.ai_agents ADD COLUMN IF NOT EXISTS architect_mode_enabled BOOLEAN DEFAULT false;

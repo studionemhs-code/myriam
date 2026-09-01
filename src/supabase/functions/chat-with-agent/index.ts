@@ -115,6 +115,107 @@ async function getActiveJourneys(db: any, userId: string): Promise<string> {
 }
 
 // ============================================================================
+// FERRAMENTAS DO MODO ARQUITETO (admin only — CRUD total no sistema)
+// ============================================================================
+
+const ARCHITECT_TABLES = [
+  'preparation_days', 'preparation_phases', 'prayers', 'prayer_categories',
+  'prayer_intentions', 'notifications', 'marian_calendar_events',
+  'acamf_contents', 'acamf_categories', 'courses', 'collective_journeys',
+  'journey_contents', 'certificate_templates', 'association_settings',
+  'feature_flags', 'store_settings', 'catalog_products', 'webhook_automations',
+  'consecration_settings', 'whatsapp_otp_settings', 'registration_settings',
+  'notification_settings', 'warranty_settings', 'prayer_favorites',
+  'content_notes', 'content_comments', 'myriam_posts', 'myriam_comments',
+  'myriam_stories', 'chat_conversations', 'chat_messages', 'reports',
+  'share_links', 'user_feature_access', 'agent_conversations', 'agent_memories',
+  'cadeiazinhas', 'warranty_claims', 'quote_requests', 'lesson_progress',
+  'reflections', 'user_progress', 'journey_participants', 'certificates'
+];
+
+async function architectCrud(
+  table: string, operation: string, data: any, filter: any, id: string, db: any
+): Promise<string> {
+  if (!ARCHITECT_TABLES.includes(table)) {
+    return `Tabela '${table}' não permitida. Tabelas válidas: ${ARCHITECT_TABLES.join(', ')}`;
+  }
+  try {
+    if (operation === 'list') {
+      let query = db.from(table).select('*').order('created_date', { ascending: false }).limit(30);
+      if (filter && typeof filter === 'object') {
+        for (const [k, v] of Object.entries(filter)) {
+          query = query.eq(k, v);
+        }
+      }
+      const { data: rows, error } = await query;
+      if (error) return `Erro: ${error.message}`;
+      return `${rows?.length || 0} registro(s) encontrado(s):\n${JSON.stringify(rows || [], null, 2)}`;
+    }
+    if (operation === 'create') {
+      if (!data || typeof data !== 'object') return 'Erro: data é obrigatório para create';
+      const { data: row, error } = await db.from(table).insert(data).select().single();
+      if (error) return `Erro ao criar: ${error.message}`;
+      return `Registro criado com sucesso:\n${JSON.stringify(row, null, 2)}`;
+    }
+    if (operation === 'update') {
+      if (!id) return 'Erro: id é obrigatório para update';
+      if (!data || typeof data !== 'object') return 'Erro: data é obrigatório para update';
+      const { data: row, error } = await db.from(table).update(data).eq('id', id).select().single();
+      if (error) return `Erro ao atualizar: ${error.message}`;
+      return `Registro atualizado:\n${JSON.stringify(row, null, 2)}`;
+    }
+    if (operation === 'delete') {
+      if (!id) return 'Erro: id é obrigatório para delete';
+      const { error } = await db.from(table).delete().eq('id', id);
+      if (error) return `Erro ao excluir: ${error.message}`;
+      return `Registro ${id} excluído com sucesso da tabela ${table}.`;
+    }
+    return `Operação '${operation}' inválida. Use: list, create, update ou delete.`;
+  } catch (e) {
+    return `Erro: ${(e as Error).message}`;
+  }
+}
+
+async function architectInviteUser(
+  email: string, role: string, displayName: string, db: any
+): Promise<string> {
+  try {
+    const { error } = await db.auth.admin.inviteUserByEmail(email, {
+      data: { role: role || 'user', display_name: displayName || '' }
+    });
+    if (error) return `Erro ao convidar: ${error.message}`;
+    return `Convite enviado para ${email} com papel '${role || 'user'}'. O usuário receberá um e-mail para definir sua senha.`;
+  } catch (e) {
+    return `Erro: ${(e as Error).message}`;
+  }
+}
+
+async function architectBroadcastNotification(
+  category: string, title: string, body: string, link: string, target: any, db: any
+): Promise<string> {
+  try {
+    let userIds: string[] = [];
+    if (target === 'all') {
+      const { data: users } = await db.from('profiles').select('id');
+      userIds = (users || []).map((u: any) => u.id);
+    } else if (Array.isArray(target)) {
+      userIds = target;
+    } else {
+      userIds = [String(target)];
+    }
+    if (!userIds.length) return 'Nenhum usuário encontrado para enviar a notificação.';
+    const notifications = userIds.map((uid) => ({
+      user_id: uid, category, title, body: body || null, link: link || null, read: false
+    }));
+    const { error } = await db.from('notifications').insert(notifications);
+    if (error) return `Erro ao enviar: ${error.message}`;
+    return `Notificação '${title}' enviada para ${userIds.length} usuário(s) na categoria '${category}'.`;
+  } catch (e) {
+    return `Erro: ${(e as Error).message}`;
+  }
+}
+
+// ============================================================================
 // DEFINIÇÕES DAS FERRAMENTAS (OpenAI function calling)
 // ============================================================================
 
@@ -157,6 +258,56 @@ const TOOL_DEFS = [
 ];
 
 // ============================================================================
+// FERRAMENTAS DO MODO ARQUITETO (adicionadas dinamicamente para admins)
+// ============================================================================
+
+const ARCHITECT_TOOL_DEFS = [
+  { type: 'function', function: {
+    name: 'architect_crud',
+    description: 'MODO ARQUITETO: cria, lista, atualiza ou exclui registros em qualquer tabela do sistema. Use para gerenciar conteúdos da caminhada (preparation_days), orações (prayers), notificações (notifications), conteúdos ACAMF (acamf_contents), jornadas (collective_journeys), configurações, etc. Operação "list" retorna registros; "create" insere; "update" altera (precisa id); "delete" remove (precisa id).',
+    parameters: {
+      type: 'object',
+      properties: {
+        table: { type: 'string', description: 'Nome da tabela (ex: preparation_days, prayers, notifications, acamf_contents, collective_journeys, marian_calendar_events)' },
+        operation: { type: 'string', enum: ['list', 'create', 'update', 'delete'], description: 'Operação a realizar' },
+        data: { type: 'object', description: 'Campos do registro para create/update (ex: {title: "Dia 1", day_number: 1, text: "..."})' },
+        filter: { type: 'object', description: 'Filtros para list (opcional). Ex: {status: "ativa"}' },
+        id: { type: 'string', description: 'ID do registro para update/delete' }
+      },
+      required: ['table', 'operation']
+    }
+  }},
+  { type: 'function', function: {
+    name: 'architect_invite_user',
+    description: 'MODO ARQUITETO: convida um novo usuário para o sistema por e-mail. O usuário receberá um convite para definir sua senha.',
+    parameters: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', description: 'E-mail do novo usuário' },
+        role: { type: 'string', enum: ['admin', 'user'], description: 'Papel do usuário (padrão: user)' },
+        display_name: { type: 'string', description: 'Nome de exibição (opcional)' }
+      },
+      required: ['email']
+    }
+  }},
+  { type: 'function', function: {
+    name: 'architect_broadcast_notification',
+    description: 'MODO ARQUITETO: envia uma notificação/novidade para usuários. Pode enviar para todos ("all") ou para usuários específicos (ID ou array de IDs).',
+    parameters: {
+      type: 'object',
+      properties: {
+        category: { type: 'string', enum: ['caminho', 'renovacao', 'myriam', 'intencoes', 'acamf', 'jornadas', 'novidades', 'associacao', 'assistente_ia'], description: 'Categoria da notificação' },
+        title: { type: 'string', description: 'Título da notificação' },
+        body: { type: 'string', description: 'Corpo da mensagem (opcional)' },
+        link: { type: 'string', description: 'Link interno (ex: /caminho) (opcional)' },
+        target: { type: 'string', description: '"all" para todos, ou ID de usuário, ou array de IDs' }
+      },
+      required: ['category', 'title', 'target']
+    }
+  }}
+];
+
+// ============================================================================
 // MEMÓRIA
 // ============================================================================
 function extractFacts(message: string): string[] {
@@ -190,7 +341,11 @@ Deno.serve(async (req) => {
     if (!apiKey) return json({ error: 'Nenhuma chave API configurada.' }, 500);
 
     const enabledTools = (agent.tools_enabled || []) as string[];
-    const activeTools = TOOL_DEFS.filter((t) => enabledTools.includes(t.function.name));
+    let activeTools = TOOL_DEFS.filter((t) => enabledTools.includes(t.function.name));
+
+    // Modo Arquiteto: ferramentas de CRUD total — apenas para contas admin
+    const isArchitect = agent.architect_mode_enabled && user.role === 'admin';
+    if (isArchitect) activeTools = [...activeTools, ...ARCHITECT_TOOL_DEFS];
 
     // Histórico
     let conversation: any = null;
@@ -236,6 +391,10 @@ Deno.serve(async (req) => {
     systemPrompt += userContext;
     if (agent.reasoning_enabled) systemPrompt += '\n\nMODO RACIOCÍNIO: Pense passo a passo antes de responder.';
 
+    if (isArchitect) {
+      systemPrompt += '\n\n--- MODO ARQUITETO ATIVO ---\nVocê tem permissões de administrador total. Pode criar, editar, listar e excluir registros em qualquer tabela do sistema usando a ferramenta architect_crud. Tabelas principais: preparation_days (dias da caminhada), prayers (orações), prayer_categories, notifications (notificações/novidades), acamf_contents (conteúdos ACAMF), collective_journeys (jornadas), marian_calendar_events (calendário mariano), courses, journey_contents, certificate_templates, feature_flags, store_settings, webhook_automations, consecration_settings, registration_settings, notification_settings, warranty_settings, association_settings, catalog_products, quote_requests.\n\nVocê também pode convidar usuários (architect_invite_user) e enviar notificações/novidades (architect_broadcast_notification).\n\nDiretrizes:\n- Sempre confirme ações destrutivas (excluir, alterar) antes de executá-las, perguntando ao admin se ele tem certeza.\n- Ao criar conteúdo, use os campos corretos de cada tabela. Se não souber os campos, faça um "list" primeiro para ver a estrutura.\n- Seja proativo: ajude o admin a gerenciar todo o sistema — criar dias de preparação, orações, notificações, jornadas, conteúdos, etc.\n- Para criar um dia da caminhada: architect_crud com table="preparation_days", operation="create", data={day_number, title, description, phase, text, prayer, practice, gender, is_published}.\n- Para criar uma oração: architect_crud com table="prayers", operation="create", data={title, category_id, content, is_published}.\n- Para enviar novidade: architect_broadcast_notification com category="novidades", title, body, target="all".';
+    }
+
     const model = agent.reasoning_enabled ? 'gpt-4o' : (agent.model || 'gpt-4o-mini');
 
     // Loop de tool-use
@@ -271,6 +430,9 @@ Deno.serve(async (req) => {
             else if (tc.function.name === 'list_acamf_content') result = await listAcamfContent(args.category ?? null, args.limit ?? 6, db);
             else if (tc.function.name === 'list_prayers') result = await listPrayers(args.category ?? null, db);
             else if (tc.function.name === 'get_active_journeys') result = await getActiveJourneys(db, user.id);
+            else if (tc.function.name === 'architect_crud') result = await architectCrud(args.table, args.operation, args.data, args.filter, args.id, db);
+            else if (tc.function.name === 'architect_invite_user') result = await architectInviteUser(args.email, args.role, args.display_name, db);
+            else if (tc.function.name === 'architect_broadcast_notification') result = await architectBroadcastNotification(args.category, args.title, args.body, args.link, args.target, db);
             else result = 'Ferramenta desconhecida.';
           } catch (e) { result = `Erro: ${(e as Error).message}`; }
           messages.push({ role: 'tool', tool_call_id: tc.id, content: result });
