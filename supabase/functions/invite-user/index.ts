@@ -37,7 +37,8 @@ Deno.serve(async (req) => {
       await db.from('profiles').update({ full_name }).eq('id', data.user.id);
     }
 
-    return json({ ok: true, user_id: data.user?.id, password });
+    // SEC-04: a senha nunca é devolvida na resposta — o admin a repassa por canal próprio.
+    return json({ ok: true, user_id: data.user?.id });
   } catch (error) {
     return json({ error: (error as Error).message }, 500);
   }

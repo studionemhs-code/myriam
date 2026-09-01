@@ -1514,3 +1514,27 @@ SELECT 'rastreamento_correios', 'Rastreamento de pedidos (Correios)', true
 WHERE NOT EXISTS (
   SELECT 1 FROM public.feature_flags WHERE feature = 'rastreamento_correios'
 );
+
+-- ============================================================================
+-- 14. CORREÇÕES DE SEGURANÇA (SEC-01 a SEC-05)
+-- ============================================================================
+
+-- SEC-01: share_links — bloquear enumeração pública de tokens.
+-- Antes a policy era USING (true), permitindo que qualquer um (inclusive anônimo)
+-- listasse todos os tokens de compartilhamento. Agora apenas admin lê.
+-- O único consumidor é a página admin OrcamentosLink (já em contexto admin);
+-- a página pública /solicitar-cadeiazinha não valida o token no banco, então o
+-- compartilhamento por link continua funcionando sem alteração no frontend.
+DROP POLICY IF EXISTS "share_links_read" ON public.share_links;
+CREATE POLICY "share_links_read" ON public.share_links FOR SELECT USING (is_admin());
+
+-- SEC-02: prayer_intentions — restringir leitura a usuários autenticados.
+-- Todas as intenções são públicas por design (visíveis à comunidade logada),
+-- mas anônimos não devem poder enumerar pedidos de oração sensíveis via API.
+DROP POLICY IF EXISTS "prayer_read" ON public.prayer_intentions;
+CREATE POLICY "prayer_read" ON public.prayer_intentions FOR SELECT USING (auth.uid() IS NOT NULL);
+
+-- Nota: SEC-03, SEC-04 e SEC-05 são correções em Edge Functions (TypeScript),
+-- não em SQL — ver:
+--   supabase/functions/integrations/index.ts   (SEC-03: trava de admin por handler + SEC-05: sanitização de HTML)
+--   supabase/functions/invite-user/index.ts   (SEC-04: senha não devolvida na resposta)

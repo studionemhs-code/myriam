@@ -70,13 +70,12 @@ export default function Users() {
     setMsg('');
     try {
       // Cria o usuário via Edge Function (senha definida pelo admin, e-mail já confirmado).
-      const res = await base44.functions.invoke('inviteUser', {
+      await base44.functions.invoke('inviteUser', {
         email: inviteEmail,
         role: inviteRole,
         full_name: inviteName || undefined,
         password: invitePassword || undefined,
       });
-      const password = res?.data?.password;
       // Aplica os campos extras no profile.
       const all = await base44.entities.User.list('-created_date', 200);
       const created = all.find((u) => u.email === inviteEmail);
@@ -85,7 +84,10 @@ export default function Users() {
         if (inviteName) updates.full_name = inviteName;
         await base44.entities.User.update(created.id, updates);
       }
-      setMsg(`Usuário criado! Login: ${inviteEmail} · Senha: ${password || '—'}`);
+      // SEC-04: a senha não volta da Edge Function — o admin já a digitou e deve repassá-la por canal próprio.
+      setMsg(invitePassword
+        ? `Usuário criado! Login: ${inviteEmail} · Senha: a que você digitou acima. Repasse ao usuário por canal seguro.`
+        : `Usuário criado! Login: ${inviteEmail} · Senha gerada automaticamente (não exibida). O usuário deve usar "Esqueci a senha" para definir a própria.`);
       setInviteEmail('');
       setInviteName('');
       setInviteStatus('interessado');

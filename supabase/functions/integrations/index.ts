@@ -46,6 +46,25 @@ async function generateImage(p: any) {
   return { url: b64 ? `data:image/png;base64,${b64}` : data.data[0].url };
 }
 
+// Validação básica de formato de e-mail.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Sanitiza HTML de e-mail removendo tags/atributos perigosos (defense-in-depth).
+// O controle principal é a trava de admin (SEC-03); esta camada impede que
+// HTML malformado por um admin comprometido injete scripts no destinatário.
+function sanitizeEmailHtml(html: string): string {
+  let out = String(html || '');
+  // Remove blocos inteiros de script/style/iframe
+  out = out.replace(/<\s*(script|style|iframe|object|embed|applet)\b[\s\S]*?<\/\s*\1\s*>/gi, '');
+  // Remove tags perigosas (abertura ou fechamento)
+  out = out.replace(/<\/?\s*(script|style|iframe|object|embed|link|meta|form|input|button|textarea|select|option|applet|base|body|head|html|title)\b[^>]*>/gi, '');
+  // Remove atributos on* (event handlers inline)
+  out = out.replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  // Neutraliza URLs javascript: em href/src
+  out = out.replace(/(href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*'|javascript:[^\s"'>]+)/gi, '$1="#"');
+  return out;
+}
+
 async function sendEmail(p: any) {
   if (!RESEND_KEY()) {
     return {
@@ -54,12 +73,18 @@ async function sendEmail(p: any) {
       hint: 'Defina a secret RESEND_API_KEY (e opcionalmente EMAIL_FROM) nas Edge Functions do Supabase.'
     };
   }
+  if (!p.to || !EMAIL_RE.test(String(p.to))) {
+    throw new Error('Destinatário (to) inválido. Forneça um e-mail válido.');
+  }
+  if (!p.subject || !String(p.subject).trim()) {
+    throw new Error('Assunto (subject) é obrigatório.');
+  }
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${RESEND_KEY()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: p.from_name ? `${p.from_name} <${FROM_EMAIL().replace(/.*</, '').replace('>', '')}>` : FROM_EMAIL(),
-      to: [p.to], subject: p.subject, html: p.body
+      to: [String(p.to).trim()], subject: String(p.subject), html: sanitizeEmailHtml(p.body)
     })
   });
   const data = await res.json();
@@ -189,6 +214,29 @@ const HANDLERS: Record<string, (p: any) => Promise<unknown>> = {
   SendPushNotification: sendPushNotification
 };
 
+// SEC-03: apenas admin pode chamar integrações privilegiadas (custo/abuso).
+// InvokeLLM e GenerateSpeech ficam livres para usuários (assistente IA + TTS do app).
+const ADMIN_ONLY: Record<string, boolean> = {
+  GenerateImage: true,
+  GenerateVideo: true,
+  SendEmail: true,
+  SendPushNotification: true,
+  ExtractDataFromUploadedFile: true,
+  TranscribeAudio: true
+};
+
+// Validação mínima de payload por handler (rejeita chamadas malformadas).
+const REQUIRED_FIELDS: Record<string, string[]> = {
+  InvokeLLM: ['prompt'],
+  GenerateImage: ['prompt'],
+  SendEmail: ['to', 'subject', 'body'],
+  TranscribeAudio: ['audio_url'],
+  ExtractDataFromUploadedFile: ['file_url', 'json_schema'],
+  GenerateSpeech: ['text'],
+  GenerateVideo: ['prompt'],
+  SendPushNotification: ['user_id', 'title', 'content']
+};
+
 Deno.serve(async (req) => {
   const pf = preflight(req); if (pf) return pf;
   try {
@@ -199,7 +247,21 @@ Deno.serve(async (req) => {
     const handler = HANDLERS[endpoint];
     if (!handler) return json({ error: `Integração não suportada: ${endpoint}` }, 400);
 
-    return json(await handler(payload || {}));
+    // Trava de admin para integrações privilegiadas.
+    if (ADMIN_ONLY[endpoint] && user.role !== 'admin') {
+      return json({ error: 'Forbidden: operação restrita a administradores' }, 403);
+    }
+
+    // Validação mínima de schema do payload.
+    const required = REQUIRED_FIELDS[endpoint] || [];
+    const p = payload || {};
+    for (const field of required) {
+      if (p[field] === undefined || p[field] === null || p[field] === '') {
+        return json({ error: `Campo obrigatório ausente: ${field}` }, 400);
+      }
+    }
+
+    return json(await handler(p));
   } catch (error) {
     return json({ error: (error as Error).message }, 500);
   }
