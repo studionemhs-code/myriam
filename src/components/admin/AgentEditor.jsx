@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Field, inputCls } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot } from 'lucide-react';
+import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain } from 'lucide-react';
 
 export default function AgentEditor({ agent, onSave, onCancel }) {
   const [form, setForm] = useState({
@@ -17,7 +17,10 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     openai_api_key: agent?.openai_api_key || '',
     is_active: agent?.is_active ?? true,
     icon_url: agent?.icon_url || '',
-    is_floating_main: agent?.is_floating_main ?? false
+    is_floating_main: agent?.is_floating_main ?? false,
+    tools_enabled: agent?.tools_enabled || [],
+    reasoning_enabled: agent?.reasoning_enabled ?? false,
+    message_delay_ms: agent?.message_delay_ms ?? 0
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -209,6 +212,45 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
         </label>
       </Field>
 
+      {/* Capacidades Avançadas */}
+      <div className="rounded-xl border border-border bg-muted/20 p-4">
+        <p className="mb-3 flex items-center gap-2 text-sm font-medium"><Brain className="h-4 w-4 text-gold" /> Capacidades Avançadas</p>
+
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Ferramentas</p>
+        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <ToolToggle
+            icon={Calculator}
+            label="Calculadora"
+            description="Cálculos matemáticos"
+            checked={form.tools_enabled.includes('calculator')}
+            onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'calculator'] : form.tools_enabled.filter(t => t !== 'calculator'))}
+          />
+          <ToolToggle
+            icon={Globe}
+            label="Pesquisa na Internet"
+            description="Busca via DuckDuckGo"
+            checked={form.tools_enabled.includes('web_search')}
+            onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'web_search'] : form.tools_enabled.filter(t => t !== 'web_search'))}
+          />
+          <ToolToggle
+            icon={Database}
+            label="Copiloto do Sistema"
+            description="Consulta dados do app"
+            checked={form.tools_enabled.includes('system_query')}
+            onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'system_query'] : form.tools_enabled.filter(t => t !== 'system_query'))}
+          />
+        </div>
+
+        <label className="mb-3 flex items-center gap-2">
+          <input type="checkbox" checked={form.reasoning_enabled} onChange={e => set('reasoning_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" />
+          <span className="text-sm">Raciocínio Avançado — usa modelo mais capaz e pensa passo a passo</span>
+        </label>
+
+        <Field label={`Atraso entre partes da resposta: ${form.message_delay_ms}ms`} hint="Quebra mensagens longas em partes e envia com pausa. 0 = resposta instantânea.">
+          <input type="range" min="0" max="3000" step="200" value={form.message_delay_ms} onChange={e => set('message_delay_ms', parseInt(e.target.value))} className="w-full" />
+        </Field>
+      </div>
+
       <div className="flex gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Cancelar</Button>
         <Button onClick={save} disabled={saving || !form.name || !form.instructions}>
@@ -216,5 +258,23 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
         </Button>
       </div>
     </div>
+  );
+}
+
+function ToolToggle({ icon: Icon, label, description, checked, onChange }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`flex items-start gap-3 rounded-lg border p-3 text-left transition ${
+        checked ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-primary/40'
+      }`}
+    >
+      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${checked ? 'text-primary' : 'text-muted-foreground'}`} />
+      <div>
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+    </button>
   );
 }

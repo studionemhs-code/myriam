@@ -47,7 +47,17 @@ export default function AgentChat() {
         message: msg,
         conversation_id: activeConvId
       });
-      setMessages(m => [...m, { role: 'assistant', content: res.data.reply }]);
+      const reply = res.data.reply || '';
+      const delay = selected.message_delay_ms || 0;
+      const parts = reply.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+      if (delay > 0 && parts.length > 1) {
+        for (const part of parts) {
+          await new Promise(r => setTimeout(r, delay));
+          setMessages(m => [...m, { role: 'assistant', content: part }]);
+        }
+      } else {
+        setMessages(m => [...m, { role: 'assistant', content: reply }]);
+      }
       if (res.data.conversation_id) {
         setActiveConvId(res.data.conversation_id);
       }

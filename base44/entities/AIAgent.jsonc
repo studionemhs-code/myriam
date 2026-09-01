@@ -69,6 +69,31 @@
       "type": "boolean",
       "default": false,
       "description": "Se true, este agente \u00e9 o principal do bot\u00e3o flutuante (apenas um agente por vez pode ter esta flag)"
+    },
+    "tools_enabled": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "calculator",
+          "web_search",
+          "system_query"
+        ]
+      },
+      "default": [],
+      "description": "Ferramentas ativas no agente: calculadora, pesquisa na internet, copiloto do sistema"
+    },
+    "reasoning_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ativa modo de racioc\u00ednio profundo \u2014 usa modelo mais capaz e instru\u00e7\u00e3o para pensar passo a passo"
+    },
+    "message_delay_ms": {
+      "type": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 5000,
+      "description": "Atraso em milissegundos entre partes da resposta (quebra de mensagens). 0 = resposta instant\u00e2nea."
     }
   },
   "required": [
