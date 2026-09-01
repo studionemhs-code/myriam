@@ -14,6 +14,7 @@ import GlobalSearch from '@/components/GlobalSearch';
 import MyriamIcon from '@/components/MyriamIcon';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import FloatingAgentButton from '@/components/ai/FloatingAgentButton';
+import NovidadePopup from '@/components/notifications/NovidadePopup';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -258,6 +259,9 @@ export default function AppLayout() {
 
       {/* Botão flutuante do assistente de IA */}
       <FloatingAgentButton />
+
+      {/* Pop-up de novidade exibido no login */}
+      <NovidadePopup />
     </div>
   );
 }

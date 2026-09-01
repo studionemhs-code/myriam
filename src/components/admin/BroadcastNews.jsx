@@ -13,6 +13,7 @@ export default function BroadcastNews() {
   const [videoMode, setVideoMode] = useState('youtube'); // 'youtube' | 'upload' | 'none'
   const [youtubeId, setYoutubeId] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [link, setLink] = useState('');
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -47,6 +48,7 @@ export default function BroadcastNews() {
       } else if (videoMode === 'upload' && videoUrl) {
         payload.video_url = videoUrl;
       }
+      if (link.trim()) payload.link = link.trim();
       const res = await base44.functions.invoke('broadcastNotification', payload);
       toast({
         title: 'Novidade enviada',
@@ -56,6 +58,7 @@ export default function BroadcastNews() {
       setBody('');
       setYoutubeId('');
       setVideoUrl('');
+      setLink('');
       setVideoMode('youtube');
     } catch (e) {
       toast({ title: 'Erro ao enviar', description: 'Não foi possível enviar a novidade.', variant: 'destructive' });
@@ -126,6 +129,17 @@ export default function BroadcastNews() {
               )}
             </div>
           )}
+        </div>
+
+        <div>
+          <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Link da funcionalidade (opcional)</label>
+          <input
+            className={inputCls + ' mt-1'}
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="Ex: /caminho — preencha quando a novidade exige ação do usuário"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">Se preenchido, o pop-up do usuário mostrará um botão "Ver funcionalidade".</p>
         </div>
 
         <button
