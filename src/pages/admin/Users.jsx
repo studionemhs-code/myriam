@@ -6,8 +6,8 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/components/ui/use-toast';
 import UserFeatureAccessDialog from '@/components/admin/UserFeatureAccessDialog';
 
-const STATUS_LABEL = { interessado: 'Interessado', preparacao: 'Em Preparação', consagrado: 'Consagrado' };
-const STATUS_TONE = { interessado: 'muted', preparacao: 'blue', consagrado: 'gold' };
+const STATUS_LABEL = { interessado: 'Interessado', preparacao: 'Em Preparação', consagrado: 'Consagrado', usuario_escolhe: 'Usuário Escolhe' };
+const STATUS_TONE = { interessado: 'muted', preparacao: 'blue', consagrado: 'gold', usuario_escolhe: 'purple' };
 
 export default function Users() {
   const { toast } = useToast();
@@ -82,6 +82,8 @@ export default function Users() {
       if (created) {
         const updates = { status: inviteStatus, exclusive_access: inviteExclusive };
         if (inviteName) updates.full_name = inviteName;
+        // Nível específico → onboarding concluído (usuário só preenche perfil); 'Usuário Escolhe' → vê escolha de nível.
+        if (inviteStatus !== 'usuario_escolhe') updates.onboarding_completed = true;
         await base44.entities.User.update(created.id, updates);
       }
       // SEC-04: a senha não volta da Edge Function — o admin já a digitou e deve repassá-la por canal próprio.
@@ -111,7 +113,10 @@ export default function Users() {
 
   const changeStatus = async (id, status) => {
     try {
-      await base44.entities.User.update(id, { status });
+      const updates = { status };
+      // Reverter para 'Usuário Escolhe' reabre o onboarding (etapa de nível volta a aparecer).
+      if (status === 'usuario_escolhe') updates.onboarding_completed = false;
+      await base44.entities.User.update(id, updates);
       toast({ description: 'Nível espiritual atualizado.' });
       await load();
     } catch (e) {
@@ -203,6 +208,7 @@ export default function Users() {
             <option value="interessado">Nível: Interessado</option>
             <option value="preparacao">Nível: Em Preparação</option>
             <option value="consagrado">Nível: Consagrado</option>
+            <option value="usuario_escolhe">Nível: Usuário Escolhe</option>
           </select>
           <label className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm">
             <input type="checkbox" checked={inviteExclusive} onChange={(e) => setInviteExclusive(e.target.checked)} className="accent-primary" />
@@ -248,6 +254,7 @@ export default function Users() {
                       <option value="interessado">Interessado</option>
                       <option value="preparacao">Em Preparação</option>
                       <option value="consagrado">Consagrado</option>
+                      <option value="usuario_escolhe">Usuário Escolhe</option>
                     </select>
                   </td>
                   <td className="px-4 py-3">

@@ -1538,3 +1538,12 @@ CREATE POLICY "prayer_read" ON public.prayer_intentions FOR SELECT USING (auth.u
 -- não em SQL — ver:
 --   supabase/functions/integrations/index.ts   (SEC-03: trava de admin por handler + SEC-05: sanitização de HTML)
 --   supabase/functions/invite-user/index.ts   (SEC-04: senha não devolvida na resposta)
+
+-- ============================================================================
+-- 15. OPÇÃO "USUÁRIO ESCOLHE" (nível espiritual definido pelo próprio usuário no onboarding)
+-- ============================================================================
+
+-- Adiciona o valor 'usuario_escolhe' ao enum user_status.
+-- Quando o admin cria/edita um usuário com esse nível, o onboarding reabre a etapa
+-- de escolha de nível para o usuário decidir entre Interessado/Preparação/Consagrado.
+ALTER TYPE public.user_status ADD VALUE IF NOT EXISTS 'usuario_escolhe';

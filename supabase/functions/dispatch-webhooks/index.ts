@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
       const orderStatus = status || order.status;
       payload = {
         cliente_nome: order.customer_name || '',
+        cliente_telefone: order.whatsapp || '',
         codigo_rastreio: order.tracking_code || '',
         status: orderStatus,
         status_pedido: orderStatus,

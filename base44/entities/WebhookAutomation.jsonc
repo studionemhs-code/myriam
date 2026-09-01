@@ -19,7 +19,7 @@
     "message_template": {
       "type": "string",
       "default": "Voc\u00ea recebeu uma nova mensagem de {remetente_nome}: {mensagem_texto}",
-      "description": "Template da mensagem com placeholders: {remetente_nome}, {destinatario_nome}, {destinatario_email}, {mensagem_texto}, {categoria}, {titulo}, {corpo}, {link_app}, {conversation_id}, {data}, {cliente_nome}, {codigo_rastreio}, {status_pedido}"
+      "description": "Template da mensagem com placeholders: {remetente_nome}, {destinatario_nome}, {destinatario_email}, {mensagem_texto}, {categoria}, {titulo}, {corpo}, {link_app}, {conversation_id}, {data}, {cliente_nome}, {cliente_telefone}, {codigo_rastreio}, {status_pedido}"
     },
     "trigger_types": {
       "type": "array",

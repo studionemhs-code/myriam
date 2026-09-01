@@ -10,6 +10,9 @@ const TOTAL_STEPS = 4;
 
 export default function Onboarding() {
   const { user, update } = useCurrentUser();
+  // Se o admin já definiu um nível específico, o usuário pula a etapa de escolha (preenche só o perfil).
+  const needsLevelChoice = !user?.status || user?.status === 'usuario_escolhe';
+  const totalSteps = needsLevelChoice ? TOTAL_STEPS : TOTAL_STEPS - 1;
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState(user?.display_name || user?.full_name || '');
   const [photoUrl, setPhotoUrl] = useState(user?.photo_url || '');
@@ -96,15 +99,27 @@ export default function Onboarding() {
   };
 
   const skip = async () => {
-    await update({ onboarding_completed: true, status: 'interessado' });
+    await update({ onboarding_completed: true, status: needsLevelChoice ? 'interessado' : (user?.status || 'interessado') });
+    window.location.href = '/';
+  };
+
+  const finishProfileOnly = async () => {
+    await saveProfile();
+    await update({ onboarding_completed: true });
     window.location.href = '/';
   };
 
   const next = async () => {
     if (step === 2) {
       await saveProfile();
+      // Sem etapa de escolha de nível → conclui o onboarding após o perfil.
+      if (!needsLevelChoice) {
+        await update({ onboarding_completed: true });
+        window.location.href = '/';
+        return;
+      }
     }
-    setStep((s) => Math.min(TOTAL_STEPS - 1, s + 1));
+    setStep((s) => Math.min(totalSteps - 1, s + 1));
   };
 
   const prev = () => setStep((s) => Math.max(0, s - 1));
@@ -114,7 +129,7 @@ export default function Onboarding() {
       <div className="w-full max-w-md">
         {/* Indicador de progresso */}
         <div className="mb-8 flex items-center justify-center gap-2">
-          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+          {Array.from({ length: totalSteps }).map((_, i) => (
             <div
               key={i}
               className={`h-1.5 rounded-full transition-all duration-300 ${
@@ -125,7 +140,7 @@ export default function Onboarding() {
         </div>
 
         <p className="mb-6 text-center text-xs uppercase tracking-[0.25em] text-muted-foreground">
-          Passo {step + 1} de {TOTAL_STEPS}
+          Passo {step + 1} de {totalSteps}
         </p>
 
         {/* Etapa 1: Boas-vindas */}
@@ -224,8 +239,8 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Etapa 4: Escolha do caminho */}
-        {step === 3 && (
+        {/* Etapa 4: Escolha do caminho (só aparece se o admin não definiu um nível específico) */}
+        {needsLevelChoice && step === 3 && (
           <div>
             <div className="mb-6 text-center">
               <div className="ornament text-gold text-sm">✦</div>
@@ -300,7 +315,7 @@ export default function Onboarding() {
         )}
 
         {/* Botões de navegação */}
-        {step < 3 && (
+        {step < (needsLevelChoice ? 3 : 2) && (
           <div className="mt-8 flex items-center justify-between">
             {step > 0 ? (
               <button onClick={prev} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
