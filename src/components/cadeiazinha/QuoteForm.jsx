@@ -126,7 +126,7 @@ export default function QuoteForm({ catalog, settings }) {
       setSubmitted(true);
     } catch (e) {
       console.error(e);
-      toast({ title: 'Erro ao enviar', description: 'Não foi possível enviar sua solicitação. Tente novamente.', variant: 'destructive' });
+      toast({ title: 'Erro ao enviar', description: e?.message || 'Não foi possível enviar sua solicitação. Tente novamente.', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }

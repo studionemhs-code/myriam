@@ -110,9 +110,11 @@ export default function AppLayout() {
             <Sparkles className="h-[18px] w-[18px]" /> Jornadas Coletivas
           </Link>
         )}
-        <Link to="/agentes" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
-          <Bot className="h-[18px] w-[18px]" /> Assistentes IA
-        </Link>
+        {isVisible('agentes') && (
+          <Link to="/agentes" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
+            <Bot className="h-[18px] w-[18px]" /> Assistentes IA
+          </Link>
+        )}
         {isVisible('cadeiazinha') && (
           <Link to="/solicitar-cadeiazinha" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground">
             <Gift className="h-[18px] w-[18px]" /> Solicite sua cadeiazinha
