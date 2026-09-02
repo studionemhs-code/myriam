@@ -23,6 +23,8 @@ export function useNotifications() {
     onSuccess: () => qc.invalidateQueries({ queryKey }),
   });
 
+  const refetch = () => qc.invalidateQueries({ queryKey });
+
   const markAllRead = useMutation({
     mutationFn: async () => {
       const unread = notifications.filter((n) => !n.read);
@@ -36,7 +38,8 @@ export function useNotifications() {
     notifications,
     unreadCount,
     isLoading,
-    markRead: (id) => markRead.mutate(id),
+    markRead: (id) => markRead.mutateAsync(id).catch(() => {}),
     markAllRead: () => markAllRead.mutate(),
+    refetch,
   };
 }
