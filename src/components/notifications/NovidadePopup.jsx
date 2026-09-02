@@ -2,39 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ArrowRight, Sparkles } from 'lucide-react';
 
-const SHOWN_KEY = 'novidade_popup_shown_ids';
-
 // Pop-up de novidade exibido no login quando há uma notificação não lida
 // da categoria "novidades". Recebe as notificações do AppLayout (mesma
 // instância de useNotifications) para evitar uma segunda busca de usuário.
-export default function NovidadePopup({ notifications = [], markRead, refetch }) {
+// O estado "lida" (read) no banco é a fonte da verdade: ao fechar, marcamos
+// como lida. Um Set local evita reexibir a mesma novidade antes do refetch.
+export default function NovidadePopup({ notifications = [], markRead }) {
   const navigate = useNavigate();
   const [current, setCurrent] = useState(null);
-
-  // Garante dados frescos ao montar (após login).
-  useEffect(() => {
-    if (refetch) refetch();
-  }, [refetch]);
+  const [dismissed, setDismissed] = useState(() => new Set());
 
   useEffect(() => {
     if (current) return;
-    const unread = notifications.filter((n) => n.category === 'novidades' && !n.read);
+    const unread = notifications.filter(
+      (n) => n.category === 'novidades' && !n.read && !dismissed.has(n.id)
+    );
     if (!unread.length) return;
-    let shown = [];
-    try { shown = JSON.parse(sessionStorage.getItem(SHOWN_KEY) || '[]'); } catch {}
-    const next = unread.find((n) => !shown.includes(n.id));
-    if (next) setCurrent(next);
-  }, [notifications, current]);
+    setCurrent(unread[0]);
+  }, [notifications, current, dismissed]);
 
   const dismiss = async (id, redirectTo) => {
-    if (markRead) await markRead(id);
-    let shown = [];
-    try { shown = JSON.parse(sessionStorage.getItem(SHOWN_KEY) || '[]'); } catch {}
-    if (!shown.includes(id)) {
-      shown.push(id);
-      sessionStorage.setItem(SHOWN_KEY, JSON.stringify(shown));
-    }
+    // Marca como lida no banco (fonte da verdade) e localmente (evita reexibir).
+    setDismissed((prev) => { const next = new Set(prev); next.add(id); return next; });
     setCurrent(null);
+    if (markRead) { try { await markRead(id); } catch { /* ignore */ } }
     if (redirectTo) navigate(redirectTo);
   };
 

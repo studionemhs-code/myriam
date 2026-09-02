@@ -46,7 +46,7 @@ export default function AppLayout() {
   }, [loadingUser, user, navigate]);
 
   const { isVisible } = useFeatureFlags();
-  const { unreadCount, notifications, markRead, refetch } = useNotifications();
+  const { unreadCount, notifications, markRead } = useNotifications();
 
   const handleLogout = async () => {
     await base44.auth.logout();
@@ -261,7 +261,7 @@ export default function AppLayout() {
       <FloatingAgentButton />
 
       {/* Pop-up de novidade exibido no login */}
-      <NovidadePopup notifications={notifications} markRead={markRead} refetch={refetch} />
+      <NovidadePopup notifications={notifications} markRead={markRead} />
     </div>
   );
 }
