@@ -38,7 +38,7 @@ export async function currentUser(req: Request) {
   return { ...profile, profile_id: profile.id, email: profile.email || user.email };
 }
 
-// Localiza um perfil pelo ID do app (legado do Base44 ou UUID do Supabase Auth).
+// Localiza um perfil pelo UUID do Supabase Auth.
 export async function findProfile(appUserId: string) {
   const { data } = await admin()
     .from('profiles').select('*')

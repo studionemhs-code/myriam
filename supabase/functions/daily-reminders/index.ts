@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     }
 
     for (const p of profiles || []) {
-      const uid = p.legacy_id || p.id;
+      const uid = p.id;
 
       if (p.consecration_date) {
         const cDate = new Date(p.consecration_date + 'T00:00:00');
