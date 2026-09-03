@@ -15,6 +15,8 @@ import MyriamIcon from '@/components/MyriamIcon';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import FloatingAgentButton from '@/components/ai/FloatingAgentButton';
 import NovidadePopup from '@/components/notifications/NovidadePopup';
+import PageTransition from '@/components/mobile/PageTransition';
+import { useTabHistory } from '@/hooks/useTabHistory';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -53,6 +55,8 @@ export default function AppLayout() {
   };
 
   const visibleNav = navItems.filter((item) => item.feature ? isVisible(item.feature) : true);
+  const tabRoots = visibleNav.map((item) => item.to);
+  const { targetFor, currentRoot } = useTabHistory(tabRoots);
 
   const SidebarContent = (
     <div className="flex h-full flex-col">
@@ -235,7 +239,7 @@ export default function AppLayout() {
           </div>
         </div>
         <div className="mx-auto max-w-3xl px-4 pb-28 pt-6 lg:max-w-4xl lg:px-8 lg:pb-12">
-          <Outlet />
+          <PageTransition />
         </div>
       </main>
 
@@ -246,12 +250,12 @@ export default function AppLayout() {
       >
         <div className="flex items-stretch justify-around">
           {visibleNav.map((item) => {
-            const active = location.pathname === item.to;
+            const active = currentRoot === item.to;
             const Icon = item.icon;
             return (
               <Link
                 key={item.to}
-                to={item.to}
+                to={targetFor(item.to)}
                 className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition ${
                   active ? 'text-gold' : 'text-muted-foreground'
                 }`}

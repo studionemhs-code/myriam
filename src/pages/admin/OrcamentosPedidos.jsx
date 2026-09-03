@@ -5,6 +5,7 @@ import { STATUS_LABEL, STATUS_TONE, ORDER_STATUSES, exportOrdersCsv } from '@/li
 import { Download, Eye, ExternalLink, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { useConfirm } from '@/hooks/useConfirm.jsx';
+import ResponsiveSelect from '@/components/ui/responsive-select';
 
 export default function OrcamentosPedidos() {
   const [orders, setOrders] = useState(null);
@@ -122,10 +123,13 @@ export default function OrcamentosPedidos() {
           onChange={(e) => setQ(e.target.value)}
           className="max-w-xs rounded-lg border border-input bg-background px-3 py-2 text-sm"
         />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-          <option value="all">Todos os status</option>
-          {ORDER_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-        </select>
+        <ResponsiveSelect
+          value={statusFilter}
+          onChange={setStatusFilter}
+          title="Filtrar por status"
+          options={[{ value: 'all', label: 'Todos os status' }, ...ORDER_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }))]}
+          className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+        />
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -172,9 +176,13 @@ export default function OrcamentosPedidos() {
             </div>
 
             <div className="mb-4 flex flex-wrap items-center gap-3">
-              <select value={selected.status} onChange={(e) => onStatusSelect(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                {ORDER_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-              </select>
+              <ResponsiveSelect
+                value={selected.status}
+                onChange={onStatusSelect}
+                title="Status do pedido"
+                options={ORDER_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }))}
+                className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
               <span className="text-xs text-muted-foreground">{new Date(selected.created_date).toLocaleString('pt-BR')}</span>
             </div>
 

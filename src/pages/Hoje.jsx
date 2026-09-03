@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import PullToRefresh from '@/components/mobile/PullToRefresh';
 import { Flower2, BookOpen, Calendar, Heart, ChevronRight, Sparkles, Leaf, Play, Award } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -30,9 +31,8 @@ export default function Hoje() {
 
   const status = user?.status || 'interessado';
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!user) return;
-    (async () => {
       try {
         let dayNum = null;
         if (status === 'preparacao') {
@@ -87,8 +87,9 @@ export default function Hoje() {
           }
         } catch { /* ignore */ }
       } catch (e) {/* ignore */}
-    })();
   }, [user, status]);
+
+  useEffect(() => { load(); }, [load]);
 
   if (loading || !user) {
     return (
@@ -105,6 +106,7 @@ export default function Hoje() {
   const quote = aiGreeting || 'Para que venha vosso reino Jesus, venha o reino de Maria';
 
   return (
+    <PullToRefresh onRefresh={load}>
     <div>
       {/* Saudação */}
       <header className="rounded-2xl bg-deep p-6 text-primary-foreground">
@@ -228,7 +230,8 @@ export default function Hoje() {
       <GoldDivider />
       <Ornament className="mb-2" />
       <p className="text-center font-display italic text-sm text-muted-foreground">Ad Iesum per Mariam</p>
-    </div>);
+    </div>
+    </PullToRefresh>);
 
 }
 

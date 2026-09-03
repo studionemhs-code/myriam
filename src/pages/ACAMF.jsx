@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import PullToRefresh from '@/components/mobile/PullToRefresh';
 import { Play, ChevronRight, BookOpen, Sparkles, Info, Lock, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -34,8 +35,7 @@ export default function ACAMF() {
     : (ACCESS[user?.status] || ACCESS.interessado);
   const isLocked = (course) => !userAccess.includes(course.level);
 
-  useEffect(() => {
-    (async () => {
+  const load = useCallback(async () => {
       try {
         const [c, cats, l, prog] = await Promise.all([
           base44.entities.Course.filter({ status: 'publicado' }, 'sort_order', 100),
@@ -49,8 +49,9 @@ export default function ACAMF() {
         setProgress(prog);
       } catch (e) { /* ignore */ }
       finally { setLoading(false); }
-    })();
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const lessonsByCourse = (courseId) => lessons.filter((l) => l.course_id === courseId);
   const courseStats = (courseId) => {
@@ -109,6 +110,7 @@ export default function ACAMF() {
   }
 
   return (
+    <PullToRefresh onRefresh={load}>
     <div className="-mx-4 lg:-mx-8">
       {/* Hero cinematográfico */}
       {featured && (
@@ -285,6 +287,7 @@ export default function ACAMF() {
         </div>
       )}
     </div>
+    </PullToRefresh>
   );
 }
 

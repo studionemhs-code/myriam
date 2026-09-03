@@ -9,6 +9,7 @@ import PostCard from '@/components/myriam/PostCard';
 import StoriesBar from '@/components/myriam/StoriesBar';
 import ChatList from '@/components/myriam/ChatList';
 import MuralTestimonials from '@/components/myriam/MuralTestimonials';
+import PullToRefresh from '@/components/mobile/PullToRefresh';
 
 export default function Myriam() {
   const { user, loading } = useCurrentUser();
@@ -40,6 +41,7 @@ export default function Myriam() {
   const showChat = isVisible('chat');
 
   return (
+    <PullToRefresh onRefresh={load}>
     <div>
       <PageHeader title="Myriam" subtitle="A rede social da comunidade mariana" icon={Leaf} />
 
@@ -101,5 +103,6 @@ export default function Myriam() {
         <ChatList user={user} />
       )}
     </div>
+    </PullToRefresh>
   );
 }
