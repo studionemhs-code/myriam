@@ -3,10 +3,13 @@
   RewriteEngine On
   RewriteBase /
 
-  # Nunca reescrever a pasta .well-known (assetlinks.json do TWA)
+  # Digital Asset Links: serve a copia visivel /assetlinks.json na URL exigida pelo Android
+  RewriteRule ^\.well-known/assetlinks\.json$ /assetlinks.json [L]
+
+  # Nunca reescrever o resto da pasta .well-known
   RewriteRule ^\.well-known/ - [L]
 
-  # Arquivos e diretórios existentes são servidos direto
+  # Arquivos e diretorios existentes sao servidos direto
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
@@ -20,7 +23,7 @@
   ForceType application/json
 </Files>
 
-# Não cachear o shell do app nem o service worker
+# Nao cachear o shell do app nem o service worker
 <IfModule mod_headers.c>
   <FilesMatch "(index\.html|sw\.js|manifest\.json)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
