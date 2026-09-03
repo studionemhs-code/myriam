@@ -1,20 +1,28 @@
-# SPA Rewrite — garante que todas as rotas sejam servidas pelo index.html
+# SPA + suporte a Digital Asset Links (TWA/APK)
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+
+  # Nunca reescrever a pasta .well-known (assetlinks.json do TWA)
+  RewriteRule ^\.well-known/ - [L]
+
+  # Arquivos e diretórios existentes são servidos direto
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Todo o resto vai para o index.html (rotas do React Router)
+  RewriteRule ^ index.html [L]
 </IfModule>
 
-# Cache de assets estáticos (imutáveis com hash no nome)
-<IfModule mod_expires.c>
-  ExpiresActive On
-  ExpiresByType text/css "access plus 1 year"
-  ExpiresByType application/javascript "access plus 1 year"
-  ExpiresByType image/png "access plus 1 month"
-  ExpiresByType image/jpeg "access plus 1 month"
-  ExpiresByType image/svg+xml "access plus 1 month"
-  ExpiresByType text/html "access plus 0 seconds"
+# assetlinks.json precisa ser servido como JSON
+<Files "assetlinks.json">
+  ForceType application/json
+</Files>
+
+# Não cachear o shell do app nem o service worker
+<IfModule mod_headers.c>
+  <FilesMatch "(index\.html|sw\.js|manifest\.json)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
 </IfModule>
