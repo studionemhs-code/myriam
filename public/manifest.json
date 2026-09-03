@@ -12,21 +12,21 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/f729509ee_ON2.png",
+      "src": "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/da4f0647b_6.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/f729509ee_ON2.png",
+      "src": "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/da4f0647b_6.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/f729509ee_ON2.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/da4f0647b_6.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
       "purpose": "maskable"
     }
   ]
