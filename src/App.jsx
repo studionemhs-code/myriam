@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/lib/ThemeContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import PendingApproval from '@/components/PendingApproval';
 import ScrollToTop from './components/ScrollToTop';
+import SplashVideo from '@/components/SplashVideo';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -193,6 +194,7 @@ function App() {
             <AuthenticatedApp />
           </Router>
           <Toaster />
+          <SplashVideo />
         </QueryClientProvider>
       </ThemeProvider>
     </AuthProvider>
