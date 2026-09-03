@@ -4,7 +4,9 @@ const VIDEO_URL = 'https://media.base44.com/videos/public/6a874a7d3ea0948ad718c3
 const SESSION_KEY = 'splash_shown_session';
 
 export default function SplashVideo() {
-  const [visible, setVisible] = useState(() => !sessionStorage.getItem(SESSION_KEY));
+  // Apenas mobile / app (APK) — nunca no desktop
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches;
+  const [visible, setVisible] = useState(() => isMobile && !sessionStorage.getItem(SESSION_KEY));
   const [fading, setFading] = useState(false);
   const timerRef = useRef(null);
 
