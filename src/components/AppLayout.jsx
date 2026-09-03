@@ -147,14 +147,17 @@ export default function AppLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="min-h-screen bg-background"
+      style={{ paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
+    >
       {/* Desktop sidebar */}
       <aside className={`fixed inset-y-0 left-0 hidden bg-deep transition-all duration-300 lg:flex lg:flex-col ${collapsed ? 'w-0 overflow-hidden' : 'w-64'}`}>
         {SidebarContent}
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 bg-deep lg:hidden">
+      <header className="sticky top-0 z-30 bg-deep lg:hidden" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <button
@@ -201,7 +204,11 @@ export default function AppLayout() {
       {menuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMenuOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-72 bg-deep flex flex-col" onClick={() => setMenuOpen(false)}>{SidebarContent}</div>
+          <div
+            className="absolute left-0 top-0 h-full w-72 bg-deep flex flex-col"
+            style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+            onClick={() => setMenuOpen(false)}
+          >{SidebarContent}</div>
         </div>
       )}
 
@@ -233,7 +240,10 @@ export default function AppLayout() {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-card/90 backdrop-blur lg:hidden">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-card/90 backdrop-blur lg:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         <div className="flex items-stretch justify-around">
           {visibleNav.map((item) => {
             const active = location.pathname === item.to;
@@ -255,7 +265,7 @@ export default function AppLayout() {
       </nav>
 
       {/* PWA install popup — mobile only, after login */}
-      <div className="fixed inset-x-0 bottom-16 z-40 px-4 lg:hidden">
+      <div className="fixed inset-x-0 z-40 px-4 lg:hidden" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
         <PwaInstallPrompt />
       </div>
 

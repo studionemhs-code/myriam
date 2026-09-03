@@ -113,6 +113,14 @@
   h1, h2, h3, h4, h5 {
     @apply font-heading tracking-tight;
   }
+
+  /* WebView: evita seleção de texto e highlight ao tocar em elementos interativos */
+  button, a, [role="button"], [role="tab"], [role="menuitem"], summary, label {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
 }
 
 @layer utilities {

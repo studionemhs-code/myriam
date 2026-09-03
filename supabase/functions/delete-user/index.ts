@@ -41,10 +41,13 @@ Deno.serve(async (req) => {
   const pf = preflight(req); if (pf) return pf;
   try {
     const user = await currentUser(req);
-    if (!user || user.role !== 'admin') return json({ error: 'Forbidden' }, 403);
+    if (!user) return json({ error: 'Forbidden' }, 403);
 
     const { userId } = await req.json();
     if (!userId) return json({ error: 'Missing userId' }, 400);
+
+    // Admin pode excluir qualquer conta; usuário comum só pode excluir a própria.
+    if (user.role !== 'admin' && userId !== user.id) return json({ error: 'Forbidden' }, 403);
 
     const db = admin();
 

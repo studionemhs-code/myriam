@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Bell, ShoppingBag, ChevronRight, Shield, Heart } from 'lucide-react';
 import { PageHeader, GoldDivider, Ornament } from '@/components/ui/marian';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import DeleteAccountSection from '@/components/configuracoes/DeleteAccountSection';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -75,6 +76,8 @@ export default function Configuracoes() {
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </a>
       </section>
+
+      <DeleteAccountSection user={user} />
 
       <GoldDivider />
       <Ornament className="text-gold" />
