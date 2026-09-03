@@ -3,26 +3,28 @@
   "short_name": "Theotokos",
   "description": "Hub digital da Total Consagração a Jesus por Maria: jornada, formação, calendário mariano e comunidade.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#673ab7",
   "lang": "pt-BR",
+  "dir": "ltr",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://strrnkxrpyjyaewfpiwh.supabase.co/storage/v1/object/public/uploads/brand/logo-theotokos.png",
+      "src": "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/f729509ee_ON2.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://strrnkxrpyjyaewfpiwh.supabase.co/storage/v1/object/public/uploads/brand/logo-theotokos.png",
+      "src": "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/f729509ee_ON2.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://strrnkxrpyjyaewfpiwh.supabase.co/storage/v1/object/public/uploads/brand/logo-theotokos.png",
+      "src": "https://media.base44.com/images/public/6a874a7d3ea0948ad718c3b8/f729509ee_ON2.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
