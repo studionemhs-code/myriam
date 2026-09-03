@@ -40,9 +40,21 @@ Deno.serve(async (req) => {
       const { data: order } = await db.from('quote_requests').select('*').eq('id', entity_id).maybeSingle();
       if (!order) return json({ skipped: true, reason: 'order not found' });
       const orderStatus = status || order.status;
+      // Normaliza o WhatsApp do cliente para E.164 (+55DDDNÚMERO)
+      const digits = String(order.whatsapp || '').replace(/\D/g, '');
+      const phone = digits ? `+${digits.startsWith('55') && digits.length >= 12 ? digits : `55${digits}`}` : '';
       payload = {
+        remetente_nome: 'Theotokos',
+        destinatario_nome: order.customer_name || '',
+        destinatario_email: '',
+        destinatario_telefone: phone,
+        mensagem_texto: '',
+        categoria: 'orcamento',
+        titulo: `Pedido ${orderStatus}`,
+        corpo: '',
+        conversation_id: '',
         cliente_nome: order.customer_name || '',
-        cliente_telefone: order.whatsapp || '',
+        cliente_telefone: phone,
         codigo_rastreio: order.tracking_code || '',
         status: orderStatus,
         status_pedido: orderStatus,

@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
       link_app: APP_URL,
       conversation_id: 'test-conv-id',
       cliente_nome: 'Cliente Teste',
+      cliente_telefone: test_phone || '+5511999999999',
       codigo_rastreio: 'OP123456789BR',
       status: 'enviado',
       status_pedido: 'enviado',

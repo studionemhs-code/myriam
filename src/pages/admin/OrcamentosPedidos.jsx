@@ -46,11 +46,18 @@ export default function OrcamentosPedidos() {
 
   const dispatchOrcamentoWebhook = async (id, status) => {
     try {
-      const { error } = await supabase.functions.invoke('dispatch-webhooks', {
+      const { data, error } = await supabase.functions.invoke('dispatch-webhooks', {
         body: { trigger_type: 'orcamento', entity_id: id, status, app_url: window.location.origin }
       });
       if (error) throw error;
-    } catch { /* webhook falhou — não bloqueia o fluxo do admin */ }
+      if (!data?.dispatched) {
+        toast({ title: 'Nenhum webhook disparado', description: 'Nenhuma automação ativa atende ao gatilho "orçamento" para este status.', variant: 'destructive' });
+      } else if (data.results?.some((r) => !r.ok)) {
+        toast({ title: 'Webhook com falha', description: data.results.filter((r) => !r.ok).map((r) => `${r.webhook_name}: ${r.error || `HTTP ${r.status}`}`).join(' · '), variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Falha ao disparar webhook', description: e?.message || 'Erro desconhecido.', variant: 'destructive' });
+    }
   };
 
   const updateStatus = async (id, status, extra = {}) => {
