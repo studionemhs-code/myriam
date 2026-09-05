@@ -38,12 +38,13 @@ async function correiosToken() {
 async function track(code: string) {
   const token = await correiosToken();
   const response = await fetch(`https://api.correios.com.br/srorastro/v1/objetos/${encodeURIComponent(code)}?resultado=T`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Accept-Language': 'pt-BR' }
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.mensagem || body.message || 'Não foi possível consultar o rastreio.');
   const object = body.objetos?.[0];
   if (!object) return null;
+  if (object.mensagem && !object.eventos?.length) throw new Error(object.mensagem);
   return {
     code: object.codObjeto || code,
     service: object.tipoPostal?.descricao || object.tipoPostal?.categoria || '',
