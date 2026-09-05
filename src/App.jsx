@@ -41,6 +41,7 @@ import AdminRoute from '@/components/AdminRoute';
 import AdminDashboard from '@/pages/admin/Dashboard';
 import Stats from '@/pages/admin/Stats';
 import CommunityReports from '@/pages/admin/CommunityReports';
+import AtividadeRelatorio from '@/pages/admin/AtividadeRelatorio';
 import ACAMFAdmin from '@/pages/admin/ACAMFAdmin';
 import CoursesAdmin from '@/pages/admin/CoursesAdmin';
 import Reports from '@/pages/admin/Reports';
@@ -150,6 +151,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/estatisticas" element={<Stats />} />
           <Route path="/admin/crescimento" element={<CommunityReports />} />
+          <Route path="/admin/atividade" element={<AtividadeRelatorio />} />
           <Route path="/admin/acamf" element={<ACAMFAdmin />} />
           <Route path="/admin/cursos" element={<CoursesAdmin />} />
           <Route path="/admin/dias" element={<PreparationDaysAdmin />} />

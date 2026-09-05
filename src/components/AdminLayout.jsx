@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, CalendarDays, Sparkles, Heart,
-  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook, ShieldCheck, Settings2, TrendingUp
+  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook, ShieldCheck, Settings2, TrendingUp, Activity
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Logo from '@/components/Logo';
@@ -12,6 +12,7 @@ const items = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/estatisticas', label: 'Estatísticas', icon: BarChart3 },
   { to: '/admin/crescimento', label: 'Crescimento', icon: TrendingUp },
+  { to: '/admin/atividade', label: 'Atividade', icon: Activity },
   { to: '/admin/acamf', label: 'ACAMF', icon: BookOpen },
   { to: '/admin/cursos', label: 'Cursos ACAMF', icon: Clapperboard },
   { to: '/admin/categorias', label: 'Categorias ACAMF', icon: BookOpen },

@@ -17,6 +17,7 @@ import FloatingAgentButton from '@/components/ai/FloatingAgentButton';
 import NovidadePopup from '@/components/notifications/NovidadePopup';
 import PageTransition from '@/components/mobile/PageTransition';
 import { useTabHistory } from '@/hooks/useTabHistory';
+import { useTrackActivity } from '@/hooks/useTrackActivity';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -35,6 +36,7 @@ export default function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('appbar_collapsed') === 'true');
   const { user, loading: loadingUser } = useCurrentUser();
+  useTrackActivity(user);
 
   useEffect(() => {
     localStorage.setItem('appbar_collapsed', String(collapsed));
