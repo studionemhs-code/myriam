@@ -68,12 +68,14 @@ export default function Register() {
   const registerAndLogin = async () => {
     await base44.auth.register({ email, password });
     await base44.auth.loginViaEmailPassword(email, password);
-    // Se o modo for "approval", marca o perfil como não aprovado e mostra tela de pendência
+    // Salva o WhatsApp no perfil (obrigatório) e, no modo "approval", marca como não aprovado
+    const me = await base44.auth.me();
+    if (me?.id) {
+      const patch = { phone: whatsapp.replace(/\D/g, '') };
+      if (regMode === "approval") patch.is_approved = false;
+      await base44.entities.User.update(me.id, patch);
+    }
     if (regMode === "approval") {
-      const me = await base44.auth.me();
-      if (me?.id) {
-        await base44.entities.User.update(me.id, { is_approved: false });
-      }
       setStep("pending");
       return;
     }
@@ -87,8 +89,8 @@ export default function Register() {
       setError("As senhas não coincidem");
       return;
     }
-    if (otpEnabled && whatsapp.replace(/\D/g, '').length < 10) {
-      setError("Informe um número de WhatsApp válido com DDI e DDD.");
+    if (whatsapp.replace(/\D/g, '').length < 10) {
+      setError("Informe um número de WhatsApp válido com DDD.");
       return;
     }
     setLoading(true);
@@ -248,8 +250,7 @@ export default function Register() {
             />
           </div>
         </div>
-        {otpEnabled && (
-          <div className="space-y-2">
+        <div className="space-y-2">
             <Label htmlFor="whatsapp">WhatsApp</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -257,7 +258,7 @@ export default function Register() {
                 id="whatsapp"
                 type="tel"
                 autoComplete="tel"
-                placeholder="5511999999999"
+                placeholder="(11) 99999-9999"
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
                 className="pl-10 h-12"
@@ -265,10 +266,11 @@ export default function Register() {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Enviaremos um código de verificação para este número via WhatsApp.
+              {otpEnabled
+                ? "Enviaremos um código de verificação para este número via WhatsApp."
+                : "Usado para identificar seus pedidos e para contato."}
             </p>
           </div>
-        )}
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading || checkingOtp}>
           {loading || checkingOtp ? (
             <>

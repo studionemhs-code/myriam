@@ -64,16 +64,25 @@ async function orderForCurrentUser(req: Request) {
   const user = await currentUser(req);
   if (!user) return null;
   const variants = phoneVariants(user.phone);
-  if (!variants.length) return null;
-  const { data } = await admin().from('quote_requests').select('id, customer_name, whatsapp, status, tracking_code')
-    .in('whatsapp', variants).in('status', ['enviado', 'saiu_para_entrega'])
+  const email = String(user.email || '').trim().toLowerCase();
+  const filters: string[] = [];
+  if (variants.length) filters.push(`whatsapp.in.(${variants.map((v) => `"${v}"`).join(',')})`);
+  if (email) filters.push(`email.ilike.${email}`);
+  if (!filters.length) return null;
+  const { data } = await admin().from('quote_requests').select('id, customer_name, whatsapp, email, status, tracking_code')
+    .or(filters.join(',')).in('status', ['enviado', 'saiu_para_entrega'])
     .not('tracking_code', 'is', null).order('updated_date', { ascending: false }).limit(1).maybeSingle();
   return data;
 }
 
 async function registrationForOrder(order: Record<string, any> | null) {
-  if (!order?.whatsapp) return false;
-  const { data } = await admin().from('profiles').select('id').in('phone', phoneVariants(order.whatsapp)).limit(1);
+  if (!order) return false;
+  const filters: string[] = [];
+  const variants = phoneVariants(order.whatsapp);
+  if (variants.length) filters.push(`phone.in.(${variants.map((v) => `"${v}"`).join(',')})`);
+  if (order.email) filters.push(`email.ilike.${String(order.email).trim().toLowerCase()}`);
+  if (!filters.length) return false;
+  const { data } = await admin().from('profiles').select('id').or(filters.join(',')).limit(1);
   return Boolean(data?.length);
 }
 
@@ -85,7 +94,7 @@ Deno.serve(async (req) => {
     const input = await req.json().catch(() => ({}));
     const order = input.mode === 'mine'
       ? await orderForCurrentUser(req)
-      : await admin().from('quote_requests').select('id, customer_name, whatsapp, status, tracking_code')
+      : await admin().from('quote_requests').select('id, customer_name, whatsapp, email, status, tracking_code')
           .eq('tracking_code', cleanCode(input.code)).limit(1).maybeSingle().then(({ data }) => data);
     const code = cleanCode(order?.tracking_code || input.code);
     if (!code) return json({ shipment: null });

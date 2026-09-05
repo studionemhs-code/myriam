@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       payload = {
         remetente_nome: 'Theotokos',
         destinatario_nome: order.customer_name || '',
-        destinatario_email: '',
+        destinatario_email: order.email || '',
         destinatario_telefone: phone,
         destinatario_telefone_digitos: phoneDigits,
         mensagem_texto: statusText,
@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
         corpo: statusText,
         conversation_id: '',
         cliente_nome: order.customer_name || '',
+        cliente_email: order.email || '',
         cliente_telefone: phone,
         cliente_telefone_digitos: phoneDigits,
         codigo_rastreio: order.tracking_code || '',

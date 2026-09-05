@@ -36,7 +36,7 @@ export default function OrcamentosPedidos() {
       if (statusFilter !== 'all' && o.status !== statusFilter) return false;
       if (q) {
         const s = q.toLowerCase();
-        return o.customer_name?.toLowerCase().includes(s) || o.whatsapp?.includes(s) || o.city?.toLowerCase().includes(s);
+        return o.customer_name?.toLowerCase().includes(s) || o.whatsapp?.includes(s) || o.email?.toLowerCase().includes(s) || o.city?.toLowerCase().includes(s);
       }
       return true;
     });
@@ -212,6 +212,7 @@ export default function OrcamentosPedidos() {
 
             <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
               <Info label="WhatsApp" value={selected.whatsapp} />
+              <Info label="E-mail" value={selected.email || '—'} />
               <Info label="CEP" value={selected.cep} />
               <Info label="Endereço" value={`${selected.street || ''}, ${selected.number || ''}${selected.complement ? ' - ' + selected.complement : ''}`} />
               <Info label="Bairro / Cidade" value={`${selected.neighborhood || '—'} · ${selected.city || '—'}/${selected.state || '—'}`} />

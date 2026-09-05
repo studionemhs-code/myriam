@@ -15,6 +15,7 @@ export default function QuoteForm({ catalog, settings }) {
   const [form, setForm] = useState({
     customerName: '',
     whatsapp: '',
+    email: '',
     cep: '',
     street: '',
     number: '',
@@ -100,6 +101,7 @@ export default function QuoteForm({ catalog, settings }) {
       const payload = {
         customer_name: form.customerName,
         whatsapp: form.whatsapp.replace(/\D/g, ''),
+        email: form.email.trim().toLowerCase(),
         cep: form.cep,
         street: form.street,
         number: form.number,
@@ -148,7 +150,7 @@ export default function QuoteForm({ catalog, settings }) {
             setSubmitted(false);
             setStep(0);
             setForm({
-              customerName: '', whatsapp: '', cep: '', street: '', number: '', complement: '',
+              customerName: '', whatsapp: '', email: '', cep: '', street: '', number: '', complement: '',
               neighborhood: '', city: '', state: '', chains: [newChain()], medallions: [], scapulars: [], notes: ''
             });
           }}
@@ -198,6 +200,11 @@ export default function QuoteForm({ catalog, settings }) {
                 <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">WhatsApp *</label>
                 <input className={inputCls} value={form.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} placeholder="(11) 99999-9999" maxLength={20} />
               </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">E-mail</label>
+              <input className={inputCls} type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} placeholder="seu@email.com" maxLength={120} />
+              <p className="mt-1 text-xs text-muted-foreground">Use o mesmo e-mail da sua conta no app para acompanhar o pedido na tela inicial.</p>
             </div>
             <div>
               <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">CEP *</label>
@@ -387,7 +394,7 @@ export default function QuoteForm({ catalog, settings }) {
           <div className="rounded-xl border border-border bg-card p-4">
             <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Dados</h4>
             <p className="text-sm">{form.customerName}</p>
-            <p className="text-sm text-muted-foreground">{form.whatsapp}</p>
+            <p className="text-sm text-muted-foreground">{form.whatsapp}{form.email ? ` · ${form.email}` : ''}</p>
             <p className="text-sm text-muted-foreground">{form.street}, {form.number} {form.complement}</p>
             <p className="text-sm text-muted-foreground">{form.neighborhood} - {form.city}/{form.state} · CEP {form.cep}</p>
           </div>
