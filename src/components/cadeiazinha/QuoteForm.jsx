@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabaseClient';
 import ProductGrid from '@/components/cadeiazinha/ProductGrid';
 import { fetchCep, buildWhatsAppMessage, newChain } from '@/lib/quoteUtils';
 import { ChevronLeft, ChevronRight, Check, Search, Loader2, Plus, Trash2, MessageCircle } from 'lucide-react';
@@ -115,7 +115,9 @@ export default function QuoteForm({ catalog, settings }) {
         notes: form.notes || '',
         status: 'novo'
       };
-      await base44.entities.QuoteRequest.create(payload);
+      // Insert sem retorno: visitantes não têm permissão de leitura na tabela
+      const { error: insertError } = await supabase.from('quote_requests').insert(payload);
+      if (insertError) throw insertError;
 
       // Abrir WhatsApp
       const message = buildWhatsAppMessage(payload, settings, catalog);
