@@ -110,6 +110,7 @@ const AuthenticatedApp = () => {
       <Route path="/aprovacao/:token" element={<AprovacaoAutoridade />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
       <Route path="/rastreio/:codigo?" element={<Rastreio />} />
+      <Route path="/solicitar-cadeiazinha" element={<SolicitarCadeiazinha />} />
 
       <Route path="/onboarding" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route index element={<Onboarding />} />
@@ -141,7 +142,6 @@ const AuthenticatedApp = () => {
           <Route path="/historico" element={<Historico />} />
           <Route path="/associacao" element={<Associacao />} />
           <Route path="/agentes" element={<AgentChat />} />
-          <Route path="/solicitar-cadeiazinha" element={<SolicitarCadeiazinha />} />
           <Route path="/oracoes" element={<Oracoes />} />
         </Route>
       </Route>
