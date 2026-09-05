@@ -5,6 +5,7 @@ import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/ad
 import { useConfirm } from '@/hooks/useConfirm';
 import { useToast } from '@/components/ui/use-toast';
 import UserFeatureAccessDialog from '@/components/admin/UserFeatureAccessDialog';
+import { isOnline } from '@/hooks/useOnlineUsers';
 
 const STATUS_LABEL = { interessado: 'Interessado', preparacao: 'Em Preparação', consagrado: 'Consagrado', usuario_escolhe: 'Usuário Escolhe' };
 const STATUS_TONE = { interessado: 'muted', preparacao: 'blue', consagrado: 'gold', usuario_escolhe: 'purple' };
@@ -240,6 +241,10 @@ export default function Users() {
                 <tr key={u.id} className="hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     <div className="flex items-center gap-2">
+                      <span
+                        title={isOnline(u) ? 'Online agora' : 'Offline'}
+                        className={`h-2 w-2 shrink-0 rounded-full ${isOnline(u) ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`}
+                      />
                       {u.exclusive_access && <Crown className="h-3.5 w-3.5 text-gold" />}
                       {u.display_name || u.full_name || '—'}
                     </div>

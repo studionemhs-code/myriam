@@ -3,6 +3,7 @@ import { Activity, Users, CalendarDays, Flame } from 'lucide-react';
 import { AdminPageTitle, Loading } from '@/components/admin/ui';
 import ActiveUsersChart from '@/components/admin/ActiveUsersChart';
 import TopContentList from '@/components/admin/TopContentList';
+import OnlineUsersPanel from '@/components/admin/OnlineUsersPanel';
 import { loadDailyActiveUsers, loadTopContentThisMonth } from '@/lib/activityReport';
 
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -22,7 +23,11 @@ export default function AtividadeRelatorio() {
 
   return (
     <div>
-      <AdminPageTitle title="Atividade" subtitle="Usuários ativos diariamente e conteúdos mais vivos na formação" />
+      <AdminPageTitle title="Atividade" subtitle="Quem está online, usuários ativos diariamente e conteúdos mais vivos na formação" />
+
+      <div className="mb-6">
+        <OnlineUsersPanel />
+      </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <Card icon={Activity} value={dau.today} label="Ativos hoje" tone="green" />
