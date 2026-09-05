@@ -40,27 +40,39 @@ Deno.serve(async (req) => {
       const { data: order } = await db.from('quote_requests').select('*').eq('id', entity_id).maybeSingle();
       if (!order) return json({ skipped: true, reason: 'order not found' });
       const orderStatus = status || order.status;
+      const STATUS_TEXT: Record<string, string> = {
+        novo: 'Novo', em_andamento: 'Em andamento', enviado: 'Enviado', saiu_para_entrega: 'Saiu para entrega',
+        atendido: 'Atendido', fechado: 'Fechado', cancelado: 'Cancelado'
+      };
+      const statusLabel = STATUS_TEXT[orderStatus] || orderStatus;
       // Normaliza o WhatsApp do cliente para E.164 (+55DDDNÚMERO)
       const digits = String(order.whatsapp || '').replace(/\D/g, '');
-      const phone = digits ? `+${digits.startsWith('55') && digits.length >= 12 ? digits : `55${digits}`}` : '';
+      const phoneDigits = digits ? (digits.startsWith('55') && digits.length >= 12 ? digits : `55${digits}`) : '';
+      const phone = phoneDigits ? `+${phoneDigits}` : '';
+      const baseUrl = app_url || APP_URL;
+      const trackLink = order.tracking_code ? `${baseUrl}/rastreio/${order.tracking_code}` : '';
+      const statusText = `Olá, ${order.customer_name || ''}! Seu pedido está com status: ${statusLabel}.${order.tracking_code ? ` Código de rastreio: ${order.tracking_code}.` : ''}${trackLink ? ` Acompanhe em ${trackLink}` : ''}`;
       payload = {
         remetente_nome: 'Theotokos',
         destinatario_nome: order.customer_name || '',
         destinatario_email: '',
         destinatario_telefone: phone,
-        mensagem_texto: '',
+        destinatario_telefone_digitos: phoneDigits,
+        mensagem_texto: statusText,
         categoria: 'orcamento',
-        titulo: `Pedido ${orderStatus}`,
-        corpo: '',
+        titulo: `Pedido ${statusLabel}`,
+        corpo: statusText,
         conversation_id: '',
         cliente_nome: order.customer_name || '',
         cliente_telefone: phone,
+        cliente_telefone_digitos: phoneDigits,
         codigo_rastreio: order.tracking_code || '',
         status: orderStatus,
         status_pedido: orderStatus,
+        status_label: statusLabel,
         pedido_id: order.id,
-        link_app: app_url || APP_URL,
-        link_rastreio: order.tracking_code ? `${app_url || APP_URL}/rastreio/${order.tracking_code}` : '',
+        link_app: baseUrl,
+        link_rastreio: trackLink,
         data: new Date().toISOString()
       };
     } else {
@@ -109,7 +121,8 @@ Deno.serve(async (req) => {
           headers: { 'Content-Type': 'application/json', ...(webhook.custom_headers || {}) },
           body: JSON.stringify(postBody)
         });
-        results.push({ webhook_id: webhook.id, webhook_name: webhook.name, status: res.status, ok: res.ok });
+        const responseText = res.ok ? '' : (await res.text().catch(() => '')).slice(0, 300);
+        results.push({ webhook_id: webhook.id, webhook_name: webhook.name, status: res.status, ok: res.ok, response: responseText });
       } catch (e) {
         results.push({ webhook_id: webhook.id, webhook_name: webhook.name, error: (e as Error).message, ok: false });
       }

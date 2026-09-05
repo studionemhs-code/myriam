@@ -89,9 +89,20 @@ Deno.serve(async (req) => {
           .eq('tracking_code', cleanCode(input.code)).limit(1).maybeSingle().then(({ data }) => data);
     const code = cleanCode(order?.tracking_code || input.code);
     if (!code) return json({ shipment: null });
-    const tracking = await track(code);
+    let tracking: Record<string, any> | null = null;
+    let trackingError = '';
+    try {
+      tracking = await track(code);
+    } catch (e) {
+      trackingError = (e as Error).message;
+      if (!order) throw e;
+    }
+    // Pedido conhecido mas ainda sem dados nos Correios: mostra o código mesmo assim.
+    if (!tracking && order) {
+      tracking = { code, service: '', expected_date: null, events: [] };
+    }
     return json({
-      shipment: tracking ? { ...tracking, order_status: order?.status || null } : null,
+      shipment: tracking ? { ...tracking, order_status: order?.status || null, tracking_error: trackingError || null } : null,
       registered: await registrationForOrder(order)
     });
   } catch (error) {
