@@ -11,6 +11,13 @@ import OtpWhatsappStep from "@/components/auth/OtpWhatsappStep";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
 
+// Normaliza números brasileiros adicionando o DDI 55 quando ausente
+const normalizeWhatsapp = (raw) => {
+  const digits = (raw || '').replace(/\D/g, '');
+  if (digits.length >= 10 && digits.length <= 11 && !digits.startsWith('55')) return '55' + digits;
+  return digits;
+};
+
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,11 +56,15 @@ export default function Register() {
     try {
       const { data } = await invokeEdgeFunction('sendWhatsappOtp', {
         email: email.trim().toLowerCase(),
-        whatsapp_number: whatsapp.replace(/\D/g, '')
+        whatsapp_number: normalizeWhatsapp(whatsapp)
       });
       if (data?.enabled === false) {
         // Admin desativou entre o submit e agora — segue fluxo simples
         await registerAndLogin();
+        return;
+      }
+      if (data?.sent && data?.webhook_ok === false) {
+        setError("Não foi possível enviar o código por WhatsApp no momento. O serviço de envio pode estar indisponível. Tente novamente em instantes ou contate o suporte.");
         return;
       }
       setStep('otp');
@@ -71,7 +82,7 @@ export default function Register() {
     // Salva o WhatsApp no perfil (obrigatório) e, no modo "approval", marca como não aprovado
     const me = await base44.auth.me();
     if (me?.id) {
-      const patch = { phone: whatsapp.replace(/\D/g, '') };
+      const patch = { phone: normalizeWhatsapp(whatsapp) };
       if (regMode === "approval") patch.is_approved = false;
       await base44.entities.User.update(me.id, patch);
     }

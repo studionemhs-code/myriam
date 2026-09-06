@@ -8,7 +8,11 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const email = body?.email?.trim().toLowerCase();
-    const whatsapp_number = body?.whatsapp_number?.replace(/\D/g, '');
+    let whatsapp_number = body?.whatsapp_number?.replace(/\D/g, '');
+    // Normaliza para o formato internacional do Brasil (DDI 55) quando faltar o código do país
+    if (whatsapp_number && whatsapp_number.length >= 10 && whatsapp_number.length <= 11 && !whatsapp_number.startsWith('55')) {
+      whatsapp_number = '55' + whatsapp_number;
+    }
     const full_name = body?.full_name || '';
 
     if (!email || !whatsapp_number) return json({ error: 'email e whatsapp_number são obrigatórios' }, 400);
