@@ -43,6 +43,16 @@ Deno.serve(async (req) => {
     const { data } = await db.from('products').select('*').eq('integration_id', integration.id).eq('external_product_id', n.external_product_id).limit(1);
     product = data?.[0] || null;
   }
+  // Fallback: tenta casar pelo external_offer_id (algumas plataformas enviam offer_id em vez de product_id)
+  if (!product && n.external_offer_id) {
+    const { data } = await db.from('products').select('*').eq('integration_id', integration.id).eq('external_product_id', n.external_offer_id).limit(1);
+    product = data?.[0] || null;
+  }
+  // Fallback: tenta casar pelo código de checkout embutido na URL do produto
+  if (!product && n.checkout_code) {
+    const { data } = await db.from('products').select('*').eq('integration_id', integration.id).ilike('checkout_url', `%${n.checkout_code}%`).limit(1);
+    product = data?.[0] || null;
+  }
 
   // 2) Comprador (pode ainda não ter conta — a permissão fica vinculada ao e-mail)
   let profile: any = null;

@@ -7,6 +7,8 @@ export type NormalizedPayment = {
   name?: string;
   external_transaction_id: string;
   external_product_id: string;
+  external_offer_id?: string;
+  checkout_code?: string;
   amount: number | null;
   currency: string;
   event_type: string;
@@ -55,6 +57,8 @@ export const adapters: Record<string, (b: any) => NormalizedPayment> = {
     email: b.customer?.email || '', name: b.customer?.name,
     external_transaction_id: b.transaction?.hash || b.order?.hash || '',
     external_product_id: String(b.item?.product_id ?? b.product?.id ?? ''),
+    external_offer_id: b.item?.offer_id ? String(b.item.offer_id) : undefined,
+    checkout_code: b.url_params?.query_params?.code || undefined,
     amount: cents(b.order?.paid_amount ?? b.item?.amount), currency: 'BRL',
     event_type: b.status || ''
   }),
