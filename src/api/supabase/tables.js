@@ -49,12 +49,20 @@ export const SUPABASE_TABLES = {
   PrayerFavorite: 'prayer_favorites',
   RegistrationSettings: 'registration_settings',
   JourneyContent: 'journey_contents',
-  DailyActivity: 'daily_activity'
+  DailyActivity: 'daily_activity',
+  MonetizationSettings: 'monetization_settings',
+  PaymentIntegration: 'payment_integrations',
+  Product: 'products',
+  ProductResource: 'product_resources',
+  AccessGrant: 'access_grants',
+  Payment: 'payments',
+  MonetizationEvent: 'monetization_events',
+  UserTrial: 'user_trials'
 };
 
 // Colunas array no Postgres (usadas em filtros de contenção).
 export const SUPABASE_ARRAY_COLUMNS = new Set([
   'participants', 'participant_names', 'participant_photos', 'read_by',
   'tags', 'trigger_types', 'trigger_categories', 'orcamento_statuses', 'completed_days',
-  'content_ids', 'related_content_ids', 'viewers', 'photos'
+  'content_ids', 'related_content_ids', 'viewers', 'photos', 'trial_product_ids', 'product_ids'
 ]);
