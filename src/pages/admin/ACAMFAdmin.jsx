@@ -7,13 +7,15 @@ import 'react-quill-new/dist/quill.snow.css';
 import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/admin/ui';
 import ImageUpload from '@/components/admin/ImageUpload';
 import FileUpload from '@/components/admin/FileUpload';
+import AccessTypeFields from '@/components/admin/AccessTypeFields';
 
 const empty = {
   title: '', subtitle: '', description: '', category_id: '', author: '',
   content_type: 'texto', level: 'iniciante', content: '', youtube_id: '',
   use_alternative_player: false,
   file_url: '', cover_url: '', status: 'publicado', recommended: false,
-  duration: '', published_date: '', course_id: '', lesson_order: 0
+  duration: '', published_date: '', course_id: '', lesson_order: 0,
+  access_type: 'gratuito', product_id: ''
 };
 
 const typeLabels = { texto: 'Texto', pdf: 'PDF', ebook: 'E-book', audio: 'Áudio', video: 'Vídeo', imagem: 'Imagem' };
@@ -63,8 +65,9 @@ export default function ACAMFAdmin() {
     if (!editing.title) return;
     setSaving(true);
     try {
-      if (editing.id) await base44.entities.ACAMFContent.update(editing.id, editing);
-      else await base44.entities.ACAMFContent.create(editing);
+      const payload = { ...editing, product_id: editing.access_type === 'pago' ? (editing.product_id || null) : null };
+      if (editing.id) await base44.entities.ACAMFContent.update(editing.id, payload);
+      else await base44.entities.ACAMFContent.create(payload);
       setEditing(null);
       await load();
     } finally { setSaving(false); }
@@ -118,9 +121,12 @@ export default function ACAMFAdmin() {
                 <td className="px-4 py-3">{typeLabels[it.content_type]}</td>
                 <td className="px-4 py-3">{levelLabels[it.level]}</td>
                 <td className="px-4 py-3">
-                  <Badge tone={it.status === 'publicado' ? 'green' : it.status === 'arquivado' ? 'muted' : 'gold'}>
-                    {it.status}
-                  </Badge>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge tone={it.status === 'publicado' ? 'green' : it.status === 'arquivado' ? 'muted' : 'gold'}>
+                      {it.status}
+                    </Badge>
+                    {it.access_type === 'pago' && <Badge tone="purple">Pago</Badge>}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
@@ -305,6 +311,10 @@ export default function ACAMFAdmin() {
                 <input type="checkbox" checked={editing.recommended} onChange={(e) => set('recommended', e.target.checked)} />
                 Recomendado (destaque)
               </label>
+              <AccessTypeFields
+                value={{ access_type: editing.access_type, product_id: editing.product_id }}
+                onChange={(v) => setEditing((p) => ({ ...p, ...v }))}
+              />
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button onClick={() => setEditing(null)} className="rounded-lg px-4 py-2 text-sm text-muted-foreground">Cancelar</button>

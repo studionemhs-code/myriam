@@ -4,6 +4,7 @@ import { Play, Check, ChevronLeft, Clock, BookOpen, FileText, Headphones, Lock }
 import { base44 } from '@/api/base44Client';
 import { Ornament, GoldDivider } from '@/components/ui/marian';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import AccessGate from '@/components/access/AccessGate';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
 const TYPE_ICON = { texto: FileText, pdf: FileText, ebook: BookOpen, audio: Headphones, video: Play, imagem: BookOpen };
@@ -79,6 +80,11 @@ export default function CourseDetail() {
   const nextLesson = lessons.find((l) => !progress.some((p) => p.lesson_id === l.id && p.completed)) || lessons[0];
 
   return (
+    <AccessGate
+      resource={{ type: 'course', id: course.id, access_type: course.access_type, product_id: course.product_id }}
+      title={course.title}
+      backTo="/acamf"
+    >
     <div className="-mx-4 lg:-mx-8">
       {/* Hero */}
       <div className="relative h-[45vh] min-h-[300px] w-full overflow-hidden">
@@ -185,5 +191,6 @@ export default function CourseDetail() {
         </div>
       </div>
     </div>
+    </AccessGate>
   );
 }

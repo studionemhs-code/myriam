@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 
 let cache = null;
+let recordsCache = [];
 let grantsCache = null;
 
 export async function loadFeatureFlags() {
@@ -9,6 +10,7 @@ export async function loadFeatureFlags() {
   const map = {};
   list.forEach((f) => { map[f.feature] = f.visible !== false; });
   cache = map;
+  recordsCache = list;
   return map;
 }
 
@@ -23,11 +25,13 @@ export async function loadUserGrants(userId) {
 
 export function clearFeatureFlagsCache() {
   cache = null;
+  recordsCache = [];
   grantsCache = null;
 }
 
 export function useFeatureFlags() {
   const [flags, setFlags] = useState(cache || {});
+  const [flagRecords, setFlagRecords] = useState(recordsCache);
   const [grants, setGrants] = useState(grantsCache || {});
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(!cache);
@@ -42,6 +46,7 @@ export function useFeatureFlags() {
         ]);
         if (!active) return;
         setFlags(map);
+        setFlagRecords(recordsCache);
         setIsAdmin(me?.role === 'admin');
         if (me && me.role !== 'admin') {
           const g = grantsCache || await loadUserGrants(me.id);
@@ -58,5 +63,5 @@ export function useFeatureFlags() {
     if (grants[feature]) return true;
     return flags[feature] !== false;
   };
-  return { flags, loading, isVisible };
+  return { flags, flagRecords, loading, isVisible };
 }

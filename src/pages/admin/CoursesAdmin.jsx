@@ -3,11 +3,12 @@ import { base44 } from '@/api/base44Client';
 import { Plus, Pencil, Trash2, Star, X } from 'lucide-react';
 import { AdminPageTitle, Field, inputCls, Loading, Badge } from '@/components/admin/ui';
 import ImageUpload from '@/components/admin/ImageUpload';
+import AccessTypeFields from '@/components/admin/AccessTypeFields';
 
 const empty = {
   title: '', description: '', cover_url: '', poster_url: '', trailer_youtube_id: '',
   category_id: '', level: 'iniciante', status: 'rascunho', featured: false, sort_order: 0,
-  accent_color: '#663399'
+  accent_color: '#663399', access_type: 'gratuito', product_id: ''
 };
 
 const levelLabels = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
@@ -44,8 +45,9 @@ export default function CoursesAdmin() {
     if (!editing.title) return;
     setSaving(true);
     try {
-      if (editing.id) await base44.entities.Course.update(editing.id, editing);
-      else await base44.entities.Course.create(editing);
+      const payload = { ...editing, product_id: editing.access_type === 'pago' ? (editing.product_id || null) : null };
+      if (editing.id) await base44.entities.Course.update(editing.id, payload);
+      else await base44.entities.Course.create(payload);
       setEditing(null);
       await load();
     } finally { setSaving(false); }
@@ -96,6 +98,7 @@ export default function CoursesAdmin() {
               </div>
               <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                 <Badge tone={it.status === 'publicado' ? 'green' : it.status === 'arquivado' ? 'muted' : 'gold'}>{it.status}</Badge>
+                {it.access_type === 'pago' && <Badge tone="purple">Pago</Badge>}
                 <span>{catName(it.category_id)}</span>
                 <span>·</span>
                 <span>{levelLabels[it.level]}</span>
@@ -157,6 +160,10 @@ export default function CoursesAdmin() {
                 <input type="checkbox" checked={editing.featured} onChange={(e) => set('featured', e.target.checked)} />
                 Destacar no banner principal da ACAMF
               </label>
+              <AccessTypeFields
+                value={{ access_type: editing.access_type, product_id: editing.product_id }}
+                onChange={(v) => setEditing((p) => ({ ...p, ...v }))}
+              />
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button onClick={() => setEditing(null)} className="rounded-lg px-4 py-2 text-sm text-muted-foreground">Cancelar</button>

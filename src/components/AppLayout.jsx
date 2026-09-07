@@ -16,6 +16,7 @@ import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import FloatingAgentButton from '@/components/ai/FloatingAgentButton';
 import NovidadePopup from '@/components/notifications/NovidadePopup';
 import PageTransition from '@/components/mobile/PageTransition';
+import FeatureAccessGate from '@/components/access/FeatureAccessGate';
 import { useTabHistory } from '@/hooks/useTabHistory';
 import { useTrackActivity } from '@/hooks/useTrackActivity';
 
@@ -241,7 +242,9 @@ export default function AppLayout() {
           </div>
         </div>
         <div className="mx-auto max-w-3xl px-4 pb-28 pt-6 lg:max-w-4xl lg:px-8 lg:pb-12">
-          <PageTransition />
+          <FeatureAccessGate>
+            <PageTransition />
+          </FeatureAccessGate>
         </div>
       </main>
 

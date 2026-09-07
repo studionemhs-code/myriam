@@ -9,6 +9,7 @@ import AcamfPdfReader from '@/components/acamf/AcamfPdfReader';
 import ContentNotes from '@/components/acamf/ContentNotes';
 import ContentComments from '@/components/acamf/ContentComments';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import AccessGate from '@/components/access/AccessGate';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
 
@@ -88,6 +89,11 @@ export default function ACAMFDetalhe() {
   }
 
   return (
+    <AccessGate
+      resource={{ type: 'acamf_content', id: content.id, access_type: content.access_type, product_id: content.product_id }}
+      title={content.title}
+      backTo={content.course_id ? `/acamf/curso/${content.course_id}` : '/acamf'}
+    >
     <div className="space-y-5">
       <button onClick={() => navigate(content.course_id ? `/acamf/curso/${content.course_id}` : '/acamf')} className="inline-flex items-center gap-1 text-sm text-muted-foreground">
         <ChevronLeft className="h-4 w-4" /> {content.course_id ? 'Curso' : 'ACAMF'}
@@ -230,5 +236,6 @@ export default function ACAMFDetalhe() {
         contentTitle={content.title}
       />
     </div>
+    </AccessGate>
   );
 }
