@@ -34,7 +34,7 @@ export function useFeatureFlags() {
   const [flagRecords, setFlagRecords] = useState(recordsCache);
   const [grants, setGrants] = useState(grantsCache || {});
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(!cache);
+  const [loading, setLoading] = useState(!cache || !grantsCache);
 
   useEffect(() => {
     let active = true;
@@ -47,8 +47,9 @@ export function useFeatureFlags() {
         if (!active) return;
         setFlags(map);
         setFlagRecords(recordsCache);
-        setIsAdmin(me?.role === 'admin');
-        if (me && me.role !== 'admin') {
+        const admin = me?.role === 'admin';
+        setIsAdmin(admin);
+        if (me && !admin) {
           const g = grantsCache || await loadUserGrants(me.id);
           if (active) setGrants(g);
         }
@@ -59,6 +60,7 @@ export function useFeatureFlags() {
   }, []);
 
   const isVisible = (feature) => {
+    if (loading) return true;
     if (isAdmin) return true;
     if (grants[feature]) return true;
     return flags[feature] !== false;

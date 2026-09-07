@@ -98,7 +98,27 @@ export default function Users() {
       setInvitePassword('');
       await load();
     } catch (e) {
-      setMsg('Não foi possível criar: ' + (e.message || 'erro'));
+      const errMsg = String(e.message || '');
+      // Se o usuário já foi criado em uma tentativa anterior (profile update falhou),
+      // recupera o registro existente e aplica os campos pendentes.
+      if (errMsg.toLowerCase().includes('already been registered') || errMsg.toLowerCase().includes('já foi cadastrado')) {
+        try {
+          const all = await base44.entities.User.list('-created_date', 200);
+          const existing = all.find((u) => u.email === inviteEmail);
+          if (existing) {
+            const updates = { status: inviteStatus, exclusive_access: inviteExclusive };
+            if (inviteName) updates.full_name = inviteName;
+            if (inviteStatus !== 'usuario_escolhe') updates.onboarding_completed = true;
+            await base44.entities.User.update(existing.id, updates);
+            setMsg(`Usuário já existia — perfil atualizado! Login: ${inviteEmail}`);
+            setInviteEmail(''); setInviteName(''); setInviteStatus('interessado');
+            setInviteExclusive(false); setInvitePassword('');
+            await load();
+            return;
+          }
+        } catch (e2) { /* fall through */ }
+      }
+      setMsg('Não foi possível criar: ' + (errMsg || 'erro'));
     } finally { setInviting(false); }
   };
 
