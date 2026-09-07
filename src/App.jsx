@@ -74,6 +74,8 @@ import OtpWhatsappAdmin from '@/pages/admin/OtpWhatsappAdmin';
 import OracoesAdmin from '@/pages/admin/OracoesAdmin';
 import OAuthConsent from '@/pages/OAuthConsent';
 import Rastreio from '@/pages/Rastreio';
+import MonetizacaoAdmin from '@/pages/admin/MonetizacaoAdmin';
+import PagamentoRetorno from '@/pages/PagamentoRetorno';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -143,6 +145,7 @@ const AuthenticatedApp = () => {
           <Route path="/associacao" element={<Associacao />} />
           <Route path="/agentes" element={<AgentChat />} />
           <Route path="/oracoes" element={<Oracoes />} />
+          <Route path="/pagamento/retorno" element={<PagamentoRetorno />} />
         </Route>
       </Route>
 
@@ -176,6 +179,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/garantia/config" element={<GarantiaConfig />} />
           <Route path="/admin/otp-whatsapp" element={<OtpWhatsappAdmin />} />
           <Route path="/admin/oracoes" element={<OracoesAdmin />} />
+          <Route path="/admin/monetizacao" element={<MonetizacaoAdmin />} />
         </Route>
       </Route>
 
