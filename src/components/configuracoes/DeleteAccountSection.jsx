@@ -15,7 +15,17 @@ export default function DeleteAccountSection({ user }) {
     setDeleting(true);
     try {
       const { data, error } = await supabase.functions.invoke('delete-user', { body: { userId: user.id } });
-      if (error) throw error;
+      if (error) {
+        // Extrai a mensagem real do corpo da resposta da Edge Function
+        let msg = error.message || 'Erro desconhecido';
+        try {
+          if (error.context) {
+            const body = await error.context.json();
+            if (body?.error) msg = body.error;
+          }
+        } catch { /* fallback para mensagem genérica */ }
+        throw new Error(msg);
+      }
       if (data?.error) throw new Error(data.error);
       await supabase.auth.signOut();
       window.location.href = '/login';

@@ -1,6 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// --- Helpers inlineados (não depende de ../_shared/utils.ts) ---
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -35,7 +34,17 @@ async function currentUser(req: Request) {
   if (!profile) return null;
   return { ...profile, profile_id: profile.id, email: profile.email || user.email };
 }
-// --- Fim dos helpers ---
+
+// Tabelas estruturais que não devem ser limpas pela lista dinâmica
+const STRUCTURAL_TABLES = new Set(['profiles', 'users', 'auth_users']);
+
+// Descobre dinamicamente todas as tabelas do schema public que possuem uma dada coluna.
+async function discoverTablesByColumn(db: ReturnType<typeof admin>, column: string): Promise<string[]> {
+  const { data, error } = await db.rpc('get_tables_by_column', { column_name: column });
+  if (error || !data) return [];
+  const tables: string[] = Array.isArray(data) ? data : [];
+  return tables.filter((t) => !STRUCTURAL_TABLES.has(t));
+}
 
 Deno.serve(async (req) => {
   const pf = preflight(req); if (pf) return pf;
@@ -46,49 +55,46 @@ Deno.serve(async (req) => {
     const { userId } = await req.json();
     if (!userId) return json({ error: 'Missing userId' }, 400);
 
-    // Admin pode excluir qualquer conta; usuário comum só pode excluir a própria.
     if (user.role !== 'admin' && userId !== user.id) return json({ error: 'Forbidden' }, 403);
 
     const db = admin();
 
-    // Busca o perfil para obter o legacy_id (ID histórico do Base44 usado em created_by_id)
-    const { data: profile } = await db.from('profiles').select('id, legacy_id').eq('id', userId).maybeSingle();
+    const { data: profile, error: profileError } = await db.from('profiles')
+      .select('id, legacy_id').eq('id', userId).maybeSingle();
+    if (profileError) return json({ error: 'Erro ao buscar perfil: ' + profileError.message }, 500);
     if (!profile) return json({ error: 'Profile not found' }, 404);
 
-    // IDs possíveis: UUID do Supabase Auth e/ou legacy_id do Base44
     const ids = [profile.id, profile.legacy_id].filter(Boolean) as string[];
 
-    // Tabelas com created_by_id
-    const createdByTables = [
-      'myriam_posts', 'myriam_comments', 'myriam_interactions', 'myriam_stories',
-      'reflections', 'prayer_intentions', 'prayer_interactions',
-      'content_notes', 'content_comments', 'lesson_progress', 'user_progress',
-      'journey_participants', 'certificates', 'agent_conversations', 'reports'
-    ];
+    // 1) Descobre e limpa tabelas com created_by_id
+    const createdByTables = await discoverTablesByColumn(db, 'created_by_id');
     for (const table of createdByTables) {
-      await db.from(table).delete().in('created_by_id', ids);
+      const { error: e } = await db.from(table).delete().in('created_by_id', ids);
+      if (e) return json({ error: `Falha ao limpar ${table}: ${e.message}` }, 500);
     }
 
-    // chat_messages: remover mensagens enviadas pelo usuário
-    await db.from('chat_messages').delete().in('sender_id', ids);
-    await db.from('chat_messages').delete().in('created_by_id', ids);
-
-    // chat_conversations criadas pelo usuário
-    await db.from('chat_conversations').delete().in('created_by_id', ids);
-
-    // Tabelas com user_id
-    const userIdTables = ['association_requests', 'notifications', 'user_feature_access'];
+    // 2) Descobre e limpa tabelas com user_id
+    const userIdTables = await discoverTablesByColumn(db, 'user_id');
     for (const table of userIdTables) {
-      await db.from(table).delete().in('user_id', ids);
+      const { error: e } = await db.from(table).delete().in('user_id', ids);
+      if (e) return json({ error: `Falha ao limpar ${table}: ${e.message}` }, 500);
     }
 
-    // Deleta o perfil
-    await db.from('profiles').delete().eq('id', userId);
+    // 3) Descobre e limpa tabelas com sender_id (chat_messages)
+    const senderTables = await discoverTablesByColumn(db, 'sender_id');
+    for (const table of senderTables) {
+      const { error: e } = await db.from(table).delete().in('sender_id', ids);
+      if (e) return json({ error: `Falha ao limpar ${table}: ${e.message}` }, 500);
+    }
 
-    // Deleta o usuário de autenticação (auth.users)
+    // 4) Deleta o perfil primeiro
+    const { error: delProfileError } = await db.from('profiles').delete().eq('id', userId);
+    if (delProfileError) return json({ error: 'Falha ao remover perfil: ' + delProfileError.message }, 500);
+
+    // 5) Deleta auth.users (não-fatal — perfil já foi removido)
     const { error: authError } = await db.auth.admin.deleteUser(userId);
     if (authError) {
-      return json({ error: 'Falha ao remover autenticação: ' + authError.message }, 500);
+      return json({ success: true, deleted: userId, auth_warning: authError.message });
     }
 
     return json({ success: true, deleted: userId });
