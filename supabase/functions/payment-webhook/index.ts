@@ -48,7 +48,12 @@ Deno.serve(async (req) => {
     const { data } = await db.from('products').select('*').eq('integration_id', integration.id).eq('external_product_id', n.external_offer_id).limit(1);
     product = data?.[0] || null;
   }
-  // Fallback: tenta casar pelo código de checkout embutido na URL do produto
+  // Fallback: tenta casar pelo código de checkout (offer_code da Ticto) contra o external_product_id cadastrado
+  if (!product && n.checkout_code) {
+    const { data } = await db.from('products').select('*').eq('integration_id', integration.id).eq('external_product_id', n.checkout_code).limit(1);
+    product = data?.[0] || null;
+  }
+  // Fallback adicional: offer_code embutido na URL de checkout do produto
   if (!product && n.checkout_code) {
     const { data } = await db.from('products').select('*').eq('integration_id', integration.id).ilike('checkout_url', `%${n.checkout_code}%`).limit(1);
     product = data?.[0] || null;

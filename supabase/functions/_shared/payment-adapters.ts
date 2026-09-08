@@ -58,7 +58,7 @@ export const adapters: Record<string, (b: any) => NormalizedPayment> = {
     external_transaction_id: b.transaction?.hash || b.order?.hash || '',
     external_product_id: String(b.item?.product_id ?? b.product?.id ?? ''),
     external_offer_id: b.item?.offer_id ? String(b.item.offer_id) : undefined,
-    checkout_code: b.url_params?.query_params?.code || undefined,
+    checkout_code: b.item?.offer_code || b.url_params?.query_params?.code || undefined,
     amount: cents(b.order?.paid_amount ?? b.item?.amount), currency: 'BRL',
     event_type: b.status || ''
   }),
