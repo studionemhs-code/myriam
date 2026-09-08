@@ -63,6 +63,9 @@ export function useFeatureFlags() {
     if (loading) return true;
     if (isAdmin) return true;
     if (grants[feature]) return true;
+    // Funcionalidades pagas são sempre exibidas na appbar (o paywall controla o acesso, não a navegação)
+    const record = flagRecords.find((f) => f.feature === feature);
+    if (record?.access_type === 'pago') return true;
     return flags[feature] !== false;
   };
   return { flags, flagRecords, loading, isVisible };
