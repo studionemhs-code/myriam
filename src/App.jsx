@@ -71,6 +71,7 @@ import WebhooksAdmin from '@/pages/admin/WebhooksAdmin';
 import GarantiaAdmin from '@/pages/admin/GarantiaAdmin';
 import GarantiaConfig from '@/pages/admin/GarantiaConfig';
 import OtpWhatsappAdmin from '@/pages/admin/OtpWhatsappAdmin';
+import GreetingSettingsAdmin from '@/pages/admin/GreetingSettings';
 import OracoesAdmin from '@/pages/admin/OracoesAdmin';
 import OAuthConsent from '@/pages/OAuthConsent';
 import Rastreio from '@/pages/Rastreio';
@@ -178,6 +179,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/garantia" element={<GarantiaAdmin />} />
           <Route path="/admin/garantia/config" element={<GarantiaConfig />} />
           <Route path="/admin/otp-whatsapp" element={<OtpWhatsappAdmin />} />
+          <Route path="/admin/saudacoes" element={<GreetingSettingsAdmin />} />
           <Route path="/admin/oracoes" element={<OracoesAdmin />} />
           <Route path="/admin/monetizacao" element={<MonetizacaoAdmin />} />
         </Route>

@@ -1,0 +1,48 @@
+{
+  "name": "GreetingSettings",
+  "type": "object",
+  "properties": {
+    "greeting_interessado": {
+      "type": "string",
+      "description": "Sauda\u00e7\u00e3o exibida acima do nome para usu\u00e1rios interessados. Vazio = usa o padr\u00e3o din\u00e2mico (Bom dia/Boa tarde/Boa noite)."
+    },
+    "greeting_preparacao": {
+      "type": "string",
+      "description": "Sauda\u00e7\u00e3o exibida acima do nome para usu\u00e1rios em prepara\u00e7\u00e3o."
+    },
+    "greeting_consagrado": {
+      "type": "string",
+      "description": "Sauda\u00e7\u00e3o exibida acima do nome para usu\u00e1rios consagrados."
+    },
+    "quote_interessado": {
+      "type": "string",
+      "description": "Frase espiritual exibida abaixo do nome para interessados. Vazio = usa a frase gerada por IA ou o padr\u00e3o."
+    },
+    "quote_preparacao": {
+      "type": "string",
+      "description": "Frase espiritual exibida abaixo do nome para usu\u00e1rios em prepara\u00e7\u00e3o."
+    },
+    "quote_consagrado": {
+      "type": "string",
+      "description": "Frase espiritual exibida abaixo do nome para usu\u00e1rios consagrados."
+    }
+  },
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

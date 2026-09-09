@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, CalendarDays, Sparkles, Heart,
-  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook, ShieldCheck, Settings2, TrendingUp, Activity, CreditCard
+  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook, ShieldCheck, Settings2, TrendingUp, Activity, CreditCard, Sun
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Logo from '@/components/Logo';
@@ -27,6 +27,7 @@ const items = [
   { to: '/admin/garantia', label: 'Garantia Vitalícia', icon: ShieldCheck },
   { to: '/admin/garantia/config', label: 'Config. Garantia', icon: Settings2 },
   { to: '/admin/otp-whatsapp', label: 'OTP WhatsApp', icon: MessageCircle },
+  { to: '/admin/saudacoes', label: 'Saudações', icon: Sun },
   { to: '/admin/orcamentos', label: 'Orçamentos', icon: ShoppingBag },
   { to: '/admin/relatorios', label: 'Moderação', icon: Flag },
   { to: '/admin/automacoes-webhook', label: 'Automações Webhook', icon: Webhook },

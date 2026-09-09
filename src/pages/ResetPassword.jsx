@@ -8,14 +8,20 @@ import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
 export default function ResetPassword() {
-  // O link de recuperação abre uma sessão temporária ao chegar nesta página.
-  const [linkState, setLinkState] = useState("checking");
+  const urlParams = new URLSearchParams(window.location.search);
+  const waToken = urlParams.get("token");
+
+  // Fluxo WhatsApp: token presente na URL → formulário pronto imediatamente.
+  // Fluxo e-mail: sem token → aguarda a sessão temporária do link mágico.
+  const [linkState, setLinkState] = useState(waToken ? "valid" : "checking");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (waToken) return; // WhatsApp flow — no session check needed
+
     let done = false;
     const check = async () => {
       if (await base44.auth.isAuthenticated()) {
@@ -27,7 +33,7 @@ export default function ResetPassword() {
     const unsubscribe = base44.auth.onAuthStateChange(() => check());
     const timer = setTimeout(() => { if (!done) setLinkState("invalid"); }, 2500);
     return () => { clearTimeout(timer); unsubscribe(); };
-  }, []);
+  }, [waToken]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +44,14 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      await base44.auth.resetPassword({ newPassword });
+      if (waToken) {
+        await base44.functions.invoke("reset-password-whatsapp", {
+          token: waToken,
+          new_password: newPassword
+        });
+      } else {
+        await base44.auth.resetPassword({ newPassword });
+      }
       window.location.href = "/login";
     } catch (err) {
       setError(err.message || "Falha ao redefinir senha");
@@ -71,7 +84,7 @@ export default function ResetPassword() {
         }
       >
         <p className="text-sm text-foreground text-center">
-          O link utilizado parece estar incompleto. Por favor, solicite um novo e-mail de redefinição de senha.
+          O link utilizado parece estar incompleto. Por favor, solicite um novo link de redefinição de senha.
         </p>
       </AuthLayout>
     );
@@ -128,9 +141,9 @@ export default function ResetPassword() {
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Redefinindo...
             </>
-            ) : (
+          ) : (
             "Redefinir senha"
-            )}
+          )}
         </Button>
       </form>
     </AuthLayout>

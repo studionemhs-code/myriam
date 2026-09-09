@@ -23,6 +23,7 @@ export default function Hoje() {
   const [intentions, setIntentions] = useState([]);
   const [dayContent, setDayContent] = useState([]);
   const [aiGreeting, setAiGreeting] = useState(null);
+  const [greetingSettings, setGreetingSettings] = useState(null);
   const [indulgenceToday, setIndulgenceToday] = useState(null);
   const [days, setDays] = useState([]);
   const [contentLoaded, setContentLoaded] = useState(false);
@@ -79,6 +80,10 @@ export default function Hoje() {
           if (res.data?.greeting) setAiGreeting(res.data.greeting);
         } catch (e) { /* use default */ }
         try {
+          const gsList = await base44.entities.GreetingSettings.list('-created_date', 1);
+          if (gsList[0]) setGreetingSettings(gsList[0]);
+        } catch { /* ignore */ }
+        try {
           const reqs = await base44.entities.AssociationRequest.filter({ user_id: user.id, status: 'aprovado' }, '-approved_date', 1);
           const approvedReq = reqs[0];
           if (approvedReq?.approved_date) {
@@ -100,10 +105,11 @@ export default function Hoje() {
   }
 
   const firstName = (user.display_name || user.full_name || user.email || 'alma').split(' ')[0];
-  const greeting = getGreeting();
+  const statusKey = status || 'interessado';
+  const greeting = greetingSettings?.[`greeting_${statusKey}`] || getGreeting();
   const nextEvent = getNextMarianEvent();
 
-  const quote = aiGreeting || 'Para que venha vosso reino Jesus, venha o reino de Maria';
+  const quote = greetingSettings?.[`quote_${statusKey}`] || aiGreeting || 'Para que venha vosso reino Jesus, venha o reino de Maria';
 
   return (
     <PullToRefresh onRefresh={load}>

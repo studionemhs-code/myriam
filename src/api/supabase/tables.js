@@ -50,6 +50,7 @@ export const SUPABASE_TABLES = {
   RegistrationSettings: 'registration_settings',
   JourneyContent: 'journey_contents',
   DailyActivity: 'daily_activity',
+  GreetingSettings: 'greeting_settings',
   MonetizationSettings: 'monetization_settings',
   PaymentIntegration: 'payment_integrations',
   Product: 'products',
