@@ -9,6 +9,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import PendingApproval from '@/components/PendingApproval';
 import ScrollToTop from './components/ScrollToTop';
 import SplashVideo from '@/components/SplashVideo';
+import DynamicBranding from '@/components/DynamicBranding';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -72,6 +73,7 @@ import GarantiaAdmin from '@/pages/admin/GarantiaAdmin';
 import GarantiaConfig from '@/pages/admin/GarantiaConfig';
 import OtpWhatsappAdmin from '@/pages/admin/OtpWhatsappAdmin';
 import GreetingSettingsAdmin from '@/pages/admin/GreetingSettings';
+import PersonalizacaoAdmin from '@/pages/admin/Personalizacao';
 import OracoesAdmin from '@/pages/admin/OracoesAdmin';
 import OAuthConsent from '@/pages/OAuthConsent';
 import Rastreio from '@/pages/Rastreio';
@@ -180,6 +182,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/garantia/config" element={<GarantiaConfig />} />
           <Route path="/admin/otp-whatsapp" element={<OtpWhatsappAdmin />} />
           <Route path="/admin/saudacoes" element={<GreetingSettingsAdmin />} />
+          <Route path="/admin/personalizacao" element={<PersonalizacaoAdmin />} />
           <Route path="/admin/oracoes" element={<OracoesAdmin />} />
           <Route path="/admin/monetizacao" element={<MonetizacaoAdmin />} />
         </Route>
@@ -203,6 +206,7 @@ function App() {
           </Router>
           <Toaster />
           <SplashVideo />
+          <DynamicBranding />
         </QueryClientProvider>
       </ThemeProvider>
     </AuthProvider>

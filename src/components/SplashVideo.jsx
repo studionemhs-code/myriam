@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { usePersonalizationSettings } from '@/hooks/usePersonalizationSettings';
 
-const VIDEO_URL = 'https://media.base44.com/videos/public/6a874a7d3ea0948ad718c3b8/e580afddd_STORIESIGTHEOTOKOS.mp4';
+const DEFAULT_VIDEO_URL = 'https://media.base44.com/videos/public/6a874a7d3ea0948ad718c3b8/e580afddd_STORIESIGTHEOTOKOS.mp4';
 const SESSION_KEY = 'splash_shown_session';
 const START_TIMEOUT = 3000; // se o vídeo não começar a tocar, revela o app
 const MAX_TIMEOUT = 9000;   // limite absoluto da splash
 
 export default function SplashVideo() {
+  const { settings } = usePersonalizationSettings();
+  const videoUrl = (settings && settings.splash_video_url) || DEFAULT_VIDEO_URL;
   // Apenas mobile / app (APK) — nunca no desktop
   const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches;
   const [visible, setVisible] = useState(() => {
@@ -57,7 +60,7 @@ export default function SplashVideo() {
       }`}
     >
       <video
-        src={VIDEO_URL}
+        src={videoUrl}
         autoPlay
         muted
         playsInline

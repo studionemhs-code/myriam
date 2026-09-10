@@ -5,11 +5,13 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from '@/components/ui/use-toast';
 import Logo from '@/components/Logo';
 import { registerConsecrationOrRenewal } from '@/lib/consecration';
+import { usePersonalizationSettings, getLevelInfo } from '@/hooks/usePersonalizationSettings';
 
 const TOTAL_STEPS = 4;
 
 export default function Onboarding() {
   const { user, update } = useCurrentUser();
+  const { settings } = usePersonalizationSettings();
   // Se o admin já definiu um nível específico, o usuário pula a etapa de escolha (preenche só o perfil).
   const needsLevelChoice = !user?.status || user?.status === 'usuario_escolhe';
   const totalSteps = needsLevelChoice ? TOTAL_STEPS : TOTAL_STEPS - 1;
@@ -276,8 +278,8 @@ export default function Onboarding() {
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10"><BookOpen className="h-6 w-6 text-primary" /></div>
                 <div className="flex-1">
-                  <p className="font-display text-lg">Quero Conhecer</p>
-                  <p className="text-xs text-muted-foreground">Descubra o que é a Total Consagração</p>
+                  <p className="font-display text-lg">{getLevelInfo(settings, 'interessado').name}</p>
+                  <p className="text-xs text-muted-foreground">{getLevelInfo(settings, 'interessado').desc}</p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1" />
               </button>
@@ -289,8 +291,8 @@ export default function Onboarding() {
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gold/15"><Flower2 className="h-6 w-6 text-gold" /></div>
                 <div className="flex-1">
-                  <p className="font-display text-lg">Quero Me Preparar</p>
-                  <p className="text-xs text-muted-foreground">Iniciar a jornada de 33 dias</p>
+                  <p className="font-display text-lg">{getLevelInfo(settings, 'preparacao').name}</p>
+                  <p className="text-xs text-muted-foreground">{getLevelInfo(settings, 'preparacao').desc}</p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1" />
               </button>
@@ -302,8 +304,8 @@ export default function Onboarding() {
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-marian/15"><Crown className="h-6 w-6 text-marian" /></div>
                 <div className="flex-1">
-                  <p className="font-display text-lg">Já Sou Consagrado</p>
-                  <p className="text-xs text-muted-foreground">Registrar a data da sua consagração</p>
+                  <p className="font-display text-lg">{getLevelInfo(settings, 'consagrado').name}</p>
+                  <p className="text-xs text-muted-foreground">{getLevelInfo(settings, 'consagrado').desc}</p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1" />
               </button>

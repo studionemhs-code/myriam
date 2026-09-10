@@ -2,21 +2,25 @@ import React from "react";
 import { Instagram } from "lucide-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
+import { usePersonalizationSettings } from "@/hooks/usePersonalizationSettings";
 
 const STORAGE = "https://strrnkxrpyjyaewfpiwh.supabase.co/storage/v1/object/public/uploads/brand";
-const BG_IMAGE_DESKTOP = `${STORAGE}/auth-bg-desktop.png`;
-const BG_IMAGE_MOBILE = `${STORAGE}/auth-bg-mobile.png`;
+const DEFAULT_BG_DESKTOP = `${STORAGE}/auth-bg-desktop.png`;
+const DEFAULT_BG_MOBILE = `${STORAGE}/auth-bg-mobile.png`;
 
 export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
+  const { settings } = usePersonalizationSettings();
+  const bgMobile = (settings && settings.login_bg_mobile) || DEFAULT_BG_MOBILE;
+  const bgDesktop = (settings && settings.login_bg_desktop) || DEFAULT_BG_DESKTOP;
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-8 overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center opacity-40 pointer-events-none lg:hidden"
-        style={{ backgroundImage: `url(${BG_IMAGE_MOBILE})` }}
+        style={{ backgroundImage: `url(${bgMobile})` }}
       />
       <div
         className="absolute inset-0 hidden bg-cover bg-center opacity-40 pointer-events-none lg:block"
-        style={{ backgroundImage: `url(${BG_IMAGE_DESKTOP})` }}
+        style={{ backgroundImage: `url(${bgDesktop})` }}
       />
       <div className="absolute right-4 top-4 z-10">
         <ThemeToggle className="text-muted-foreground hover:text-foreground" />

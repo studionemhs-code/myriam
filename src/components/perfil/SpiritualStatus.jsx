@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { Flower2, BookOpen, ChevronRight, Users, Compass, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { formatDate, daysSince, nextRenewal, parseDate, daysBetween } from '@/lib/marianDates';
+import { usePersonalizationSettings, getLevelInfo } from '@/hooks/usePersonalizationSettings';
 
 export default function SpiritualStatus({ user }) {
+  const { settings } = usePersonalizationSettings();
   const [journeys, setJourneys] = useState([]);
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export default function SpiritualStatus({ user }) {
           <>
             <div className="flex items-center gap-2 text-gold">
               <Flower2 className="h-4 w-4" />
-              <span className="text-xs uppercase tracking-wider">Consagração</span>
+              <span className="text-xs uppercase tracking-wider">{getLevelInfo(settings, 'consagrado').name}</span>
             </div>
             <p className="mt-2 font-display text-xl text-primary">Consagrado desde {consecrationYear}</p>
             <p className="text-xs text-muted-foreground">
@@ -77,7 +79,7 @@ export default function SpiritualStatus({ user }) {
           <>
             <div className="flex items-center gap-2 text-gold">
               <BookOpen className="h-4 w-4" />
-              <span className="text-xs uppercase tracking-wider">Preparação</span>
+              <span className="text-xs uppercase tracking-wider">{getLevelInfo(settings, 'preparacao').name}</span>
             </div>
             <p className="mt-2 font-display text-xl text-primary">Em preparação para a Consagração</p>
             {prepInfo ? (
@@ -95,7 +97,7 @@ export default function SpiritualStatus({ user }) {
           <>
             <div className="flex items-center gap-2 text-gold">
               <Compass className="h-4 w-4" />
-              <span className="text-xs uppercase tracking-wider">Caminhando</span>
+              <span className="text-xs uppercase tracking-wider">{getLevelInfo(settings, 'interessado').name}</span>
             </div>
             <p className="mt-2 font-display text-xl text-primary">Conhecendo a devoção</p>
             <p className="text-xs text-muted-foreground">
