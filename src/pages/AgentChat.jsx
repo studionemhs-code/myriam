@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
 import { Button } from '@/components/ui/button';
-import { Bot, Send, ArrowLeft, Loader2 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import { Bot, ArrowLeft, Loader2, Hammer } from 'lucide-react';
+import AgentComposer from '@/components/ai/AgentComposer';
+import AgentMessage from '@/components/ai/AgentMessage';
 
 export default function AgentChat() {
   const [agents, setAgents] = useState(null);
@@ -11,6 +12,8 @@ export default function AgentChat() {
   const [messages, setMessages] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [input, setInput] = useState('');
+  const [mode, setMode] = useState('text');
+  const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef(null);
 
@@ -35,38 +38,38 @@ export default function AgentChat() {
     setActiveConvId(null);
   };
 
-  const send = async () => {
-    if (!input.trim() || sending) return;
-    const msg = input.trim();
-    setInput('');
-    setSending(true);
-    setMessages(m => [...m, { role: 'user', content: msg }]);
+  const send = async (overrideFile = file, live = mode === 'live') => {
+    if ((!input.trim() && !overrideFile) || sending) return;
+    const typed = input.trim();
+    setInput(''); setFile(null); setSending(true);
+    setMessages(m => [...m, { role: 'user', content: typed || (overrideFile?.type?.startsWith('audio/') ? 'Mensagem de voz' : 'Analise este arquivo.'), file_name: overrideFile?.name }]);
     try {
-      const res = await base44.functions.invoke('chatWithAgent', {
-        agent_id: selected.id,
-        message: msg,
-        conversation_id: activeConvId
-      });
+      let msg = typed;
+      let fileContext = '';
+      if (overrideFile) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: overrideFile });
+        const analyzed = overrideFile.type.startsWith('audio/')
+          ? await base44.integrations.Core.TranscribeAudio({ audio_url: file_url })
+          : await base44.integrations.Core.AnalyzeFile({ file_url, file_name: overrideFile.name, mime_type: overrideFile.type, model: selected.model });
+        fileContext = typeof analyzed === 'string' ? analyzed : analyzed?.text || '';
+        if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext;
+      }
+      const res = await base44.functions.invoke('chatWithAgent', { agent_id: selected.id, message: msg || 'Analise o arquivo anexado.', conversation_id: activeConvId, file_context: fileContext });
       const reply = res.data.reply || '';
-      const delay = selected.message_delay_ms || 0;
-      const parts = reply.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
-      if (delay > 0 && parts.length > 1) {
-        for (const part of parts) {
-          await new Promise(r => setTimeout(r, delay));
-          setMessages(m => [...m, { role: 'assistant', content: part }]);
-        }
-      } else {
-        setMessages(m => [...m, { role: 'assistant', content: reply }]);
+      let audioUrl = '';
+      if (mode !== 'text' && selected.voice_enabled !== false) {
+        const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: selected.default_voice || 'river' });
+        audioUrl = speech?.url || '';
       }
-      if (res.data.conversation_id) {
-        setActiveConvId(res.data.conversation_id);
-      }
+      setMessages(m => [...m, { role: 'assistant', content: reply, audio_url: audioUrl }]);
+      if (live && audioUrl) new Audio(audioUrl).play().catch(() => {});
+      if (res.data.conversation_id) setActiveConvId(res.data.conversation_id);
     } catch (err) {
-      setMessages(m => [...m, { role: 'assistant', content: '⚠️ Erro: ' + (err.response?.data?.error || err.message) }]);
-    } finally {
-      setSending(false);
-    }
+      setMessages(m => [...m, { role: 'assistant', content: 'Erro: ' + (err.message || 'tente novamente') }]);
+    } finally { setSending(false); }
   };
+
+  const sendAudio = async (audioFile, live) => send(audioFile, live);
 
   if (!agents) {
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -104,20 +107,15 @@ export default function AgentChat() {
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
           <Bot className="h-5 w-5 text-primary" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-display text-lg leading-tight">{selected.name}</p>
-          <p className="text-xs text-muted-foreground">{selected.description}</p>
+          <p className="truncate text-xs text-muted-foreground">{selected.description}</p>
         </div>
+        {selected.architect_mode_enabled && <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-medium text-amber-800"><Hammer className="h-3 w-3" /> Arquiteto</span>}
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4">
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-              {m.role === 'assistant' ? <ReactMarkdown>{m.content}</ReactMarkdown> : m.content}
-            </div>
-          </div>
-        ))}
+        {messages.map((message, index) => <AgentMessage key={index} message={message} />)}
         {sending && (
           <div className="flex justify-start">
             <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-3">
@@ -129,18 +127,8 @@ export default function AgentChat() {
         )}
       </div>
 
-      <div className="mt-3 flex gap-2">
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-          placeholder="Digite sua mensagem..."
-          className="flex-1 rounded-xl border border-input bg-background px-4 py-2.5 text-sm outline-none focus:border-primary"
-          disabled={sending}
-        />
-        <Button onClick={send} disabled={sending || !input.trim()} size="icon" className="rounded-xl shrink-0">
-          <Send className="h-4 w-4" />
-        </Button>
+      <div className="mt-3">
+        <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} busy={sending} allowFiles={selected.files_enabled !== false} allowVoice={selected.voice_enabled !== false} />
       </div>
     </div>
   );

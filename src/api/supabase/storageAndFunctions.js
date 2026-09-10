@@ -70,6 +70,7 @@ export const supabaseIntegrations = {
     GenerateSpeech: viaEdge('GenerateSpeech'),
     GenerateVideo: viaEdge('GenerateVideo'),
     TranscribeAudio: viaEdge('TranscribeAudio'),
+    AnalyzeFile: viaEdge('AnalyzeFile'),
     SendEmail: viaEdge('SendEmail'),
     SendPushNotification: viaEdge('SendPushNotification'),
     ExtractDataFromUploadedFile: viaEdge('ExtractDataFromUploadedFile')

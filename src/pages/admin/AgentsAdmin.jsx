@@ -28,7 +28,7 @@ export default function AgentsAdmin() {
     <div>
       <AdminPageTitle
         title="Agentes de IA"
-        subtitle="Crie e personalize assistentes com OpenAI"
+        subtitle="Crie assistentes multimodais com os modelos da plataforma"
         action={<Button onClick={() => setEditing({})}><Plus className="mr-1.5 h-4 w-4" /> Novo Agente</Button>}
       />
 

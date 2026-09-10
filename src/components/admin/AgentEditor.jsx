@@ -21,6 +21,9 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     tools_enabled: agent?.tools_enabled || [],
     reasoning_enabled: agent?.reasoning_enabled ?? false,
     architect_mode_enabled: agent?.architect_mode_enabled ?? false,
+    voice_enabled: agent?.voice_enabled ?? true,
+    files_enabled: agent?.files_enabled ?? true,
+    default_voice: agent?.default_voice || 'river',
     message_delay_ms: agent?.message_delay_ms ?? 0
   });
   const [saving, setSaving] = useState(false);
@@ -109,11 +112,14 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
         <Field label="Nome">
           <input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ex: Assistente Theotokos" />
         </Field>
-        <Field label="Modelo OpenAI">
+        <Field label="Modelo da plataforma">
           <select className={inputCls} value={form.model} onChange={e => set('model', e.target.value)}>
-            <option value="gpt-4o-mini">GPT-4o Mini (rápido e econômico)</option>
-            <option value="gpt-4o">GPT-4o (mais capaz)</option>
-            <option value="gpt-3.5-turbo">GPT-3.5 Turbo (básico)</option>
+            <option value="automatic">Automático (recomendado)</option>
+            <option value="gpt_5_mini">GPT-5 Mini (rápido)</option>
+            <option value="gpt_5_4">GPT-5.4 (robusto)</option>
+            <option value="gpt_5_6_sol">GPT-5.6 Sol (máxima capacidade)</option>
+            <option value="gpt_5_6_luna">GPT-5.6 Luna (máxima capacidade)</option>
+            <option value="gpt-4o">GPT-4o (legado)</option>
           </select>
         </Field>
       </div>
@@ -274,9 +280,15 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
           />
         </div>
 
+        <div className="mb-4 grid gap-3 sm:grid-cols-2">
+          <label className="flex items-center gap-2"><input type="checkbox" checked={form.voice_enabled} onChange={e => set('voice_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" /><span className="text-sm">Entrada e resposta por voz</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={form.files_enabled} onChange={e => set('files_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" /><span className="text-sm">Interpretar documentos e arquivos</span></label>
+          <Field label="Voz padrão"><select className={inputCls} value={form.default_voice} onChange={e => set('default_voice', e.target.value)}><option value="river">River — neutra</option><option value="honey">Honey — suave</option><option value="sunny">Sunny — alegre</option><option value="storm">Storm — formal</option><option value="spark">Spark — enérgica</option></select></Field>
+        </div>
+
         <label className="mb-3 flex items-center gap-2">
           <input type="checkbox" checked={form.reasoning_enabled} onChange={e => set('reasoning_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" />
-          <span className="text-sm">Raciocínio Avançado — usa modelo mais capaz e pensa passo a passo</span>
+          <span className="text-sm">Raciocínio Avançado — usa o modelo selecionado para análises profundas</span>
         </label>
 
         <div className="mb-3 rounded-lg border border-amber-300/40 bg-amber-50/50 p-3 dark:border-amber-500/30 dark:bg-amber-950/20">

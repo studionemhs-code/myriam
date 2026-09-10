@@ -27,8 +27,12 @@ async function invokeLLM(p: any) {
   for (const url of [].concat(p.file_urls || [])) {
     content.push({ type: 'image_url', image_url: { url } });
   }
+  const modelMap: Record<string, string> = {
+    automatic: 'gpt-4o-mini', gpt_5_mini: 'gpt-5-mini', gpt_5_4: 'gpt-5',
+    gpt_5_6_sol: 'gpt-5', gpt_5_6_luna: 'gpt-5', 'gpt-4o': 'gpt-4o', 'gpt-4o-mini': 'gpt-4o-mini'
+  };
   const data = await openai('chat/completions', {
-    model: p.model && p.model !== 'automatic' ? 'gpt-4o' : 'gpt-4o-mini',
+    model: modelMap[p.model] || 'gpt-4o-mini',
     messages: [{ role: 'user', content: p.file_urls?.length ? content : p.prompt }],
     ...(p.response_json_schema
       ? { response_format: { type: 'json_schema', json_schema: { name: 'resposta', schema: p.response_json_schema, strict: false } } }
@@ -116,6 +120,31 @@ async function extractData(p: any) {
   } catch (e) {
     return { status: 'error', details: (e as Error).message };
   }
+}
+
+async function analyzeFile(p: any) {
+  const response = await fetch(p.file_url);
+  if (!response.ok) throw new Error('Não foi possível acessar o arquivo.');
+  const mime = p.mime_type || response.headers.get('content-type') || 'application/octet-stream';
+  if (mime.startsWith('audio/')) return { text: await transcribeAudio({ audio_url: p.file_url }) };
+  if (mime.startsWith('text/') || mime.includes('csv') || mime.includes('json')) {
+    const text = (await response.text()).slice(0, 100000);
+    const summary = await invokeLLM({ model: p.model, prompt: `Interprete este arquivo e extraia as informações relevantes para responder às perguntas do usuário:\n\n${text}` });
+    return { text: summary };
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.byteLength > 20 * 1024 * 1024) throw new Error('O arquivo deve ter no máximo 20 MB.');
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  const dataUrl = `data:${mime};base64,${btoa(binary)}`;
+  const part = mime.startsWith('image/')
+    ? { type: 'input_image', image_url: dataUrl }
+    : { type: 'input_file', filename: p.file_name || 'documento', file_data: dataUrl };
+  const data = await openai('responses', {
+    model: 'gpt-4o',
+    input: [{ role: 'user', content: [{ type: 'input_text', text: 'Interprete este arquivo e descreva todas as informações relevantes.' }, part] }]
+  });
+  return { text: data.output_text || data.output?.flatMap((item: any) => item.content || []).map((item: any) => item.text || '').join('\n') || 'Arquivo processado.' };
 }
 
 // Gera áudio (TTS) e guarda no bucket público, devolvendo a URL definitiva.
@@ -209,6 +238,7 @@ const HANDLERS: Record<string, (p: any) => Promise<unknown>> = {
   SendEmail: sendEmail,
   TranscribeAudio: transcribeAudio,
   ExtractDataFromUploadedFile: extractData,
+  AnalyzeFile: analyzeFile,
   GenerateSpeech: generateSpeech,
   GenerateVideo: generateVideo,
   SendPushNotification: sendPushNotification
@@ -220,9 +250,7 @@ const ADMIN_ONLY: Record<string, boolean> = {
   GenerateImage: true,
   GenerateVideo: true,
   SendEmail: true,
-  SendPushNotification: true,
-  ExtractDataFromUploadedFile: true,
-  TranscribeAudio: true
+  SendPushNotification: true
 };
 
 // Validação mínima de payload por handler (rejeita chamadas malformadas).
@@ -232,6 +260,7 @@ const REQUIRED_FIELDS: Record<string, string[]> = {
   SendEmail: ['to', 'subject', 'body'],
   TranscribeAudio: ['audio_url'],
   ExtractDataFromUploadedFile: ['file_url', 'json_schema'],
+  AnalyzeFile: ['file_url'],
   GenerateSpeech: ['text'],
   GenerateVideo: ['prompt'],
   SendPushNotification: ['user_id', 'title', 'content']

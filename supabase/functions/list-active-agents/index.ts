@@ -16,7 +16,11 @@ Deno.serve(async (req) => {
       welcome_message: a.welcome_message,
       model: a.model,
       icon_url: a.icon_url || null,
-      is_floating_main: a.is_floating_main || false
+      is_floating_main: a.is_floating_main || false,
+      voice_enabled: a.voice_enabled !== false,
+      files_enabled: a.files_enabled !== false,
+      default_voice: a.default_voice || 'river',
+      architect_mode_enabled: user.role === 'admin' && a.architect_mode_enabled === true
     }));
 
     // Agente principal do botão flutuante (apenas um por vez pode ter a flag).

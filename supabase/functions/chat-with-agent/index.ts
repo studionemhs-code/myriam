@@ -118,27 +118,10 @@ async function getActiveJourneys(db: any, userId: string): Promise<string> {
 // FERRAMENTAS DO MODO ARQUITETO (admin only — CRUD total no sistema)
 // ============================================================================
 
-const ARCHITECT_TABLES = [
-  'preparation_days', 'preparation_phases', 'prayers', 'prayer_categories',
-  'prayer_intentions', 'notifications', 'marian_calendar_events',
-  'acamf_contents', 'acamf_categories', 'courses', 'collective_journeys',
-  'journey_contents', 'certificate_templates', 'association_settings',
-  'feature_flags', 'store_settings', 'catalog_products', 'webhook_automations',
-  'consecration_settings', 'whatsapp_otp_settings', 'registration_settings',
-  'notification_settings', 'warranty_settings', 'prayer_favorites',
-  'content_notes', 'content_comments', 'myriam_posts', 'myriam_comments',
-  'myriam_stories', 'chat_conversations', 'chat_messages', 'reports',
-  'share_links', 'user_feature_access', 'agent_conversations', 'agent_memories',
-  'cadeiazinhas', 'warranty_claims', 'quote_requests', 'lesson_progress',
-  'reflections', 'user_progress', 'journey_participants', 'certificates'
-];
-
 async function architectCrud(
   table: string, operation: string, data: any, filter: any, id: string, db: any
 ): Promise<string> {
-  if (!ARCHITECT_TABLES.includes(table)) {
-    return `Tabela '${table}' não permitida. Tabelas válidas: ${ARCHITECT_TABLES.join(', ')}`;
-  }
+  if (!/^[a-z][a-z0-9_]*$/.test(table || '')) return 'Nome de tabela inválido.';
   try {
     if (operation === 'list') {
       let query = db.from(table).select('*').order('created_date', { ascending: false }).limit(30);
@@ -330,7 +313,7 @@ Deno.serve(async (req) => {
     const user = await currentUser(req);
     if (!user) return json({ error: 'Unauthorized' }, 401);
 
-    const { agent_id, message, conversation_id } = await req.json();
+    const { agent_id, message, conversation_id, file_context } = await req.json();
     if (!agent_id || !message) return json({ error: 'agent_id e message são obrigatórios' }, 400);
 
     const db = admin();
@@ -389,13 +372,18 @@ Deno.serve(async (req) => {
       systemPrompt += '\n\n--- O QUE VOCÊ LEMBRA DO USUÁRIO ---\n' + memoryFacts.map((f) => `- ${f.fact}`).join('\n');
     }
     systemPrompt += userContext;
-    if (agent.reasoning_enabled) systemPrompt += '\n\nMODO RACIOCÍNIO: Pense passo a passo antes de responder.';
+    if (agent.reasoning_enabled) systemPrompt += '\n\nMODO RACIOCÍNIO: Analise cuidadosamente antes de responder.';
+    if (file_context) systemPrompt += `\n\n--- ARQUIVO ANEXADO PELO USUÁRIO ---\n${String(file_context).slice(0, 100000)}`;
 
     if (isArchitect) {
       systemPrompt += '\n\n--- MODO ARQUITETO ATIVO ---\nVocê tem permissões de administrador total. Pode criar, editar, listar e excluir registros em qualquer tabela do sistema usando a ferramenta architect_crud. Tabelas principais: preparation_days (dias da caminhada), prayers (orações), prayer_categories, notifications (notificações/novidades), acamf_contents (conteúdos ACAMF), collective_journeys (jornadas), marian_calendar_events (calendário mariano), courses, journey_contents, certificate_templates, feature_flags, store_settings, webhook_automations, consecration_settings, registration_settings, notification_settings, warranty_settings, association_settings, catalog_products, quote_requests.\n\nVocê também pode convidar usuários (architect_invite_user) e enviar notificações/novidades (architect_broadcast_notification).\n\nDiretrizes:\n- Sempre confirme ações destrutivas (excluir, alterar) antes de executá-las, perguntando ao admin se ele tem certeza.\n- Ao criar conteúdo, use os campos corretos de cada tabela. Se não souber os campos, faça um "list" primeiro para ver a estrutura.\n- Seja proativo: ajude o admin a gerenciar todo o sistema — criar dias de preparação, orações, notificações, jornadas, conteúdos, etc.\n- Para criar um dia da caminhada: architect_crud com table="preparation_days", operation="create", data={day_number, title, description, phase, text, prayer, practice, gender, is_published}.\n- Para criar uma oração: architect_crud com table="prayers", operation="create", data={title, category_id, content, is_published}.\n- Para enviar novidade: architect_broadcast_notification com category="novidades", title, body, target="all".';
     }
 
-    const model = agent.reasoning_enabled ? 'gpt-4o' : (agent.model || 'gpt-4o-mini');
+    const modelMap: Record<string, string> = {
+      automatic: 'gpt-4o-mini', gpt_5_mini: 'gpt-5-mini', gpt_5_4: 'gpt-5',
+      gpt_5_6_sol: 'gpt-5', gpt_5_6_luna: 'gpt-5', 'gpt-4o': 'gpt-4o', 'gpt-4o-mini': 'gpt-4o-mini'
+    };
+    const model = modelMap[agent.model] || 'gpt-4o-mini';
 
     // Loop de tool-use
     const messages: any[] = [{ role: 'system', content: systemPrompt }, ...history, { role: 'user', content: message }];
@@ -403,7 +391,8 @@ Deno.serve(async (req) => {
     let usedTools = false;
 
     for (let iter = 0; iter < 6; iter++) {
-      const body: any = { model, temperature: agent.temperature ?? 0.7, messages };
+      const body: any = { model, messages };
+      if (!model.startsWith('gpt-5')) body.temperature = agent.temperature ?? 0.7;
       if (activeTools.length > 0) { body.tools = activeTools; body.tool_choice = 'auto'; }
 
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
