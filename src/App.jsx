@@ -78,6 +78,7 @@ import OracoesAdmin from '@/pages/admin/OracoesAdmin';
 import OAuthConsent from '@/pages/OAuthConsent';
 import Rastreio from '@/pages/Rastreio';
 import MonetizacaoAdmin from '@/pages/admin/MonetizacaoAdmin';
+import GithubAdmin from '@/pages/admin/GithubAdmin';
 import PagamentoRetorno from '@/pages/PagamentoRetorno';
 
 const AuthenticatedApp = () => {
@@ -185,6 +186,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/personalizacao" element={<PersonalizacaoAdmin />} />
           <Route path="/admin/oracoes" element={<OracoesAdmin />} />
           <Route path="/admin/monetizacao" element={<MonetizacaoAdmin />} />
+          <Route path="/admin/github" element={<GithubAdmin />} />
         </Route>
       </Route>
 

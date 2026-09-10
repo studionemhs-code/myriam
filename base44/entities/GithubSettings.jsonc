@@ -1,0 +1,51 @@
+{
+  "name": "GithubSettings",
+  "type": "object",
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "Token de acesso pessoal (PAT) do GitHub com permiss\u00f5es de repo. Armazenado em segredo."
+    },
+    "owner": {
+      "type": "string",
+      "description": "Nome do usu\u00e1rio ou organiza\u00e7\u00e3o dona do reposit\u00f3rio padr\u00e3o (ex: 'theotokos')"
+    },
+    "repo": {
+      "type": "string",
+      "description": "Nome do reposit\u00f3rio padr\u00e3o (ex: 'myriam-app')"
+    },
+    "branch": {
+      "type": "string",
+      "default": "main",
+      "description": "Branch padr\u00e3o para opera\u00e7\u00f5es de leitura e escrita"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ativa ou desativa a conex\u00e3o com o GitHub para o agente e fun\u00e7\u00f5es internas"
+    }
+  },
+  "required": [],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

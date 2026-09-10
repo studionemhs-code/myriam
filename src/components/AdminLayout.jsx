@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, CalendarDays, Sparkles, Heart,
-  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook, ShieldCheck, Settings2, TrendingUp, Activity, CreditCard, Sun, Palette
+  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook, ShieldCheck, Settings2, TrendingUp, Activity, CreditCard, Sun, Palette, Github
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Logo from '@/components/Logo';
@@ -34,6 +34,7 @@ const items = [
   { to: '/admin/automacoes-webhook', label: 'Automações Webhook', icon: Webhook },
   { to: '/admin/funcionalidades', label: 'Funcionalidades', icon: ToggleLeft },
   { to: '/admin/monetizacao', label: 'Acesso e Monetização', icon: CreditCard },
+  { to: '/admin/github', label: 'Conexão GitHub', icon: Github },
   { to: '/admin/usuarios', label: 'Usuários', icon: Users }
 ];
 
