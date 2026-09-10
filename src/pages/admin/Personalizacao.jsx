@@ -18,8 +18,12 @@ export default function PersonalizacaoAdmin() {
 
   useEffect(() => {
     (async () => {
-      const list = await base44.entities.PersonalizationSettings.list('-created_date', 1);
-      setS(list[0] || await base44.entities.PersonalizationSettings.create({}));
+      try {
+        const list = await base44.entities.PersonalizationSettings.list('-created_date', 1);
+        setS(list[0] || await base44.entities.PersonalizationSettings.create({}));
+      } catch (e) {
+        setS({});
+      }
     })();
   }, []);
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Film, Flag, Users, Sparkles, CalendarDays, Heart, Leaf } from 'lucide-react';
+import { BookOpen, Flag, Users, Sparkles, CalendarDays, Heart, Leaf } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { AdminPageTitle } from '@/components/admin/ui';
 import PreparationStagesChart from '@/components/admin/PreparationStagesChart';
@@ -10,26 +10,36 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     (async () => {
-      const [content, days, media, users, reports, intentions, events, journeys] = await Promise.all([
-        base44.entities.ACAMFContent.list('-created_date', 1).catch(() => []),
-        base44.entities.PreparationDay.list('-created_date', 1).catch(() => []),
-        base44.entities.MediaAsset.list('-created_date', 1).catch(() => []),
-        base44.entities.User.list('-created_date', 1).catch(() => []),
-        base44.entities.Report.filter({ status: 'pendente' }, '-created_date', 1).catch(() => []),
-        base44.entities.PrayerIntention.filter({ status: 'ativo' }, '-created_date', 1).catch(() => []),
-        base44.entities.MarianCalendarEvent.list('-created_date', 1).catch(() => []),
-        base44.entities.CollectiveJourney.list('-created_date', 1).catch(() => [])
-      ]);
-      setStats({
-        'ACAMF Conteúdos': { count: content.length, icon: BookOpen, to: '/admin/acamf' },
-        'Dias de Preparação': { count: days.length, icon: Sparkles, to: '/admin/dias' },
-        'Mídias': { count: media.length, icon: Film, to: '/admin/midias' },
-        'Usuários': { count: users.length, icon: Users, to: '/admin/usuarios' },
-        'Relatórios Pendentes': { count: reports.length, icon: Flag, to: '/admin/relatorios' },
-        'Intenções Ativas': { count: intentions.length, icon: Heart, to: '/intencoes' },
-        'Eventos do Calendário': { count: events.length, icon: CalendarDays, to: '/admin/calendario' },
-        'Jornadas Coletivas': { count: journeys.length, icon: Leaf, to: '/admin/jornadas' }
-      });
+      try {
+        const safeList = (entity, ...args) => {
+          try { return entity ? entity.list(...args).catch(() => []) : Promise.resolve([]); }
+          catch { return []; }
+        };
+        const safeFilter = (entity, ...args) => {
+          try { return entity ? entity.filter(...args).catch(() => []) : Promise.resolve([]); }
+          catch { return []; }
+        };
+        const [content, days, users, reports, intentions, events, journeys] = await Promise.all([
+          safeList(base44.entities.ACAMFContent, '-created_date', 1),
+          safeList(base44.entities.PreparationDay, '-created_date', 1),
+          safeList(base44.entities.User, '-created_date', 1),
+          safeFilter(base44.entities.Report, { status: 'pendente' }, '-created_date', 1),
+          safeFilter(base44.entities.PrayerIntention, { status: 'ativo' }, '-created_date', 1),
+          safeList(base44.entities.MarianCalendarEvent, '-created_date', 1),
+          safeList(base44.entities.CollectiveJourney, '-created_date', 1)
+        ]);
+        setStats({
+          'ACAMF Conteúdos': { count: content.length, icon: BookOpen, to: '/admin/acamf' },
+          'Dias de Preparação': { count: days.length, icon: Sparkles, to: '/admin/dias' },
+          'Usuários': { count: users.length, icon: Users, to: '/admin/usuarios' },
+          'Relatórios Pendentes': { count: reports.length, icon: Flag, to: '/admin/relatorios' },
+          'Intenções Ativas': { count: intentions.length, icon: Heart, to: '/intencoes' },
+          'Eventos do Calendário': { count: events.length, icon: CalendarDays, to: '/admin/calendario' },
+          'Jornadas Coletivas': { count: journeys.length, icon: Leaf, to: '/admin/jornadas' }
+        });
+      } catch {
+        setStats({});
+      }
     })();
   }, []);
 
