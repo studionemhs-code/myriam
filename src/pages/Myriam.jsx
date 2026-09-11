@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { PageHeader, EmptyState } from '@/components/ui/marian';
+import MyriamIcon from '@/components/MyriamIcon';
 import Composer from '@/components/myriam/Composer';
 import PostCard from '@/components/myriam/PostCard';
 import StoriesBar from '@/components/myriam/StoriesBar';
@@ -43,7 +44,7 @@ export default function Myriam() {
   return (
     <PullToRefresh onRefresh={load}>
     <div>
-      <PageHeader title="Myriam" subtitle="A rede social da comunidade mariana" icon={Leaf} />
+      <PageHeader title="Myriam" subtitle="A rede social dos consagrados a Jesus por Maria" icon={MyriamIcon} />
 
       <div className="mb-4 flex gap-1 rounded-xl bg-muted/60 p-1">
         <button onClick={() => setTab('feed')} className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition sm:text-sm ${tab === 'feed' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground'}`}>
