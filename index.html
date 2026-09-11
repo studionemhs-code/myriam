@@ -10,6 +10,15 @@
     <link rel="manifest" href="/manifest.json" />
     <title>Theotokos — Mãe de Deus | Hub da Total Consagração</title>
     <script>
+      // Captura o evento de instalação antes do React montar, senão ele é perdido.
+      window.__pwaInstallEvent = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__pwaInstallEvent = e;
+        window.dispatchEvent(new Event('pwa-installable'));
+      });
+    </script>
+    <script>
       (function () {
         try {
           var stored = localStorage.getItem('theotokos-theme');
