@@ -6,7 +6,7 @@ import { Field, inputCls } from '@/components/admin/ui';
 import { formatPrice } from '@/lib/access';
 
 // Seletor "Gratuito / Pago" + produto associado. value = { access_type, product_id }
-export default function AccessTypeFields({ value, onChange }) {
+export default function AccessTypeFields({ value, onChange, label = 'Acesso' }) {
   const [products, setProducts] = useState([]);
   const accessType = value?.access_type || 'gratuito';
 
@@ -19,7 +19,7 @@ export default function AccessTypeFields({ value, onChange }) {
 
   return (
     <div className="col-span-2 space-y-3 rounded-xl border border-border bg-muted/30 p-4">
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Acesso</p>
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
       <div className="grid grid-cols-2 gap-2">
         {[['gratuito', 'Gratuito', Unlock], ['pago', 'Pago', Lock]].map(([v, label, Icon]) => (
           <button

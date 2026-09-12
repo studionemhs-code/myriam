@@ -5,7 +5,9 @@ export const RESOURCE_TYPE_LABELS = {
   acamf_content: 'Conteúdo ACAMF',
   course: 'Curso',
   feature: 'Funcionalidade',
-  app: 'Aplicativo'
+  app: 'Aplicativo',
+  background_playback: 'Reprodução em 2º plano',
+  offline_download: 'Download Offline'
 };
 
 export const GRANT_SOURCE_LABELS = {

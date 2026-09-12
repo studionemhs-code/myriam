@@ -74,6 +74,7 @@ import GarantiaConfig from '@/pages/admin/GarantiaConfig';
 import OtpWhatsappAdmin from '@/pages/admin/OtpWhatsappAdmin';
 import GreetingSettingsAdmin from '@/pages/admin/GreetingSettings';
 import PersonalizacaoAdmin from '@/pages/admin/Personalizacao';
+import SuporteAdmin from '@/pages/admin/SuporteAdmin';
 import OracoesAdmin from '@/pages/admin/OracoesAdmin';
 import OAuthConsent from '@/pages/OAuthConsent';
 import Rastreio from '@/pages/Rastreio';
@@ -185,6 +186,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/personalizacao" element={<PersonalizacaoAdmin />} />
           <Route path="/admin/oracoes" element={<OracoesAdmin />} />
           <Route path="/admin/monetizacao" element={<MonetizacaoAdmin />} />
+          <Route path="/admin/suporte" element={<SuporteAdmin />} />
         </Route>
       </Route>
 

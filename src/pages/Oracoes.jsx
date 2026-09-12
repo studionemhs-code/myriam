@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Heart, Share2, Music, X, Search } from 'lucide-react';
 import AudioPlayer from '@/components/oracao/AudioPlayer';
+import ReadingModeButton from '@/components/reading/ReadingModeButton';
 
 export default function Oracoes() {
   const [categories, setCategories] = useState([]);
@@ -178,6 +179,9 @@ export default function Oracoes() {
                   <AudioPlayer src={selected.audio_url} />
                 </div>
               )}
+              <div className="flex justify-end">
+                <ReadingModeButton title={selected.title} contentHtml={selected.content} />
+              </div>
               <div className="rich-text mt-6 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: selected.content || '' }} />
               <div className="mt-6 flex items-center gap-3 border-t border-border pt-4">
                 <button

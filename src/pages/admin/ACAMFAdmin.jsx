@@ -15,7 +15,9 @@ const empty = {
   use_alternative_player: false,
   file_url: '', cover_url: '', status: 'publicado', recommended: false,
   duration: '', published_date: '', course_id: '', lesson_order: 0,
-  access_type: 'gratuito', product_id: ''
+  access_type: 'gratuito', product_id: '',
+  background_playback_type: 'gratuito', background_playback_product_id: '',
+  offline_download_type: 'pago', offline_download_product_id: ''
 };
 
 const typeLabels = { texto: 'Texto', pdf: 'PDF', ebook: 'E-book', audio: 'Áudio', video: 'Vídeo', imagem: 'Imagem' };
@@ -65,7 +67,12 @@ export default function ACAMFAdmin() {
     if (!editing.title) return;
     setSaving(true);
     try {
-      const payload = { ...editing, product_id: editing.access_type === 'pago' ? (editing.product_id || null) : null };
+      const payload = {
+        ...editing,
+        product_id: editing.access_type === 'pago' ? (editing.product_id || null) : null,
+        background_playback_product_id: editing.background_playback_type === 'pago' ? (editing.background_playback_product_id || null) : null,
+        offline_download_product_id: editing.offline_download_type === 'pago' ? (editing.offline_download_product_id || null) : null,
+      };
       if (editing.id) await base44.entities.ACAMFContent.update(editing.id, payload);
       else await base44.entities.ACAMFContent.create(payload);
       setEditing(null);
@@ -315,6 +322,20 @@ export default function ACAMFAdmin() {
                 value={{ access_type: editing.access_type, product_id: editing.product_id }}
                 onChange={(v) => setEditing((p) => ({ ...p, ...v }))}
               />
+              {(editing.content_type === 'audio' || editing.content_type === 'video') && (
+                <>
+                  <AccessTypeFields
+                    label="Reprodução em 2º plano / PiP"
+                    value={{ access_type: editing.background_playback_type, product_id: editing.background_playback_product_id }}
+                    onChange={(v) => setEditing((p) => ({ ...p, background_playback_type: v.access_type, background_playback_product_id: v.product_id }))}
+                  />
+                  <AccessTypeFields
+                    label="Download Offline"
+                    value={{ access_type: editing.offline_download_type, product_id: editing.offline_download_product_id }}
+                    onChange={(v) => setEditing((p) => ({ ...p, offline_download_type: v.access_type, offline_download_product_id: v.product_id }))}
+                  />
+                </>
+              )}
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button onClick={() => setEditing(null)} className="rounded-lg px-4 py-2 text-sm text-muted-foreground">Cancelar</button>

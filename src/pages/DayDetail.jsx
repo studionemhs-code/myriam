@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import ReactMarkdown from 'react-markdown';
 import { getCurrentUnlockedDay, isDayUnlocked, TOTAL_DAYS } from '@/lib/preparationProgress';
+import ReadingModeButton from '@/components/reading/ReadingModeButton';
 
 export default function DayDetail() {
   const { day } = useParams();
@@ -156,6 +157,10 @@ export default function DayDetail() {
       {dayData?.image_url && (
         <img src={dayData.image_url} alt="" className="h-44 w-full rounded-2xl object-cover" />
       )}
+
+      <div className="flex justify-end">
+        <ReadingModeButton title={`Dia ${dayNum} — ${dayData?.title || ''}`} contentMarkdown={dayData?.text} prayerText={dayData?.prayer} />
+      </div>
 
       {dayData?.text && (
         <article className="prose prose-sm max-w-none">

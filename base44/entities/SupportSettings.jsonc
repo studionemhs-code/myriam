@@ -1,0 +1,47 @@
+{
+  "name": "SupportSettings",
+  "type": "object",
+  "properties": {
+    "whatsapp": {
+      "type": "string",
+      "description": "N\u00famero de WhatsApp para suporte (somente d\u00edgitos com DDI, ex.: 5511999999999)"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-mail de suporte"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefone de suporte (somente d\u00edgitos com DDI)"
+    },
+    "site_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL do site ou p\u00e1gina de ajuda externa"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o suporte est\u00e1 vis\u00edvel para os usu\u00e1rios"
+    }
+  },
+  "required": [],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

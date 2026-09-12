@@ -10,6 +10,8 @@ import ContentNotes from '@/components/acamf/ContentNotes';
 import ContentComments from '@/components/acamf/ContentComments';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import AccessGate from '@/components/access/AccessGate';
+import EnhancedMediaPlayer from '@/components/acamf/EnhancedMediaPlayer';
+import ReadingModeButton from '@/components/reading/ReadingModeButton';
 
 const LEVEL_LABEL = { iniciante: 'Iniciante', intermediario: 'Intermediário', aprofundamento: 'Aprofundamento' };
 
@@ -124,12 +126,12 @@ export default function ACAMFDetalhe() {
             <PrivacyVideoPlayer videoId={content.youtube_id} title={content.title} onComplete={handleVideoComplete} />
           </div>
         ) : content.file_url ? (
-          <video controls src={content.file_url} className="w-full rounded-2xl" onEnded={handleVideoComplete} />
+          <EnhancedMediaPlayer content={content} onComplete={handleVideoComplete} />
         ) : null
       )}
 
       {content.content_type === 'audio' && content.file_url && (
-        <audio controls src={content.file_url} className="w-full" />
+        <EnhancedMediaPlayer content={content} />
       )}
 
       {(content.content_type === 'pdf' || content.content_type === 'ebook') && content.file_url && (
@@ -145,6 +147,10 @@ export default function ACAMFDetalhe() {
       {content.content_type === 'imagem' && content.file_url && (
         <img src={content.file_url} alt="" className="w-full rounded-2xl" />
       )}
+
+      <div className="flex justify-end">
+        <ReadingModeButton title={content.title} contentHtml={content.content} />
+      </div>
 
       {content.content && (
         <article className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: content.content }} />

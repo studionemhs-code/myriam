@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, CalendarDays, Sparkles, Heart,
-  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook, ShieldCheck, Settings2, TrendingUp, Activity, CreditCard, Sun, Palette
+  Flag, Users, ArrowLeft, Menu, X, ToggleLeft, MessageCircle, BarChart3, Award, Crown, Bot, ShoppingBag, Clapperboard, Webhook, ShieldCheck, Settings2, TrendingUp, Activity, CreditCard, Sun, Palette, LifeBuoy
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Logo from '@/components/Logo';
@@ -29,6 +29,7 @@ const items = [
   { to: '/admin/otp-whatsapp', label: 'OTP WhatsApp', icon: MessageCircle },
   { to: '/admin/saudacoes', label: 'Saudações', icon: Sun },
   { to: '/admin/personalizacao', label: 'Personalização', icon: Palette },
+  { to: '/admin/suporte', label: 'Suporte', icon: LifeBuoy },
   { to: '/admin/orcamentos', label: 'Orçamentos', icon: ShoppingBag },
   { to: '/admin/relatorios', label: 'Moderação', icon: Flag },
   { to: '/admin/automacoes-webhook', label: 'Automações Webhook', icon: Webhook },

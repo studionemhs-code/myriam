@@ -4,6 +4,7 @@ import { PageHeader, GoldDivider, Ornament } from '@/components/ui/marian';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import DeleteAccountSection from '@/components/configuracoes/DeleteAccountSection';
 import InstallAppSection from '@/components/configuracoes/InstallAppSection';
+import SupportSection from '@/components/support/SupportSection';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
 
@@ -77,6 +78,10 @@ export default function Configuracoes() {
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </a>
       </section>
+
+      <div className="mt-4">
+        <SupportSection />
+      </div>
 
       <InstallAppSection />
 

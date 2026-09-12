@@ -108,6 +108,32 @@
       "type": "integer",
       "default": 0,
       "description": "N\u00famero de acessos ao conte\u00fado"
+    },
+    "background_playback_type": {
+      "type": "string",
+      "enum": [
+        "gratuito",
+        "pago"
+      ],
+      "default": "gratuito",
+      "description": "Define se a reprodu\u00e7\u00e3o em segundo plano/PiP \u00e9 gratuita ou paga"
+    },
+    "background_playback_product_id": {
+      "type": "string",
+      "description": "Produto associado quando background_playback_type = 'pago'"
+    },
+    "offline_download_type": {
+      "type": "string",
+      "enum": [
+        "gratuito",
+        "pago"
+      ],
+      "default": "pago",
+      "description": "Define se o download offline \u00e9 gratuito ou pago"
+    },
+    "offline_download_product_id": {
+      "type": "string",
+      "description": "Produto associado quando offline_download_type = 'pago'"
     }
   },
   "required": [
