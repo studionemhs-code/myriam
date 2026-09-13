@@ -1,0 +1,9 @@
+{
+  "type": "supabase",
+  "scopes": [
+    "edge_functions:write",
+    "projects:read",
+    "database:write",
+    "api-keys:read"
+  ]
+}
