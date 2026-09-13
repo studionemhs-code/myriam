@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 import { Field, inputCls, Loading } from '@/components/admin/ui';
 import { toast } from '@/components/ui/use-toast';
 
@@ -16,8 +16,8 @@ export default function GreetingSettingsAdmin() {
 
   useEffect(() => {
     (async () => {
-      const list = await base44.entities.GreetingSettings.list('-created_date', 1);
-      setS(list[0] || await base44.entities.GreetingSettings.create({}));
+      const list = await supabaseEntities.GreetingSettings.list('-created_date', 1);
+      setS(list[0] || await supabaseEntities.GreetingSettings.create({}));
     })();
   }, []);
 
@@ -27,7 +27,7 @@ export default function GreetingSettingsAdmin() {
     setSaving(true);
     try {
       const { id, created_date, updated_date, created_by_id, ...data } = s;
-      await base44.entities.GreetingSettings.update(id, data);
+      await supabaseEntities.GreetingSettings.update(id, data);
       toast({ description: 'Saudações salvas.' });
     } catch (e) {
       toast({ title: 'Erro ao salvar', description: e?.message, variant: 'destructive' });

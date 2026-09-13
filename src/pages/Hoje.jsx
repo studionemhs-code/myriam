@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PullToRefresh from '@/components/mobile/PullToRefresh';
 import { Flower2, BookOpen, Calendar, Heart, ChevronRight, Sparkles, Leaf, Play, Award } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { SectionCard, GoldDivider, Ornament } from '@/components/ui/marian';
@@ -80,7 +81,7 @@ export default function Hoje() {
           if (res.data?.greeting) setAiGreeting(res.data.greeting);
         } catch (e) { /* use default */ }
         try {
-          const gsList = await base44.entities.GreetingSettings.list('-created_date', 1);
+          const gsList = await supabaseEntities.GreetingSettings.list('-created_date', 1);
           if (gsList[0]) setGreetingSettings(gsList[0]);
         } catch { /* ignore */ }
         try {

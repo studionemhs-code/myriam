@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Flower2, Check, ChevronLeft, ChevronRight, BookOpen, FileText, PenLine, Link2, Lock } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import ReactMarkdown from 'react-markdown';
 import { getCurrentUnlockedDay, isDayUnlocked, TOTAL_DAYS } from '@/lib/preparationProgress';
@@ -23,19 +23,19 @@ export default function DayDetail() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const all = await base44.entities.PreparationDay.filter({ day_number: dayNum });
+      const all = await supabaseEntities.PreparationDay.filter({ day_number: dayNum });
       const dayRecord = all.find((d) => d.gender === user.gender) || null;
       setDayData(dayRecord);
-      const prog = await base44.entities.UserProgress.filter({ created_by_id: user.id });
+      const prog = await supabaseEntities.UserProgress.filter({ created_by_id: user.id });
       setProgress(prog[0] || null);
-      const refl = await base44.entities.Reflection.filter({ created_by_id: user.id, day_number: dayNum });
+      const refl = await supabaseEntities.Reflection.filter({ created_by_id: user.id, day_number: dayNum });
       if (refl[0]) setReflection(refl[0].content);
       // Conteúdos ACAMF: prioriza related_content_ids do PreparationDay; se não houver, busca por related_day_number
       if (dayRecord?.related_content_ids?.length) {
-        const contents = await base44.entities.ACAMFContent.list();
+        const contents = await supabaseEntities.ACAMFContent.list();
         setRelated(contents.filter((c) => dayRecord.related_content_ids.includes(c.id)));
       } else {
-        const dayContents = await base44.entities.ACAMFContent.filter({ status: 'publicado', related_day_number: dayNum }, '-published_date', 10);
+        const dayContents = await supabaseEntities.ACAMFContent.filter({ status: 'publicado', related_day_number: dayNum }, '-published_date', 10);
         setRelated(dayContents);
       }
       setLoaded(true);
@@ -48,7 +48,7 @@ export default function DayDetail() {
     const openedAt = progress.day_opened_at || [];
     if (!openedAt.find((d) => d.day === dayNum)) {
       const updated = [...openedAt, { day: dayNum, opened_at: new Date().toISOString() }];
-      base44.entities.UserProgress.update(progress.id, { day_opened_at: updated }).catch(() => {});
+      supabaseEntities.UserProgress.update(progress.id, { day_opened_at: updated }).catch(() => {});
       setProgress((p) => ({ ...p, day_opened_at: updated }));
     }
   }, [user, dayData, dayNum, progress, loaded]);
@@ -103,7 +103,7 @@ export default function DayDetail() {
     try {
       const completed = Array.from(new Set([...(progress?.completed_days || []), dayNum]));
       const allDone = completed.length >= TOTAL_DAYS;
-      const updated = await base44.entities.UserProgress.update(progress.id, {
+      const updated = await supabaseEntities.UserProgress.update(progress.id, {
         completed_days: completed,
         current_day: currentUnlocked,
         last_access_date: new Date().toISOString(),
@@ -125,11 +125,11 @@ export default function DayDetail() {
     if (!reflection.trim()) return;
     setSaving(true);
     try {
-      const existing = await base44.entities.Reflection.filter({ created_by_id: user.id, day_number: dayNum });
+      const existing = await supabaseEntities.Reflection.filter({ created_by_id: user.id, day_number: dayNum });
       if (existing[0]) {
-        await base44.entities.Reflection.update(existing[0].id, { content: reflection });
+        await supabaseEntities.Reflection.update(existing[0].id, { content: reflection });
       } else {
-        await base44.entities.Reflection.create({
+        await supabaseEntities.Reflection.create({
           day_number: dayNum,
           title: dayData?.title || `Dia ${dayNum}`,
           content: reflection,

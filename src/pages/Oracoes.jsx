@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 import { Heart, Share2, Music, X, Search } from 'lucide-react';
 import AudioPlayer from '@/components/oracao/AudioPlayer';
 import ReadingModeButton from '@/components/reading/ReadingModeButton';
@@ -17,9 +17,9 @@ export default function Oracoes() {
     setLoading(true);
     try {
       const [cats, prs, favs] = await Promise.all([
-        base44.entities.PrayerCategory.list('sort_order', 100),
-        base44.entities.Prayer.list('sort_order', 200),
-        base44.entities.PrayerFavorite.list('-created_date', 500)
+        supabaseEntities.PrayerCategory.list('sort_order', 100),
+        supabaseEntities.Prayer.list('sort_order', 200),
+        supabaseEntities.PrayerFavorite.list('-created_date', 500)
       ]);
       setCategories(cats);
       setPrayers(prs);
@@ -38,9 +38,9 @@ export default function Oracoes() {
     const existing = favorites.find((f) => f.prayer_id === prayerId);
     if (existing) {
       setFavorites((p) => p.filter((f) => f.id !== existing.id));
-      await base44.entities.PrayerFavorite.delete(existing.id);
+      await supabaseEntities.PrayerFavorite.delete(existing.id);
     } else {
-      const created = await base44.entities.PrayerFavorite.create({ prayer_id: prayerId });
+      const created = await supabaseEntities.PrayerFavorite.create({ prayer_id: prayerId });
       setFavorites((p) => [...p, created]);
     }
   };

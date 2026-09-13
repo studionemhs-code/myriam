@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Play, Check, ChevronLeft, Clock, BookOpen, FileText, Headphones, Lock } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 import { Ornament, GoldDivider } from '@/components/ui/marian';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import AccessGate from '@/components/access/AccessGate';
@@ -28,9 +28,9 @@ export default function CourseDetail() {
     (async () => {
       try {
         const [c, l, prog] = await Promise.all([
-          base44.entities.Course.get(id),
-          base44.entities.ACAMFContent.filter({ course_id: id, status: 'publicado' }),
-          base44.entities.LessonProgress.filter({ course_id: id }).catch(() => [])
+          supabaseEntities.Course.get(id),
+          supabaseEntities.ACAMFContent.filter({ course_id: id, status: 'publicado' }),
+          supabaseEntities.LessonProgress.filter({ course_id: id }).catch(() => [])
         ]);
         setCourse(c);
         setLessons(l.sort((a, b) => (a.lesson_order || 0) - (b.lesson_order || 0)));

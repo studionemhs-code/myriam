@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 
 let cache = null;
 
@@ -11,7 +11,7 @@ export function useSupportSettings() {
     let alive = true;
     (async () => {
       try {
-        const list = await base44.entities.SupportSettings.list();
+        const list = await supabaseEntities.SupportSettings.list();
         if (!alive) return;
         cache = list[0] || null;
         setSettings(cache);

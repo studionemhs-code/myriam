@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 
 let cache = null;
 
@@ -12,7 +12,7 @@ export function usePersonalizationSettings() {
     if (cache) { setSettings(cache); setLoading(false); return; }
     (async () => {
       try {
-        const list = await base44.entities.PersonalizationSettings.list('-created_date', 1);
+        const list = await supabaseEntities.PersonalizationSettings.list('-created_date', 1);
         cache = list[0] || null;
       } catch {
         cache = null;

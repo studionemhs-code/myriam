@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, BookOpen, FileText, Headphones, Play, Clock, ChevronRight, Flag } from 'lucide-react';
 import ReportDialog from '@/components/myriam/ReportDialog';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
+import { supabase } from '@/api/supabase/client';
 import { Ornament, GoldDivider } from '@/components/ui/marian';
 import PrivacyVideoPlayer from '@/components/PrivacyVideoPlayer';
 import AcamfPdfReader from '@/components/acamf/AcamfPdfReader';
@@ -31,28 +32,28 @@ export default function ACAMFDetalhe() {
   useEffect(() => {
     (async () => {
       try {
-        const c = await base44.entities.ACAMFContent.get(id);
+        const c = await supabaseEntities.ACAMFContent.get(id);
         setContent(c);
         if (c.status === 'publicado') {
-          base44.functions.invoke('incrementContentView', { content_id: id }).catch(() => {});
+          supabase.rpc('increment_view_count', { content_id: id }).catch(() => {});
         }
         if (c.category_id) {
-          const cats = await base44.entities.ACAMFCategory.filter({ id: c.category_id });
+          const cats = await supabaseEntities.ACAMFCategory.filter({ id: c.category_id });
           setCategory(cats[0]);
         }
         if (c.related_content_ids?.length) {
-          const all = await base44.entities.ACAMFContent.list();
+          const all = await supabaseEntities.ACAMFContent.list();
           setRelated(all.filter((x) => c.related_content_ids.includes(x.id) && x.id !== id).slice(0, 3));
         }
         if (c.course_id) {
-          const cl = await base44.entities.ACAMFContent.filter({ course_id: c.course_id, status: 'publicado' });
+          const cl = await supabaseEntities.ACAMFContent.filter({ course_id: c.course_id, status: 'publicado' });
           setCourseLessons(cl.sort((a, b) => (a.lesson_order || 0) - (b.lesson_order || 0)));
-          const existing = await base44.entities.LessonProgress.filter({ lesson_id: id });
+          const existing = await supabaseEntities.LessonProgress.filter({ lesson_id: id });
           if (existing.length > 0) {
             setLessonProgress(existing[0]);
-            base44.entities.LessonProgress.update(existing[0].id, { last_watched_date: new Date().toISOString() }).catch(() => {});
+            supabaseEntities.LessonProgress.update(existing[0].id, { last_watched_date: new Date().toISOString() }).catch(() => {});
           } else {
-            const created = await base44.entities.LessonProgress.create({
+            const created = await supabaseEntities.LessonProgress.create({
               lesson_id: id, course_id: c.course_id, completed: false, last_watched_date: new Date().toISOString()
             }).catch(() => null);
             if (created) setLessonProgress(created);
@@ -64,7 +65,7 @@ export default function ACAMFDetalhe() {
 
   const markComplete = async () => {
     if (!lessonProgress) return;
-    const updated = await base44.entities.LessonProgress.update(lessonProgress.id, { completed: !lessonProgress.completed });
+    const updated = await supabaseEntities.LessonProgress.update(lessonProgress.id, { completed: !lessonProgress.completed });
     setLessonProgress(updated);
   };
 
@@ -72,10 +73,10 @@ export default function ACAMFDetalhe() {
     if (!content?.course_id) return;
     if (lessonProgress) {
       if (lessonProgress.completed) return;
-      const updated = await base44.entities.LessonProgress.update(lessonProgress.id, { completed: true, last_watched_date: new Date().toISOString() });
+      const updated = await supabaseEntities.LessonProgress.update(lessonProgress.id, { completed: true, last_watched_date: new Date().toISOString() });
       setLessonProgress(updated);
     } else {
-      const created = await base44.entities.LessonProgress.create({
+      const created = await supabaseEntities.LessonProgress.create({
         lesson_id: id, course_id: content.course_id, completed: true, last_watched_date: new Date().toISOString()
       }).catch(() => null);
       if (created) setLessonProgress(created);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Palette, Layers, Video as VideoIcon, Image as ImageIcon } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 import { Field, inputCls, Loading } from '@/components/admin/ui';
 import { toast } from '@/components/ui/use-toast';
 import FileUpload from '@/components/admin/FileUpload';
@@ -19,8 +19,8 @@ export default function PersonalizacaoAdmin() {
   useEffect(() => {
     (async () => {
       try {
-        const list = await base44.entities.PersonalizationSettings.list('-created_date', 1);
-        setS(list[0] || await base44.entities.PersonalizationSettings.create({}));
+        const list = await supabaseEntities.PersonalizationSettings.list('-created_date', 1);
+        setS(list[0] || await supabaseEntities.PersonalizationSettings.create({}));
       } catch (e) {
         setS({});
       }
@@ -33,7 +33,7 @@ export default function PersonalizacaoAdmin() {
     setSaving(true);
     try {
       const { id, created_date, updated_date, created_by_id, ...data } = s;
-      await base44.entities.PersonalizationSettings.update(id, data);
+      await supabaseEntities.PersonalizationSettings.update(id, data);
       resetPersonalizationCache();
       toast({ description: 'Personalização salva.' });
     } catch (e) {

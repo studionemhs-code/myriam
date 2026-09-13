@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 import { AdminPageTitle, Field, inputCls, Loading } from '@/components/admin/ui';
 import { Switch } from '@/components/ui/switch';
 
@@ -13,7 +13,7 @@ export default function SuporteAdmin() {
   useEffect(() => {
     (async () => {
       try {
-        const list = await base44.entities.SupportSettings.list();
+        const list = await supabaseEntities.SupportSettings.list();
         setSettings(list[0] || { ...empty });
       } catch (e) {
         setSettings({ ...empty });
@@ -29,10 +29,10 @@ export default function SuporteAdmin() {
     setSaving(true);
     try {
       if (settings.id) {
-        const updated = await base44.entities.SupportSettings.update(settings.id, settings);
+        const updated = await supabaseEntities.SupportSettings.update(settings.id, settings);
         setSettings(updated);
       } else {
-        const created = await base44.entities.SupportSettings.create(settings);
+        const created = await supabaseEntities.SupportSettings.create(settings);
         setSettings(created);
       }
     } finally {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { supabaseEntities } from '@/api/supabase/entities';
 import { Plus, Pencil, Trash2, Star, X } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import ReactQuill from 'react-quill-new';
@@ -51,9 +51,9 @@ export default function ACAMFAdmin() {
   const load = async () => {
     setLoading(true);
     const [c, cc, crs] = await Promise.all([
-      base44.entities.ACAMFContent.list('-created_date', 200),
-      base44.entities.ACAMFCategory.list('sort_order', 50),
-      base44.entities.Course.list('sort_order', 100)
+      supabaseEntities.ACAMFContent.list('-created_date', 200),
+      supabaseEntities.ACAMFCategory.list('sort_order', 50),
+      supabaseEntities.Course.list('sort_order', 100)
     ]);
     setItems(c);
     setCats(cc);
@@ -73,14 +73,14 @@ export default function ACAMFAdmin() {
         background_playback_product_id: editing.background_playback_type === 'pago' ? (editing.background_playback_product_id || null) : null,
         offline_download_product_id: editing.offline_download_type === 'pago' ? (editing.offline_download_product_id || null) : null,
       };
-      if (editing.id) await base44.entities.ACAMFContent.update(editing.id, payload);
-      else await base44.entities.ACAMFContent.create(payload);
+      if (editing.id) await supabaseEntities.ACAMFContent.update(editing.id, payload);
+      else await supabaseEntities.ACAMFContent.create(payload);
       setEditing(null);
       await load();
     } finally { setSaving(false); }
   };
   const remove = async (id) => {
-    if (confirm('Excluir este conteúdo?')) { await base44.entities.ACAMFContent.delete(id); await load(); }
+    if (confirm('Excluir este conteúdo?')) { await supabaseEntities.ACAMFContent.delete(id); await load(); }
   };
 
   if (loading) return <Loading />;
