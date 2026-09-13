@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Bot, ArrowLeft, Loader2, Hammer } from 'lucide-react';
 import AgentComposer from '@/components/ai/AgentComposer';
 import AgentMessage from '@/components/ai/AgentMessage';
+import LiveVoiceConversation from '@/components/ai/LiveVoiceConversation';
 
 export default function AgentChat() {
   const [agents, setAgents] = useState(null);
@@ -15,6 +16,7 @@ export default function AgentChat() {
   const [mode, setMode] = useState('text');
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
+  const [liveOpen, setLiveOpen] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -69,7 +71,7 @@ export default function AgentChat() {
     } finally { setSending(false); }
   };
 
-  const sendAudio = async (audioFile, live) => send(audioFile, live);
+  const sendAudio = async (audioFile) => send(audioFile, false);
 
   if (!agents) {
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -128,7 +130,8 @@ export default function AgentChat() {
       </div>
 
       <div className="mt-3">
-        <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} busy={sending} allowFiles={selected.files_enabled !== false} allowVoice={selected.voice_enabled !== false} />
+        <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending} allowFiles={selected.files_enabled !== false} allowVoice={selected.voice_enabled !== false} />
+        {liveOpen && <LiveVoiceConversation agent={selected} onClose={() => setLiveOpen(false)} />}
       </div>
     </div>
   );

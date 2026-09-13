@@ -11,21 +11,24 @@ export default function AgentRecorder({ onRecorded, disabled, live }) {
   useEffect(() => () => stream.current?.getTracks().forEach((t) => t.stop()), []);
 
   const start = async () => {
-    const media = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.current = media;
-    chunks.current = [];
-    const next = new MediaRecorder(media);
-    next.ondataavailable = (event) => event.data.size && chunks.current.push(event.data);
-    next.onstop = async () => {
-      stream.current?.getTracks().forEach((track) => track.stop());
-      const file = new File([new Blob(chunks.current, { type: 'audio/webm' })], `voz-${Date.now()}.webm`, { type: 'audio/webm' });
-      setProcessing(true);
-      await onRecorded(file, live);
-      setProcessing(false);
-    };
-    recorder.current = next;
-    next.start();
-    setRecording(true);
+    try {
+      const media = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      stream.current = media;
+      chunks.current = [];
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const next = new MediaRecorder(media, { mimeType });
+      next.ondataavailable = (event) => event.data.size && chunks.current.push(event.data);
+      next.onstop = async () => {
+        stream.current?.getTracks().forEach((track) => track.stop());
+        if (!chunks.current.length) return;
+        const file = new File([new Blob(chunks.current, { type: mimeType })], `voz-${Date.now()}.webm`, { type: 'audio/webm' });
+        setProcessing(true);
+        try { await onRecorded(file); } finally { setProcessing(false); }
+      };
+      recorder.current = next;
+      next.start();
+      setRecording(true);
+    } catch { setRecording(false); }
   };
 
   const stop = () => {

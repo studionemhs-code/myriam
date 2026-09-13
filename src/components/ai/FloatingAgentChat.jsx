@@ -6,6 +6,7 @@ import { X, Loader2, Hammer } from 'lucide-react';
 import FloatingAgentIcon from './FloatingAgentIcon';
 import AgentComposer from './AgentComposer';
 import AgentMessage from './AgentMessage';
+import LiveVoiceConversation from './LiveVoiceConversation';
 
 export default function FloatingAgentChat({ agent, onClose }) {
   const { user } = useCurrentUser();
@@ -16,6 +17,7 @@ export default function FloatingAgentChat({ agent, onClose }) {
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
   const [convId, setConvId] = useState(null);
+  const [liveOpen, setLiveOpen] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -71,7 +73,7 @@ export default function FloatingAgentChat({ agent, onClose }) {
     } finally { setSending(false); }
   };
 
-  const sendAudio = async (audioFile, live) => send(audioFile, live);
+  const sendAudio = async (audioFile) => send(audioFile, false);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end lg:items-end lg:p-6">
@@ -113,7 +115,8 @@ export default function FloatingAgentChat({ agent, onClose }) {
 
         {/* Input */}
         <div className="shrink-0 border-t border-border bg-card px-3 py-3">
-          <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} busy={sending} allowFiles={agent.files_enabled !== false} allowVoice={agent.voice_enabled !== false} />
+          <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending} allowFiles={agent.files_enabled !== false} allowVoice={agent.voice_enabled !== false} />
+          {liveOpen && <LiveVoiceConversation agent={agent} onClose={() => setLiveOpen(false)} />}
         </div>
       </div>
     </div>

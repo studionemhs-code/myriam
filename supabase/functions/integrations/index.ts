@@ -97,9 +97,13 @@ async function sendEmail(p: any) {
 }
 
 async function transcribeAudio(p: any) {
-  const audio = await fetch(p.audio_url).then((r) => r.blob());
+  const source = await fetch(p.audio_url);
+  if (!source.ok) throw new Error('Não foi possível acessar o áudio gravado.');
+  const audio = await source.blob();
+  const type = audio.type || source.headers.get('content-type') || 'audio/webm';
+  const extension = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : type.includes('mpeg') ? 'mp3' : 'webm';
   const form = new FormData();
-  form.append('file', audio, 'audio.mp3');
+  form.append('file', audio, `audio.${extension}`);
   form.append('model', 'whisper-1');
   const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
     method: 'POST', headers: { Authorization: `Bearer ${OPENAI_KEY()}` }, body: form
