@@ -19,8 +19,7 @@
       "description": "Imagem vertical para card (2:3)"
     },
     "trailer_youtube_id": {
-      "type": "string",
-      "description": "Trailer do curso (YouTube)"
+      "type": "string"
     },
     "category_id": {
       "type": "string"
@@ -45,8 +44,7 @@
     },
     "featured": {
       "type": "boolean",
-      "default": false,
-      "description": "Destaque no banner principal"
+      "default": false
     },
     "sort_order": {
       "type": "integer",
@@ -54,8 +52,16 @@
     },
     "accent_color": {
       "type": "string",
-      "default": "#663399",
-      "description": "Cor de destaque do curso"
+      "default": "#663399"
+    },
+    "access_type": {
+      "type": "string",
+      "default": "gratuito",
+      "description": "Tipo de acesso ao curso"
+    },
+    "product_id": {
+      "type": "string",
+      "description": "Produto necess\u00e1rio quando o acesso \u00e9 pago"
     }
   },
   "required": [

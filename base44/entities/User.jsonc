@@ -1,4 +1,6 @@
 {
+  "name": "User",
+  "type": "object",
   "properties": {
     "role": {
       "type": "string",
@@ -41,44 +43,39 @@
       "enum": [
         "interessado",
         "preparacao",
-        "consagrado"
+        "consagrado",
+        "usuario_escolhe"
       ],
       "default": "interessado"
     },
     "exclusive_access": {
       "type": "boolean",
       "default": false,
-      "description": "Concede acesso a todas as funcionalidades exclusivas (ACAMF, etc.), independente do n\u00edvel espiritual"
+      "description": "Concede acesso a todas as funcionalidades exclusivas"
     },
     "consecration_date": {
       "type": "string",
-      "format": "date",
-      "description": "PRIMEIRA data da Total Consagra\u00e7\u00e3o \u2014 imut\u00e1vel ap\u00f3s o registro (apenas uma corre\u00e7\u00e3o \u00fanica na janela de 7 dias)"
+      "format": "date"
     },
     "consecration_date_edited": {
       "type": "boolean",
-      "default": false,
-      "description": "Indica que a corre\u00e7\u00e3o \u00fanica da data de consagra\u00e7\u00e3o j\u00e1 foi utilizada"
+      "default": false
     },
     "onboarding_completed": {
       "type": "boolean",
-      "default": false,
-      "description": "Indica se o usu\u00e1rio concluiu o onboarding inicial"
+      "default": false
     },
     "preparation_start_date": {
       "type": "string",
-      "format": "date",
-      "description": "Data de in\u00edcio da prepara\u00e7\u00e3o de 33 dias"
+      "format": "date"
     },
     "target_consecration_date": {
       "type": "string",
-      "format": "date",
-      "description": "Data prevista para a consagra\u00e7\u00e3o"
+      "format": "date"
     },
     "last_renewal_date": {
       "type": "string",
-      "format": "date",
-      "description": "Data da \u00faltima renova\u00e7\u00e3o anual registrada"
+      "format": "date"
     },
     "renewals": {
       "type": "array",
@@ -86,12 +83,10 @@
         "type": "string",
         "format": "date"
       },
-      "default": [],
-      "description": "Hist\u00f3rico de consagra\u00e7\u00e3o/renova\u00e7\u00f5es \u2014 o \u00edndice 0 \u00e9 sempre a consagra\u00e7\u00e3o original"
+      "default": []
     },
     "notification_prefs": {
       "type": "object",
-      "description": "Prefer\u00eancias de notifica\u00e7\u00e3o por categoria (true = ativa)",
       "properties": {
         "caminho": {
           "type": "boolean"
@@ -117,7 +112,5 @@
   },
   "required": [
     "role"
-  ],
-  "name": "User",
-  "type": "object"
+  ]
 }

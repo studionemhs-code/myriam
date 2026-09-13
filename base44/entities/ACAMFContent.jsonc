@@ -1,4 +1,6 @@
 {
+  "name": "ACAMFContent",
+  "type": "object",
   "properties": {
     "title": {
       "type": "string"
@@ -13,13 +15,11 @@
       "type": "string"
     },
     "course_id": {
-      "type": "string",
-      "description": "ID do curso ao qual esta aula pertence"
+      "type": "string"
     },
     "lesson_order": {
       "type": "integer",
-      "default": 0,
-      "description": "Ordem sequencial da aula dentro do curso"
+      "default": 0
     },
     "author": {
       "type": "string"
@@ -29,8 +29,7 @@
       "format": "uri"
     },
     "content": {
-      "type": "string",
-      "description": "Conte\u00fado em texto rico (HTML/markdown)"
+      "type": "string"
     },
     "content_type": {
       "type": "string",
@@ -53,8 +52,7 @@
     },
     "use_alternative_player": {
       "type": "boolean",
-      "default": false,
-      "description": "Se true, usa player alternativo (youtube-nocookie, privacy-enhanced, sem redirecionamento)"
+      "default": false
     },
     "tags": {
       "type": "array",
@@ -73,8 +71,7 @@
       "default": "iniciante"
     },
     "duration": {
-      "type": "string",
-      "description": "Dura\u00e7\u00e3o estimada (ex.: 12 min, 1h20)"
+      "type": "string"
     },
     "published_date": {
       "type": "string",
@@ -101,13 +98,11 @@
       "default": false
     },
     "related_day_number": {
-      "type": "integer",
-      "description": "Dia da prepara\u00e7\u00e3o ao qual este conte\u00fado \u00e9 recomendado"
+      "type": "integer"
     },
     "view_count": {
       "type": "integer",
-      "default": 0,
-      "description": "N\u00famero de acessos ao conte\u00fado"
+      "default": 0
     },
     "background_playback_type": {
       "type": "string",
@@ -115,12 +110,10 @@
         "gratuito",
         "pago"
       ],
-      "default": "gratuito",
-      "description": "Define se a reprodu\u00e7\u00e3o em segundo plano/PiP \u00e9 gratuita ou paga"
+      "default": "gratuito"
     },
     "background_playback_product_id": {
-      "type": "string",
-      "description": "Produto associado quando background_playback_type = 'pago'"
+      "type": "string"
     },
     "offline_download_type": {
       "type": "string",
@@ -128,12 +121,19 @@
         "gratuito",
         "pago"
       ],
-      "default": "pago",
-      "description": "Define se o download offline \u00e9 gratuito ou pago"
+      "default": "pago"
     },
     "offline_download_product_id": {
+      "type": "string"
+    },
+    "access_type": {
       "type": "string",
-      "description": "Produto associado quando offline_download_type = 'pago'"
+      "default": "gratuito",
+      "description": "Tipo de acesso ao conte\u00fado"
+    },
+    "product_id": {
+      "type": "string",
+      "description": "Produto necess\u00e1rio quando o acesso \u00e9 pago"
     }
   },
   "required": [
@@ -141,8 +141,6 @@
     "content_type",
     "status"
   ],
-  "name": "ACAMFContent",
-  "type": "object",
   "rls": {
     "read": {
       "$or": [

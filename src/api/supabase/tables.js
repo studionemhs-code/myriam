@@ -32,6 +32,7 @@ export const SUPABASE_TABLES = {
   UserFeatureAccess: 'user_feature_access',
   AIAgent: 'ai_agents',
   AgentConversation: 'agent_conversations',
+  AgentMemory: 'agent_memories',
   AssociationSettings: 'association_settings',
   AssociationRequest: 'association_requests',
   StoreSettings: 'store_settings',

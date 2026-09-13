@@ -14,7 +14,8 @@
       "enum": [
         "interessado",
         "preparacao",
-        "consagrado"
+        "consagrado",
+        "usuario_escolhe"
       ],
       "default": "interessado"
     },
@@ -34,11 +35,10 @@
     },
     "text": {
       "type": "string",
-      "description": "Texto do story (quando tipo texto) ou legenda"
+      "description": "Texto do story"
     },
     "background_color": {
       "type": "string",
-      "description": "Cor de fundo para stories de texto (marian, gold, deep)",
       "default": "marian"
     },
     "viewers": {
@@ -46,8 +46,7 @@
       "items": {
         "type": "string"
       },
-      "default": [],
-      "description": "IDs de usu\u00e1rios que visualizaram"
+      "default": []
     }
   },
   "required": [

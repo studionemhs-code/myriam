@@ -20,7 +20,8 @@
       "enum": [
         "interessado",
         "preparacao",
-        "consagrado"
+        "consagrado",
+        "usuario_escolhe"
       ],
       "default": "interessado",
       "description": "Status do autor no momento da publica\u00e7\u00e3o"

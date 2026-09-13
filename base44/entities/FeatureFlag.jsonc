@@ -4,7 +4,7 @@
   "properties": {
     "feature": {
       "type": "string",
-      "description": "Identificador \u00fanico da funcionalidade (ex: acamf, myriam)"
+      "description": "Identificador \u00fanico da funcionalidade"
     },
     "label": {
       "type": "string",
@@ -14,6 +14,15 @@
       "type": "boolean",
       "default": true,
       "description": "Se a funcionalidade aparece no app para os usu\u00e1rios"
+    },
+    "access_type": {
+      "type": "string",
+      "default": "gratuito",
+      "description": "Tipo de acesso \u00e0 funcionalidade"
+    },
+    "product_id": {
+      "type": "string",
+      "description": "Produto necess\u00e1rio quando o acesso \u00e9 pago"
     }
   },
   "required": [
