@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Field, inputCls } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
+import AgentVoicePreview from '@/components/admin/AgentVoicePreview';
 import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain, BookHeart, Sparkles, Footprints, Hammer } from 'lucide-react';
 
 export default function AgentEditor({ agent, onSave, onCancel }) {
@@ -286,6 +287,7 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.voice_enabled} onChange={e => set('voice_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" /><span className="text-sm">Entrada e resposta por voz</span></label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.files_enabled} onChange={e => set('files_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" /><span className="text-sm">Interpretar documentos e arquivos</span></label>
           <Field label="Voz padrão"><select className={inputCls} value={form.default_voice} onChange={e => set('default_voice', e.target.value)}><option value="river">River — neutra</option><option value="honey">Honey — suave</option><option value="sunny">Sunny — alegre</option><option value="storm">Storm — formal</option><option value="spark">Spark — enérgica</option></select></Field>
+          <div className="sm:col-span-2"><AgentVoicePreview key={`${agent?.id || 'new'}-${form.default_voice}-${agent?.updated_date || ''}`} voice={form.default_voice} agent={agent} /></div>
         </div>
 
         <label className="mb-3 flex items-center gap-2">
