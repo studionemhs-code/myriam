@@ -96,6 +96,11 @@
       "minimum": 0,
       "maximum": 5000
     },
+    "chat_retention_days": {
+      "type": "integer",
+      "default": 7,
+      "minimum": 7
+    },
     "voice_enabled": {
       "type": "boolean",
       "default": true

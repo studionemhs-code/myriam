@@ -24,7 +24,8 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     voice_enabled: agent?.voice_enabled ?? true,
     files_enabled: agent?.files_enabled ?? true,
     default_voice: agent?.default_voice || 'river',
-    message_delay_ms: agent?.message_delay_ms ?? 0
+    message_delay_ms: agent?.message_delay_ms ?? 0,
+    chat_retention_days: Math.max(7, agent?.chat_retention_days ?? 7)
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -93,10 +94,11 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
             .map((a) => base44.entities.AIAgent.update(a.id, { is_floating_main: false }))
         );
       }
+      const normalizedForm = { ...form, chat_retention_days: Math.max(7, Number(form.chat_retention_days) || 7) };
       if (agent?.id) {
-        await base44.entities.AIAgent.update(agent.id, form);
+        await base44.entities.AIAgent.update(agent.id, normalizedForm);
       } else {
-        await base44.entities.AIAgent.create(form);
+        await base44.entities.AIAgent.create(normalizedForm);
       }
       onSave();
     } catch (err) {
@@ -303,9 +305,14 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
           </p>
         </div>
 
-        <Field label={`Atraso entre partes da resposta: ${form.message_delay_ms}ms`} hint="Quebra mensagens longas em partes e envia com pausa. 0 = resposta instantânea.">
-          <input type="range" min="0" max="3000" step="200" value={form.message_delay_ms} onChange={e => set('message_delay_ms', parseInt(e.target.value))} className="w-full" />
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={`Atraso entre partes da resposta: ${form.message_delay_ms}ms`} hint="Quebra mensagens longas em partes e envia com pausa. 0 = resposta instantânea.">
+            <input type="range" min="0" max="3000" step="200" value={form.message_delay_ms} onChange={e => set('message_delay_ms', parseInt(e.target.value))} className="w-full" />
+          </Field>
+          <Field label="Retenção do histórico (dias)" hint="As conversas ficam disponíveis por este período. Mínimo: 7 dias.">
+            <input type="number" min="7" step="1" className={inputCls} value={form.chat_retention_days} onChange={e => set('chat_retention_days', Math.max(7, parseInt(e.target.value) || 7))} />
+          </Field>
+        </div>
       </div>
 
       <div className="flex gap-2 pt-2">

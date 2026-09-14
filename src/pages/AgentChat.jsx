@@ -6,6 +6,7 @@ import { Bot, ArrowLeft, Loader2, Hammer } from 'lucide-react';
 import AgentComposer from '@/components/ai/AgentComposer';
 import AgentMessage from '@/components/ai/AgentMessage';
 import LiveVoiceConversation from '@/components/ai/LiveVoiceConversation';
+import { supabase } from '@/api/supabase/client';
 
 export default function AgentChat() {
   const [agents, setAgents] = useState(null);
@@ -16,6 +17,7 @@ export default function AgentChat() {
   const [mode, setMode] = useState('text');
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [liveOpen, setLiveOpen] = useState(false);
   const scrollRef = useRef(null);
 
@@ -34,10 +36,26 @@ export default function AgentChat() {
     }
   }, [messages]);
 
-  const startChat = (agent) => {
+  const startChat = async (agent) => {
     setSelected(agent);
-    setMessages(agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []);
+    setMessages([]);
     setActiveConvId(null);
+    setLoadingHistory(true);
+    try {
+      const { data, error } = await supabase.rpc('load_agent_conversation', { p_agent_id: agent.id });
+      if (error) throw error;
+      const conversation = data?.[0];
+      if (conversation) {
+        setMessages((conversation.messages || []).filter(message => message.role !== 'system'));
+        setActiveConvId(conversation.id);
+      } else {
+        setMessages(agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []);
+      }
+    } catch {
+      setMessages(agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []);
+    } finally {
+      setLoadingHistory(false);
+    }
   };
 
   const send = async (overrideFile = file, live = mode === 'live') => {
@@ -117,7 +135,8 @@ export default function AgentChat() {
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4">
-        {messages.map((message, index) => <AgentMessage key={index} message={message} />)}
+        {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
+        {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} />)}
         {sending && (
           <div className="flex justify-start">
             <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-3">
@@ -130,7 +149,7 @@ export default function AgentChat() {
       </div>
 
       <div className="mt-3">
-        <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending} allowFiles={selected.files_enabled !== false} allowVoice={selected.voice_enabled !== false} />
+        <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending || loadingHistory} allowFiles={selected.files_enabled !== false} allowVoice={selected.voice_enabled !== false} />
         {liveOpen && <LiveVoiceConversation agent={selected} onClose={() => setLiveOpen(false)} />}
       </div>
     </div>
