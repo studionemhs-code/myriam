@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import FloatingAgentIcon from './FloatingAgentIcon';
 import FloatingAgentChat from './FloatingAgentChat';
+import AgentUnreadBadge from './AgentUnreadBadge';
+import useAgentUnread from '@/hooks/useAgentUnread';
 
 const POS_KEY = 'floating_agent_bottom';
 const DRAG_THRESHOLD = 6; // px — abaixo disso conta como clique
@@ -11,6 +13,9 @@ export default function FloatingAgentButton() {
   const { isVisible } = useFeatureFlags();
   const [agent, setAgent] = useState(null);
   const [open, setOpen] = useState(false);
+  const [chatVersion, setChatVersion] = useState(0);
+  const openRef = useRef(false);
+  const { unreadCount, refresh, markRead } = useAgentUnread(agent?.id);
   const [bottomPx, setBottomPx] = useState(() => {
     try { return parseInt(localStorage.getItem(POS_KEY)) || 80; } catch { return 80; }
   });
@@ -73,7 +78,20 @@ export default function FloatingAgentButton() {
   const onClick = () => {
     // Se houve arraste (mouse ou toque), não abre o chat.
     if (dragRef.current.moved) { dragRef.current.moved = false; return; }
+    openRef.current = true;
     setOpen(true);
+    markRead();
+  };
+
+  const closeChat = () => {
+    openRef.current = false;
+    setOpen(false);
+  };
+
+  const handleAssistantReply = (wasVisible) => {
+    if (!openRef.current) { refresh(); return; }
+    if (!wasVisible) setChatVersion(version => version + 1);
+    markRead();
   };
 
   if (!isVisible('assistente_ia_flutuante') || !agent) return null;
@@ -87,22 +105,23 @@ export default function FloatingAgentButton() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         style={{ bottom: `${bottomPx}px`, touchAction: 'none' }}
-        className="group fixed right-4 z-40 flex h-14 w-14 cursor-pointer items-center justify-center overflow-hidden rounded-full shadow-lg ring-2 ring-gold/30 transition hover:scale-105 hover:shadow-xl active:scale-95 lg:right-6"
-        aria-label={`Conversar com ${agent.name}`}
+        className="group fixed right-4 z-40 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-lg ring-2 ring-gold/30 transition hover:scale-105 hover:shadow-xl active:scale-95 lg:right-6"
+        aria-label={`Conversar com ${agent.name}${unreadCount ? `, ${unreadCount} mensagem${unreadCount > 1 ? 's' : ''} não lida${unreadCount > 1 ? 's' : ''}` : ''}`}
         title={`${agent.name}`}
       >
         {agent.icon_url ? (
-          <img src={agent.icon_url} alt="" className="h-full w-full object-cover" draggable={false} />
+          <img src={agent.icon_url} alt="" className="h-full w-full rounded-full object-cover" draggable={false} />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-deep">
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-deep">
             <FloatingAgentIcon className="h-11 w-11" />
           </div>
         )}
+        <AgentUnreadBadge count={unreadCount} />
         {/* halo pulse */}
         <span className="pointer-events-none absolute inset-0 -z-10 animate-ping rounded-full bg-gold/20" style={{ animationDuration: '2.5s' }} />
       </button>
 
-      {open && <FloatingAgentChat agent={agent} onClose={() => setOpen(false)} />}
+      {open && <FloatingAgentChat key={`${agent.id}-${chatVersion}`} agent={agent} onClose={closeChat} onAssistantReply={handleAssistantReply} />}
     </>
   );
 }

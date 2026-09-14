@@ -34,6 +34,10 @@
         }
       },
       "default": []
+    },
+    "last_read_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [

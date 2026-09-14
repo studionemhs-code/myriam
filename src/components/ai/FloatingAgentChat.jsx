@@ -1,30 +1,43 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { supabase } from '@/api/supabase/client';
 import { X, Loader2, Hammer } from 'lucide-react';
 import FloatingAgentIcon from './FloatingAgentIcon';
 import AgentComposer from './AgentComposer';
 import AgentMessage from './AgentMessage';
 import LiveVoiceConversation from './LiveVoiceConversation';
 
-export default function FloatingAgentChat({ agent, onClose }) {
-  const { user } = useCurrentUser();
-  const qc = useQueryClient();
+export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [mode, setMode] = useState('text');
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const [convId, setConvId] = useState(null);
   const [liveOpen, setLiveOpen] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    if (agent?.welcome_message) {
-      setMessages([{ role: 'assistant', content: agent.welcome_message }]);
-    }
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setLoadingHistory(true);
+      const { data } = await supabase.rpc('load_agent_conversation', { p_agent_id: agent.id });
+      if (!active) return;
+      const conversation = data?.[0];
+      setConvId(conversation?.id || null);
+      setMessages(conversation?.messages?.filter(message => message.role !== 'system') || (agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []));
+      await supabase.rpc('mark_agent_conversation_read', { p_agent_id: agent.id });
+      if (active) setLoadingHistory(false);
+    })();
+    return () => { active = false; };
   }, [agent]);
 
   useEffect(() => {
@@ -64,10 +77,7 @@ export default function FloatingAgentChat({ agent, onClose }) {
       setMessages(m => [...m, { role: 'assistant', content: reply, audio_url: audioUrl }]);
       if (live && audioUrl) new Audio(audioUrl).play().catch(() => {});
       if (res.data.conversation_id) setConvId(res.data.conversation_id);
-      if (user?.notification_prefs?.assistente_ia !== false) {
-        await base44.entities.Notification.create({ user_id: user.id, category: 'assistente_ia', title: agent.name, body: reply.substring(0, 150), link: '/agentes' });
-        qc.invalidateQueries({ queryKey: ['notifications', user.id] });
-      }
+      onAssistantReply?.(mountedRef.current);
     } catch (err) {
       setMessages(m => [...m, { role: 'assistant', content: 'Erro: ' + (err.message || 'tente novamente') }]);
     } finally { setSending(false); }
@@ -101,7 +111,8 @@ export default function FloatingAgentChat({ agent, onClose }) {
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-background px-4 py-4">
-          {messages.map((message, index) => <AgentMessage key={index} message={message} />)}
+          {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
+          {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} />)}
           {sending && (
             <div className="flex justify-start">
               <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-3">
@@ -115,7 +126,7 @@ export default function FloatingAgentChat({ agent, onClose }) {
 
         {/* Input */}
         <div className="shrink-0 border-t border-border bg-card px-3 py-3">
-          <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending} allowFiles={agent.files_enabled !== false} allowVoice={agent.voice_enabled !== false} />
+          <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending || loadingHistory} allowFiles={agent.files_enabled !== false} allowVoice={agent.voice_enabled !== false} />
           {liveOpen && <LiveVoiceConversation agent={agent} onClose={() => setLiveOpen(false)} />}
         </div>
       </div>
