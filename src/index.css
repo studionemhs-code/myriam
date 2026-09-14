@@ -12,6 +12,29 @@
 @tailwind components;
 @tailwind utilities;
 
+:root, .dark {
+  --voice-background: 0 0% 0%;
+  --voice-foreground: 0 0% 100%;
+  --voice-listening: 202 95% 72%;
+  --voice-thinking: 39 92% 66%;
+  --voice-speaking: 170 68% 62%;
+  --voice-violet: 265 72% 55%;
+}
+.voice-screen { background: hsl(var(--voice-background)); color: hsl(var(--voice-foreground)); }
+.voice-orb { --voice-tone: var(--voice-listening); color: hsl(var(--voice-tone)); }
+.voice-orb[data-state="thinking"] { --voice-tone: var(--voice-thinking); }
+.voice-orb[data-state="speaking"] { --voice-tone: var(--voice-speaking); }
+.voice-orb[data-state="muted"] { --voice-tone: var(--muted-foreground); }
+.voice-orb[data-state="error"] { --voice-tone: var(--destructive); }
+.voice-orb-core {
+  background: radial-gradient(circle at 30% 25%, hsl(var(--voice-tone)), hsl(var(--voice-violet)));
+  color: hsl(var(--voice-foreground));
+  box-shadow: inset 0 0 28px hsl(var(--voice-foreground) / .15);
+}
+.voice-orb-ring { border: 1px solid currentColor; }
+.voice-orb-glow { background: currentColor; filter: blur(28px); }
+.voice-orb-core, .voice-orb { transition: color .5s ease, background .5s ease; }
+
 @layer base {
   :root {
     --background: 263 10% 96%;

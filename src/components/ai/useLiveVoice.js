@@ -7,6 +7,7 @@ export default function useLiveVoice(agent, audioRef) {
   const [error, setError] = useState('');
   const [muted, setMuted] = useState(false);
   const [stream, setStream] = useState(null);
+  const [outputStream, setOutputStream] = useState(null);
   const [heard, setHeard] = useState('');
   const [reply, setReply] = useState('');
   const [audioBlocked, setAudioBlocked] = useState(false);
@@ -25,7 +26,7 @@ export default function useLiveVoice(agent, audioRef) {
         const { data } = await invokeEdgeFunction('createRealtimeSession', { agent_id: agent.id });
         if (!active) return;
         const pc = new RTCPeerConnection(); resources.current.pc = pc;
-        pc.ontrack = (event) => { if (active && audioRef.current) { audioRef.current.srcObject = event.streams[0] || new MediaStream([event.track]); playAudio(); } };
+        pc.ontrack = (event) => { if (active && audioRef.current) { const remote = event.streams[0] || new MediaStream([event.track]); setOutputStream(remote); audioRef.current.srcObject = remote; playAudio(); } };
         pc.onconnectionstatechange = () => { if (active && pc.connectionState === 'failed') { setError('A conexão de áudio foi interrompida. Encerre e inicie novamente.'); stop(); } };
         media.getTracks().forEach((track) => pc.addTrack(track, media));
         const dc = pc.createDataChannel('oai-events'); resources.current.dc = dc;
@@ -43,5 +44,6 @@ export default function useLiveVoice(agent, audioRef) {
     return () => { active = false; stop(); };
   }, [agent.id, agent.name]);
   const toggleMute = () => { const next = !muted; resources.current.stream?.getAudioTracks().forEach((track) => { track.enabled = !next; }); setMuted(next); };
-  return { status, error, muted, stream, heard, reply, audioBlocked, playAudio, toggleMute, stop };
+  const phase = status.includes('está falando') ? 'speaking' : /Conectando|Preparando/.test(status) ? 'thinking' : 'listening';
+  return { status, phase, error, muted, stream, outputStream, heard, reply, audioBlocked, playAudio, toggleMute, stop };
 }
