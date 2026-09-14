@@ -1,37 +1,67 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2 } from 'lucide-react';
+import { Play, Pause, Volume2, ExternalLink, Music } from 'lucide-react';
 
-export default function AudioPlayer({ src }) {
+function detectType(url) {
+  if (!url) return 'none';
+  const u = url.toLowerCase();
+  if (u.includes('soundcloud.com')) return 'soundcloud';
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
+  if (u.includes('spotify.com')) return 'spotify';
+  if (/\.(mp3|wav|ogg|m4a|aac|flac|webm)(\?|#|$)/.test(u)) return 'audio';
+  return 'audio'; // tenta como áudio direto
+}
+
+function getYouTubeId(url) {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function FallbackLink({ url, label }) {
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-full bg-primary-foreground/10 px-4 py-2.5 text-sm text-primary-foreground/80 hover:bg-primary-foreground/15">
+      <Music className="h-4 w-4 text-gold" />
+      <span className="flex-1 truncate">{label || 'Abrir áudio'}</span>
+      <ExternalLink className="h-4 w-4 shrink-0" />
+    </a>
+  );
+}
+
+function NativeAudioPlayer({ src }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [current, setCurrent] = useState(0);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    setError(false);
     const onTime = () => {
       setCurrent(audio.currentTime);
       setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
     };
-    const onMeta = () => setDuration(audio.duration || 0);
+    const onMeta = () => { setDuration(audio.duration || 0); setError(false); };
     const onEnd = () => setPlaying(false);
+    const onErr = () => { setError(true); setPlaying(false); };
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('loadedmetadata', onMeta);
     audio.addEventListener('ended', onEnd);
+    audio.addEventListener('error', onErr);
     return () => {
       audio.removeEventListener('timeupdate', onTime);
       audio.removeEventListener('loadedmetadata', onMeta);
       audio.removeEventListener('ended', onEnd);
+      audio.removeEventListener('error', onErr);
     };
-  }, []);
+  }, [src]);
 
   const toggle = () => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || error) return;
     if (playing) { audio.pause(); setPlaying(false); }
-    else { audio.play().then(() => setPlaying(true)).catch(() => {}); }
+    else { audio.play().then(() => setPlaying(true)).catch(() => setError(true)); }
   };
 
   const seek = (e) => {
@@ -49,6 +79,10 @@ export default function AudioPlayer({ src }) {
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
+
+  if (error) {
+    return <FallbackLink url={src} label="Não foi possível reproduzir — abrir em nova aba" />;
+  }
 
   return (
     <div className="flex items-center gap-3 rounded-full bg-primary-foreground/10 px-4 py-2.5">
@@ -78,4 +112,53 @@ export default function AudioPlayer({ src }) {
       <Volume2 className="h-4 w-4 shrink-0 text-primary-foreground/40" />
     </div>
   );
+}
+
+export default function AudioPlayer({ src }) {
+  const type = detectType(src);
+
+  if (type === 'soundcloud') {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-border">
+        <iframe
+          src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(src)}&color=%23663399&auto_play=false`}
+          width="100%"
+          height="166"
+          scrolling="no"
+          frameBorder="no"
+          allow="autoplay"
+          title="Player SoundCloud"
+        />
+      </div>
+    );
+  }
+
+  if (type === 'youtube') {
+    const id = getYouTubeId(src);
+    if (!id) return <FallbackLink url={src} label="Abrir vídeo" />;
+    return (
+      <div className="aspect-video w-full overflow-hidden rounded-2xl border border-border">
+        <iframe
+          src={`https://www.youtube.com/embed/${id}`}
+          width="100%"
+          height="100%"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="Player YouTube"
+        />
+      </div>
+    );
+  }
+
+  if (type === 'spotify') {
+    const embedUrl = src.replace('open.spotify.com/', 'open.spotify.com/embed/');
+    return (
+      <div className="overflow-hidden rounded-2xl border border-border">
+        <iframe src={embedUrl} width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media" title="Player Spotify" />
+      </div>
+    );
+  }
+
+  return <NativeAudioPlayer src={src} />;
 }
