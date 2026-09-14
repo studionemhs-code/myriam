@@ -11,14 +11,17 @@ Deno.serve(async (req) => {
     if (!agent_id) return json({ error: 'agent_id é obrigatório' }, 400);
 
     const { data: agent } = await admin().from('ai_agents')
-      .select('name,instructions,knowledge_content,voice_enabled,default_voice,is_active')
+      .select('name,instructions,knowledge_content,voice_enabled,default_voice,is_active,openai_api_key')
       .eq('id', agent_id).maybeSingle();
     if (!agent?.is_active || agent.voice_enabled === false) return json({ error: 'Conversa por voz indisponível para este agente.' }, 403);
+
+    const apiKey = agent.openai_api_key || Deno.env.get('OPENAI_API_KEY');
+    if (!apiKey) return json({ error: 'Nenhuma chave API configurada.' }, 500);
 
     const prompt = [agent.instructions, agent.knowledge_content ? `Conhecimento do agente:\n${agent.knowledge_content.slice(0, 12000)}` : '', `Você está conversando por voz com ${user.display_name || user.full_name || 'um usuário'}. Responda em português brasileiro, de forma natural, acolhedora e concisa. Não use markdown.`].filter(Boolean).join('\n\n');
     const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ session: { type: 'realtime', model: 'gpt-realtime', instructions: prompt, audio: { output: { voice: VOICES[agent.default_voice] || 'marin' } } } })
     });
     const data = await response.json();
