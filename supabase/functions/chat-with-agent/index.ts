@@ -124,7 +124,8 @@ async function architectCrud(
   if (!/^[a-z][a-z0-9_]*$/.test(table || '')) return 'Nome de tabela inválido.';
   try {
     if (operation === 'list') {
-      let query = db.from(table).select('*').order('created_date', { ascending: false }).limit(30);
+      const orderColumn = table === 'architect_audit_log' ? 'created_at' : 'created_date';
+      let query = db.from(table).select('*').order(orderColumn, { ascending: false }).limit(30);
       if (filter && typeof filter === 'object') {
         for (const [k, v] of Object.entries(filter)) {
           query = query.eq(k, v);
@@ -163,11 +164,22 @@ async function architectInviteUser(
   email: string, role: string, displayName: string, db: any
 ): Promise<string> {
   try {
-    const { error } = await db.auth.admin.inviteUserByEmail(email, {
-      data: { role: role || 'user', display_name: displayName || '' }
+    const safeRole = role === 'admin' ? 'admin' : 'user';
+    const { data: inviteData, error } = await db.auth.admin.inviteUserByEmail(email, {
+      data: { role: safeRole, display_name: displayName || '' }
     });
     if (error) return `Erro ao convidar: ${error.message}`;
-    return `Convite enviado para ${email} com papel '${role || 'user'}'. O usuário receberá um e-mail para definir sua senha.`;
+    const invitedUser = inviteData?.user;
+    if (!invitedUser?.id) return 'Erro ao convidar: usuário não retornado pelo serviço de autenticação.';
+    const { error: authRoleError } = await db.auth.admin.updateUserById(invitedUser.id, {
+      app_metadata: { role: safeRole }, user_metadata: { role: safeRole, display_name: displayName || '' }
+    });
+    if (authRoleError) return `Erro ao aplicar papel no acesso: ${authRoleError.message}`;
+    const { error: profileError } = await db.from('profiles').upsert({
+      id: invitedUser.id, email, role: safeRole, display_name: displayName || null, full_name: displayName || null
+    }, { onConflict: 'id' });
+    if (profileError) return `Erro ao aplicar papel no perfil: ${profileError.message}`;
+    return `Convite enviado para ${email} com papel '${safeRole}'. ID: ${invitedUser.id}.`;
   } catch (e) {
     return `Erro: ${(e as Error).message}`;
   }
@@ -177,25 +189,76 @@ async function architectBroadcastNotification(
   category: string, title: string, body: string, link: string, target: any, db: any
 ): Promise<string> {
   try {
-    let userIds: string[] = [];
+    let profiles: any[] = [];
     if (target === 'all') {
-      const { data: users } = await db.from('profiles').select('id');
-      userIds = (users || []).map((u: any) => u.id);
-    } else if (Array.isArray(target)) {
-      userIds = target;
+      const { data: users, error } = await db.from('profiles').select('id,notification_prefs');
+      if (error) return `Erro ao buscar destinatários: ${error.message}`;
+      profiles = users || [];
     } else {
-      userIds = [String(target)];
+      const requestedIds = Array.isArray(target) ? target.map(String) : [String(target)];
+      const { data: users, error } = await db.from('profiles').select('id,notification_prefs').in('id', requestedIds);
+      if (error) return `Erro ao buscar destinatários: ${error.message}`;
+      profiles = users || [];
     }
-    if (!userIds.length) return 'Nenhum usuário encontrado para enviar a notificação.';
-    const notifications = userIds.map((uid) => ({
-      user_id: uid, category, title, body: body || null, link: link || null, read: false
+    if (!profiles.length) return 'Nenhum usuário encontrado para enviar a notificação.';
+    const allowedProfiles = profiles.filter((profile: any) => profile.notification_prefs?.[category] !== false);
+    const skipped = profiles.length - allowedProfiles.length;
+    if (!allowedProfiles.length) return `Nenhuma notificação enviada: ${skipped} usuário(s) desativaram esta categoria.`;
+    const notifications = allowedProfiles.map((profile: any) => ({
+      user_id: profile.id, category, title, body: body || null, link: link || null, read: false
     }));
     const { error } = await db.from('notifications').insert(notifications);
     if (error) return `Erro ao enviar: ${error.message}`;
-    return `Notificação '${title}' enviada para ${userIds.length} usuário(s) na categoria '${category}'.`;
+    return `Notificação '${title}' enviada para ${allowedProfiles.length} usuário(s). ${skipped} ignorado(s) por preferência.`;
   } catch (e) {
     return `Erro: ${(e as Error).message}`;
   }
+}
+
+type ArchitectAction = {
+  tool: 'architect_crud' | 'architect_invite_user' | 'architect_broadcast_notification';
+  args: Record<string, any>;
+  summary: string;
+  requested_at: string;
+};
+
+const normalizeReply = (value: string) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+const isArchitectConfirmation = (value: string) => /^(sim\b|confirmo\b|confirmado\b|autorizo\b|autorizado\b|ok\b|pode\s+(criar|alterar|atualizar|editar|excluir|deletar|convidar|enviar|fazer|executar|prosseguir)\b|prossiga\b|execute\b)/.test(normalizeReply(value));
+const isArchitectCancellation = (value: string) => /^(nao\b|cancelar\b|cancele\b|cancela\b|desistir\b|deixa pra la\b|deixe para la\b)/.test(normalizeReply(value));
+
+function describeArchitectAction(tool: string, args: any): string {
+  if (tool === 'architect_crud') return `${args.operation} em ${args.table}${args.id ? ` (ID ${args.id})` : ''} com ${JSON.stringify(args.data || args.filter || {})}`;
+  if (tool === 'architect_invite_user') return `convidar ${args.email} com papel ${args.role || 'user'}`;
+  return `enviar notificação "${args.title}" para ${Array.isArray(args.target) ? args.target.length + ' usuários' : args.target}`;
+}
+
+async function executeArchitectAction(action: ArchitectAction, db: any): Promise<string> {
+  const args = action.args || {};
+  if (action.tool === 'architect_crud') return architectCrud(args.table, args.operation, args.data, args.filter, args.id, db);
+  if (action.tool === 'architect_invite_user') return architectInviteUser(args.email, args.role, args.display_name, db);
+  return architectBroadcastNotification(args.category, args.title, args.body, args.link, args.target, db);
+}
+
+function resultRecordId(action: ArchitectAction, result: string): string | null {
+  if (action.args?.id) return String(action.args.id);
+  const invitedId = result.match(/ID:\s*([0-9a-f-]{36})/i)?.[1];
+  if (invitedId) return invitedId;
+  if (action.tool === 'architect_crud' && action.args?.operation === 'create') {
+    try { return String(JSON.parse(result.slice(result.indexOf('{')))?.id || '') || null; } catch { return null; }
+  }
+  return null;
+}
+
+async function auditArchitectAction(action: ArchitectAction, result: string, user: any, agentId: string, conversationId: string | null, db: any) {
+  const failed = /^Erro/i.test(result);
+  const { error } = await db.from('architect_audit_log').insert({
+    admin_id: user.id, agent_id: agentId, conversation_id: conversationId,
+    table_name: action.tool === 'architect_crud' ? action.args.table : action.tool === 'architect_invite_user' ? 'auth.users/profiles' : 'notifications',
+    operation: action.tool === 'architect_crud' ? action.args.operation : action.tool === 'architect_invite_user' ? 'invite' : 'broadcast',
+    record_id: resultRecordId(action, result), action_summary: action.summary,
+    result_status: failed ? 'error' : 'success', result_detail: result
+  });
+  if (error) throw new Error(`Falha ao registrar auditoria: ${error.message}`);
 }
 
 // ============================================================================
@@ -283,7 +346,7 @@ const ARCHITECT_TOOL_DEFS = [
         title: { type: 'string', description: 'Título da notificação' },
         body: { type: 'string', description: 'Corpo da mensagem (opcional)' },
         link: { type: 'string', description: 'Link interno (ex: /caminho) (opcional)' },
-        target: { type: 'string', description: '"all" para todos, ou ID de usuário, ou array de IDs' }
+        target: { anyOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }], description: '"all" para todos, um ID de usuário ou uma lista de IDs' }
       },
       required: ['category', 'title', 'target']
     }
@@ -334,9 +397,29 @@ Deno.serve(async (req) => {
     let conversation: any = null;
     let history: { role: string; content: string }[] = [];
     if (conversation_id) {
-      const { data } = await db.from('agent_conversations').select('*').eq('id', conversation_id).maybeSingle();
+      const { data } = await db.from('agent_conversations').select('*').eq('id', conversation_id).eq('agent_id', agent_id).eq('created_by_id', user.id).maybeSingle();
       conversation = data;
       history = ((data?.messages || []) as any[]).filter((m) => m.role !== 'system').map((m) => ({ role: m.role, content: m.content }));
+    }
+
+    let pendingAction: ArchitectAction | null = isArchitect ? conversation?.pending_action || null : null;
+    if (pendingAction && isArchitectConfirmation(message)) {
+      const result = await executeArchitectAction(pendingAction, db);
+      await auditArchitectAction(pendingAction, result, user, agent_id, conversation.id, db);
+      const now = new Date().toISOString();
+      const reply = /^Erro/i.test(result) ? `A ação autorizada falhou. ${result}` : `Ação autorizada e concluída. ${result}`;
+      await db.from('agent_conversations').update({ pending_action: null, messages: [
+        ...(conversation.messages || []), { role: 'user', content: message, timestamp: now }, { role: 'assistant', content: reply, timestamp: now }
+      ] }).eq('id', conversation.id).eq('created_by_id', user.id);
+      return json({ reply, conversation_id: conversation.id, used_tools: true });
+    }
+    if (pendingAction && isArchitectCancellation(message)) {
+      const now = new Date().toISOString();
+      const reply = `Ação cancelada: ${pendingAction.summary}. Nenhuma alteração foi realizada.`;
+      await db.from('agent_conversations').update({ pending_action: null, messages: [
+        ...(conversation.messages || []), { role: 'user', content: message, timestamp: now }, { role: 'assistant', content: reply, timestamp: now }
+      ] }).eq('id', conversation.id).eq('created_by_id', user.id);
+      return json({ reply, conversation_id: conversation.id, used_tools: false });
     }
 
     // Memória
@@ -376,7 +459,7 @@ Deno.serve(async (req) => {
     if (file_context) systemPrompt += `\n\n--- ARQUIVO ANEXADO PELO USUÁRIO ---\n${String(file_context).slice(0, 100000)}`;
 
     if (isArchitect) {
-      systemPrompt += '\n\n--- MODO ARQUITETO ATIVO ---\nVocê tem permissões de administrador total. Pode criar, editar, listar e excluir registros em qualquer tabela do sistema usando a ferramenta architect_crud. Tabelas principais: preparation_days (dias da caminhada), prayers (orações), prayer_categories, notifications (notificações/novidades), acamf_contents (conteúdos ACAMF), collective_journeys (jornadas), marian_calendar_events (calendário mariano), courses, journey_contents, certificate_templates, feature_flags, store_settings, webhook_automations, consecration_settings, registration_settings, notification_settings, warranty_settings, association_settings, catalog_products, quote_requests.\n\nVocê também pode convidar usuários (architect_invite_user) e enviar notificações/novidades (architect_broadcast_notification).\n\nDiretrizes:\n- Sempre confirme ações destrutivas (excluir, alterar) antes de executá-las, perguntando ao admin se ele tem certeza.\n- Ao criar conteúdo, use os campos corretos de cada tabela. Se não souber os campos, faça um "list" primeiro para ver a estrutura.\n- Seja proativo: ajude o admin a gerenciar todo o sistema — criar dias de preparação, orações, notificações, jornadas, conteúdos, etc.\n- Para criar um dia da caminhada: architect_crud com table="preparation_days", operation="create", data={day_number, title, description, phase, text, prayer, practice, gender, is_published}.\n- Para criar uma oração: architect_crud com table="prayers", operation="create", data={title, category_id, content, is_published}.\n- Para enviar novidade: architect_broadcast_notification com category="novidades", title, body, target="all".';
+      systemPrompt += '\n\n--- MODO ARQUITETO ATIVO ---\nVocê tem permissões de administrador total. Pode criar, editar, listar e excluir registros em qualquer tabela do sistema usando a ferramenta architect_crud. Tabelas principais: preparation_days (dias da caminhada), prayers (orações), prayer_categories, notifications (notificações/novidades), acamf_contents (conteúdos ACAMF), collective_journeys (jornadas), marian_calendar_events (calendário mariano), courses, journey_contents, certificate_templates, feature_flags, store_settings, webhook_automations, consecration_settings, registration_settings, notification_settings, warranty_settings, association_settings, catalog_products, quote_requests e architect_audit_log (histórico das ações do modo Arquiteto).\n\nVocê também pode convidar usuários (architect_invite_user) e enviar notificações/novidades (architect_broadcast_notification).\n\nDiretrizes:\n- Toda ação que altera dados (criar, editar, excluir, convidar ou enviar notificações) exige consentimento explícito. A ferramenta armazenará a ação pendente sem executá-la; descreva exatamente a ação e peça ao admin para responder "Confirmo" ou "Cancelar". Nunca afirme que ela foi executada antes da confirmação.\n- Operações apenas de leitura/listagem podem ser executadas imediatamente, sem confirmação.\n- Ao criar conteúdo, use os campos corretos de cada tabela. Se não souber os campos, faça um "list" primeiro para ver a estrutura.\n- Seja proativo: ajude o admin a gerenciar todo o sistema — criar dias de preparação, orações, notificações, jornadas, conteúdos, etc.\n- Para criar um dia da caminhada: architect_crud com table="preparation_days", operation="create", data={day_number, title, description, phase, text, prayer, practice, gender, is_published}.\n- Para criar uma oração: architect_crud com table="prayers", operation="create", data={title, category_id, content, is_published}.\n- Para enviar novidade: architect_broadcast_notification com category="novidades", title, body, target="all".';
     }
 
     const modelMap: Record<string, string> = {
@@ -419,9 +502,15 @@ Deno.serve(async (req) => {
             else if (tc.function.name === 'list_acamf_content') result = await listAcamfContent(args.category ?? null, args.limit ?? 6, db);
             else if (tc.function.name === 'list_prayers') result = await listPrayers(args.category ?? null, db);
             else if (tc.function.name === 'get_active_journeys') result = await getActiveJourneys(db, user.id);
-            else if (tc.function.name === 'architect_crud') result = await architectCrud(args.table, args.operation, args.data, args.filter, args.id, db);
-            else if (tc.function.name === 'architect_invite_user') result = await architectInviteUser(args.email, args.role, args.display_name, db);
-            else if (tc.function.name === 'architect_broadcast_notification') result = await architectBroadcastNotification(args.category, args.title, args.body, args.link, args.target, db);
+            else if (tc.function.name === 'architect_crud' && args.operation === 'list') result = await architectCrud(args.table, args.operation, args.data, args.filter, args.id, db);
+            else if (['architect_crud', 'architect_invite_user', 'architect_broadcast_notification'].includes(tc.function.name)) {
+              if (pendingAction) {
+                result = `Já existe uma ação aguardando confirmação: ${pendingAction.summary}. Peça ao admin para confirmar ou cancelar.`;
+              } else {
+                pendingAction = { tool: tc.function.name as ArchitectAction['tool'], args, summary: describeArchitectAction(tc.function.name, args), requested_at: new Date().toISOString() };
+                result = `AÇÃO PENDENTE DE CONSENTIMENTO: ${pendingAction.summary}. Nenhuma alteração foi executada. Peça confirmação explícita ao admin.`;
+              }
+            }
             else result = 'Ferramenta desconhecida.';
           } catch (e) { result = `Erro: ${(e as Error).message}`; }
           messages.push({ role: 'tool', tool_call_id: tc.id, content: result });
@@ -451,10 +540,10 @@ Deno.serve(async (req) => {
     const userMsg = { role: 'user', content: message, timestamp: now };
     const assistantMsg = { role: 'assistant', content: assistantMessage, timestamp: now };
     if (conversation) {
-      await db.from('agent_conversations').update({ messages: [...(conversation.messages || []), userMsg, assistantMsg] }).eq('id', conversation.id);
+      await db.from('agent_conversations').update({ messages: [...(conversation.messages || []), userMsg, assistantMsg], pending_action: pendingAction }).eq('id', conversation.id).eq('created_by_id', user.id);
     } else {
       const { data: created } = await db.from('agent_conversations').insert({
-        agent_id, agent_name: agent.name, title: message.substring(0, 50), messages: [userMsg, assistantMsg], created_by_id: user.id
+        agent_id, agent_name: agent.name, title: message.substring(0, 50), messages: [userMsg, assistantMsg], pending_action: pendingAction, created_by_id: user.id
       }).select().single();
       conversation = created;
     }
