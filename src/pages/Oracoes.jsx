@@ -8,6 +8,7 @@ import PlaylistManager from '@/components/oracao/PlaylistManager';
 import OfflinePrayersTab from '@/components/oracao/OfflinePrayersTab';
 import AddToPlaylistSheet from '@/components/oracao/AddToPlaylistSheet';
 import PrayerDownloadButton from '@/components/oracao/PrayerDownloadButton';
+import { detectSourceType } from '@/hooks/useUnifiedPlayer';
 
 const TABS = [
   { id: 'oracoes', label: 'Orações' },
@@ -253,7 +254,11 @@ export default function Oracoes() {
                 </div>
               )}
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                {selected.audio_url ? (
+                {selected.audio_url && detectSourceType(selected.audio_url, selected.youtube_id) === 'spotify' ? (
+                  <span className="flex items-center gap-1.5 rounded-full bg-amber-100 px-4 py-2 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                    Spotify não suportado no modo imersivo
+                  </span>
+                ) : selected.audio_url ? (
                   <button
                     onClick={() => { openImmersive(selected); setSelected(null); }}
                     className="flex items-center gap-2 rounded-full bg-deep px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-deep/90"

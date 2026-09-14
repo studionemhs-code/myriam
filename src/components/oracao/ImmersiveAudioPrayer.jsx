@@ -1,27 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, X, ChevronLeft, ChevronRight, Type, BookOpen, Clock, Check, SkipForward, SkipBack } from 'lucide-react';
+import { Play, Pause, X, ChevronLeft, ChevronRight, Type, BookOpen, Clock, Check, SkipForward, SkipBack, AlertTriangle } from 'lucide-react';
 import { supabaseEntities } from '@/api/supabase/entities';
-import { getPlayableAudioUrl, isAudioDownloaded } from '@/lib/offlineAudio';
+import { isAudioDownloaded } from '@/lib/offlineAudio';
+import { detectSourceType, useUnifiedPlayer } from '@/hooks/useUnifiedPlayer';
 
 const PROGRESS_COLOR = '#2E7DFF';
 const RING_BG = '#1C1C1C';
-const LOOP_SECONDS = 300; // embeds/sem áudio: o círculo preenche a cada 5min
+const LOOP_SECONDS = 300; // fallback de loop quando duration é 0
 
 const TIMER_PRESETS = [5, 10, 15, 30];
 
-function detectType(url) {
-  if (!url) return 'none';
-  const u = url.toLowerCase();
-  if (u.includes('soundcloud.com')) return 'soundcloud';
-  if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
-  if (u.includes('spotify.com')) return 'spotify';
-  return 'audio';
-}
-function getYouTubeId(url) {
-  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
-  return m ? m[1] : null;
-}
 function fmtHMS(totalSeconds) {
   if (!totalSeconds || isNaN(totalSeconds)) totalSeconds = 0;
   const s = Math.floor(totalSeconds % 60);
@@ -53,23 +42,10 @@ export default function ImmersiveAudioPrayer({
   const [bgUrl, setBgUrl] = useState(coverUrl || null);
   const [showText, setShowText] = useState(false);
   const [fontScale, setFontScale] = useState(1);
-  const [showEmbed, setShowEmbed] = useState(false);
-
-  // áudio nativo
-  const audioRef = useRef(null);
-  const [playing, setPlaying] = useState(false);
-  const [current, setCurrent] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [audioSrc, setAudioSrc] = useState(audioUrl);
-  const [offline, setOffline] = useState(false);
-
-  // cronômetro (embed / sem áudio)
-  const [stopwatch, setStopwatch] = useState(0);
-  const [stopwatchRunning, setStopwatchRunning] = useState(false);
 
   // timer de desligamento
-  const [timerTotal, setTimerTotal] = useState(null); // segundos definidos
-  const [timerLeft, setTimerLeft] = useState(null); // segundos restantes
+  const [timerTotal, setTimerTotal] = useState(null);
+  const [timerLeft, setTimerLeft] = useState(null);
   const [showTimer, setShowTimer] = useState(false);
   const [customMin, setCustomMin] = useState('');
 
@@ -78,11 +54,20 @@ export default function ImmersiveAudioPrayer({
   const [completed, setCompleted] = useState(false);
   const [savingSession, setSavingSession] = useState(false);
 
-  const ytId = youtubeId || (audioUrl && detectType(audioUrl) === 'youtube' ? getYouTubeId(audioUrl) : null);
-  const audioType = youtubeId ? 'youtube' : detectType(audioUrl);
-  const isEmbed = ['soundcloud', 'youtube', 'spotify'].includes(audioType);
-  const hasAudio = !!(youtubeId || audioUrl);
-  const useStopwatch = isEmbed || !hasAudio;
+  const [offline, setOffline] = useState(false);
+
+  const sourceType = detectSourceType(audioUrl, youtubeId);
+  const isSpotify = sourceType === 'spotify';
+  const hasAudio = sourceType !== 'none' && !isSpotify;
+
+  const player = useUnifiedPlayer({
+    type: sourceType === 'spotify' ? 'none' : sourceType,
+    url: audioUrl,
+    youtubeId,
+    enabled: open && hasAudio
+  });
+  const { ready: playerReady, playing: playerPlaying, currentTime: playerTime, duration: playerDuration, error: playerError, play: playerPlay, pause: playerPause, audioElRef } = player;
+
   const hasQueue = Array.isArray(queue) && queue.length > 1;
 
   // carrega galeria
@@ -93,25 +78,16 @@ export default function ImmersiveAudioPrayer({
       .catch(() => setGallery([]));
   }, [open]);
 
-  // resolve áudio offline e verifica disponibilidade
+  // verifica offline (apenas áudios diretos)
   useEffect(() => {
-    if (!open || !audioUrl || useStopwatch) { setAudioSrc(audioUrl); setOffline(false); return; }
-    let blobUrl = null;
+    if (!open || sourceType !== 'audio') { setOffline(false); return; }
     let cancelled = false;
     (async () => {
       const dl = await isAudioDownloaded(audioUrl).catch(() => false);
-      if (cancelled) return;
-      setOffline(!!dl);
-      const playable = await getPlayableAudioUrl(audioUrl).catch(() => audioUrl);
-      if (cancelled) { if (blobUrl && blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl); return; }
-      if (playable && playable.startsWith('blob:')) blobUrl = playable;
-      setAudioSrc(playable);
+      if (!cancelled) setOffline(!!dl);
     })();
-    return () => {
-      cancelled = true;
-      if (blobUrl && blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
-    };
-  }, [open, audioUrl, useStopwatch]);
+    return () => { cancelled = true; };
+  }, [open, audioUrl, sourceType]);
 
   // reset ao abrir / trocar de oração
   useEffect(() => {
@@ -119,12 +95,6 @@ export default function ImmersiveAudioPrayer({
     setBgUrl(coverUrl || null);
     setShowText(false);
     setFontScale(1);
-    setPlaying(false);
-    setCurrent(0);
-    setDuration(0);
-    setStopwatch(0);
-    setStopwatchRunning(false);
-    setShowEmbed(false);
     setTimerTotal(null);
     setTimerLeft(null);
     setShowTimer(false);
@@ -134,30 +104,6 @@ export default function ImmersiveAudioPrayer({
     sessionStart.current = Date.now();
   }, [open, coverUrl, prayerId]);
 
-  // eventos de áudio nativo
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || useStopwatch) return;
-    const onTime = () => setCurrent(audio.currentTime);
-    const onMeta = () => setDuration(audio.duration || 0);
-    const onEnd = () => setPlaying(false);
-    audio.addEventListener('timeupdate', onTime);
-    audio.addEventListener('loadedmetadata', onMeta);
-    audio.addEventListener('ended', onEnd);
-    return () => {
-      audio.removeEventListener('timeupdate', onTime);
-      audio.removeEventListener('loadedmetadata', onMeta);
-      audio.removeEventListener('ended', onEnd);
-    };
-  }, [useStopwatch, open, audioSrc]);
-
-  // ticker do cronômetro
-  useEffect(() => {
-    if (!open || !useStopwatch || !stopwatchRunning) return;
-    const id = setInterval(() => setStopwatch((s) => s + 1), 1000);
-    return () => clearInterval(id);
-  }, [open, useStopwatch, stopwatchRunning]);
-
   // ticker do timer de desligamento
   useEffect(() => {
     if (!open || timerLeft === null || timerLeft <= 0) return;
@@ -165,40 +111,19 @@ export default function ImmersiveAudioPrayer({
     return () => clearInterval(id);
   }, [open, timerLeft]);
 
-  // ao zerar o timer, pausa tudo
+  // ao zerar o timer, pausa o player
   useEffect(() => {
     if (timerLeft === null || timerLeft > 0) return;
     setTimerLeft(null);
     setTimerTotal(null);
-    if (useStopwatch) {
-      setStopwatchRunning(false);
-    } else if (audioRef.current) {
-      audioRef.current.pause();
-      setPlaying(false);
-    }
-  }, [timerLeft, useStopwatch]);
-
-  // limpa áudio ao fechar
-  useEffect(() => {
-    if (!open && audioRef.current) audioRef.current.pause();
-  }, [open]);
+    playerPause();
+  }, [timerLeft, playerPause]);
 
   const togglePlay = useCallback(() => {
-    if (completed) return;
-    if (useStopwatch) {
-      setStopwatchRunning((r) => !r);
-      if (isEmbed) setShowEmbed(true);
-      return;
-    }
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) {
-      audio.pause();
-      setPlaying(false);
-    } else {
-      audio.play().then(() => setPlaying(true)).catch(() => {});
-    }
-  }, [useStopwatch, isEmbed, playing, completed]);
+    if (completed || !hasAudio || !playerReady) return;
+    if (playerPlaying) playerPause();
+    else playerPlay();
+  }, [completed, hasAudio, playerReady, playerPlaying, playerPause, playerPlay]);
 
   const startTimer = (minutes) => {
     const secs = Math.max(1, Math.round(minutes * 60));
@@ -212,7 +137,9 @@ export default function ImmersiveAudioPrayer({
   const handleComplete = async () => {
     if (completed || savingSession) return;
     setSavingSession(true);
-    const elapsed = Math.max(1, Math.round((Date.now() - sessionStart.current) / 1000));
+    const elapsed = playerDuration
+      ? Math.max(1, Math.round(playerTime))
+      : Math.max(1, Math.round((Date.now() - sessionStart.current) / 1000));
     try {
       if (prayerId) {
         await supabaseEntities.PrayerSession.create({
@@ -224,21 +151,20 @@ export default function ImmersiveAudioPrayer({
         });
       }
     } catch (e) {
-      /* ignore — ainda assim confirmamos ao usuário */
+      /* ignore */
     } finally {
       setSavingSession(false);
       setCompleted(true);
-      if (useStopwatch) setStopwatchRunning(false);
-      else if (audioRef.current) { audioRef.current.pause(); setPlaying(false); }
+      playerPause();
       onComplete?.({ prayerId, durationSeconds: elapsed });
     }
   };
 
-  const isPlaying = useStopwatch ? stopwatchRunning : playing;
-  const progressRatio = useStopwatch
-    ? (stopwatch % LOOP_SECONDS) / LOOP_SECONDS
-    : duration ? current / duration : 0;
-  const displayTime = useStopwatch ? stopwatch : current;
+  const progressRatio = playerDuration > 0
+    ? playerTime / playerDuration
+    : (playerTime % LOOP_SECONDS) / LOOP_SECONDS;
+  const displayTime = playerTime;
+  const isPlaying = playerPlaying;
 
   // geometria do círculo
   const R = 120;
@@ -251,6 +177,9 @@ export default function ImmersiveAudioPrayer({
     ...(coverUrl ? [{ url: coverUrl, label: 'Capa' }] : []),
     ...gallery.map((g) => ({ url: g.image_url, label: g.label || 'Fundo' }))
   ];
+
+  const showPlayBtn = hasAudio && playerReady && !playerError;
+  const showLoading = hasAudio && !playerReady && !playerError;
 
   return (
     <AnimatePresence>
@@ -281,7 +210,6 @@ export default function ImmersiveAudioPrayer({
               <X className="h-4 w-4" /> Sair
             </button>
             <div className="flex items-center gap-1.5">
-              {/* Timer */}
               <button
                 onClick={() => { setShowText(false); setShowTimer((s) => !s); }}
                 className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-xs backdrop-blur transition ${timerTotal ? 'bg-[#2E7DFF] text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
@@ -381,70 +309,71 @@ export default function ImmersiveAudioPrayer({
               )}
             </div>
 
-            {/* Círculo + tempo */}
-            <div className="relative my-6 flex items-center justify-center">
-              <svg width="280" height="280" viewBox="0 0 280 280" className="drop-shadow-[0_0_25px_rgba(46,125,255,0.25)]">
-                <circle cx="140" cy="140" r={R} fill={RING_BG} stroke="#2a2a2a" strokeWidth="1" />
-                <circle cx="140" cy="140" r={R} fill="none" stroke="#2a2a2a" strokeWidth={STROKE} />
-                <circle
-                  cx="140" cy="140" r={R} fill="none"
-                  stroke={completed ? '#34d399' : PROGRESS_COLOR}
-                  strokeWidth={STROKE} strokeLinecap="round"
-                  strokeDasharray={`${dash} ${C - dash}`}
-                  transform="rotate(-90 140 140)"
-                  style={{ transition: useStopwatch ? 'stroke-dasharray 1s linear' : 'stroke-dasharray 0.25s linear' }}
-                />
-              </svg>
-              {completed ? (
-                <div className="absolute inset-0 m-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 backdrop-blur">
-                  <Check className="h-8 w-8 text-emerald-300" />
-                </div>
-              ) : (
-                <button
-                  onClick={togglePlay}
-                  className="absolute inset-0 m-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/10 backdrop-blur transition hover:bg-white/20"
-                  aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
-                >
-                  {isPlaying ? <Pause className="h-7 w-7 text-white" /> : <Play className="h-7 w-7 translate-x-0.5 text-white" />}
-                </button>
-              )}
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <span className="font-mono tabular-nums tracking-wider text-white" style={{ fontSize: '1.75rem', marginTop: '3.5rem' }}>
-                  {fmtHMS(displayTime)}
-                </span>
-                {!useStopwatch && duration > 0 && !completed && (
-                  <span className="mt-1 font-mono text-xs text-white/40">{fmtHMS(duration)}</span>
-                )}
-                {completed && (
-                  <span className="mt-1 text-xs text-emerald-300/80">Oração concluída</span>
-                )}
+            {/* Aviso Spotify */}
+            {isSpotify && (
+              <div className="mt-8 flex max-w-sm items-center gap-3 rounded-2xl bg-amber-500/15 p-4 text-amber-200">
+                <AlertTriangle className="h-5 w-5 shrink-0" />
+                <p className="text-sm">Spotify não é suportado no modo imersivo. Você ainda pode ouvir esta oração fora do Modo Oração.</p>
               </div>
-            </div>
-
-            {/* Áudio nativo oculto */}
-            {!useStopwatch && audioSrc && (
-              <audio ref={audioRef} src={audioSrc} preload="metadata" className="hidden" />
             )}
 
-            {/* Player externo (embed) */}
-            {isEmbed && showEmbed && !completed && (
-              <div className="mb-4 w-full max-w-md">
-                <div className="mb-1.5 flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-wider text-white/50">Player externo</span>
-                  <button onClick={() => setShowEmbed(false)} className="text-white/40 hover:text-white"><X className="h-3.5 w-3.5" /></button>
-                </div>
-                {audioType === 'soundcloud' && (
-                  <iframe src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(audioUrl)}&color=%232E7DFF&auto_play=true`} width="100%" height="120" scrolling="no" frameBorder="no" allow="autoplay" title="SoundCloud" />
-                )}
-                {audioType === 'youtube' && ytId && (
-                  <div className="aspect-video w-full overflow-hidden rounded-xl">
-                    <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1`} width="100%" height="100%" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="YouTube" />
-                  </div>
-                )}
-                {audioType === 'spotify' && (
-                  <iframe src={audioUrl.replace('open.spotify.com/', 'open.spotify.com/embed/')} width="100%" height="120" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media" title="Spotify" />
-                )}
+            {/* Erro de carregamento */}
+            {hasAudio && playerError && (
+              <div className="mt-8 flex max-w-sm items-center gap-3 rounded-2xl bg-red-500/15 p-4 text-red-200">
+                <AlertTriangle className="h-5 w-5 shrink-0" />
+                <p className="text-sm">{playerError}</p>
               </div>
+            )}
+
+            {/* Círculo + tempo */}
+            {hasAudio && !playerError && (
+              <div className="relative my-6 flex items-center justify-center">
+                <svg width="280" height="280" viewBox="0 0 280 280" className="drop-shadow-[0_0_25px_rgba(46,125,255,0.25)]">
+                  <circle cx="140" cy="140" r={R} fill={RING_BG} stroke="#2a2a2a" strokeWidth="1" />
+                  <circle cx="140" cy="140" r={R} fill="none" stroke="#2a2a2a" strokeWidth={STROKE} />
+                  <circle
+                    cx="140" cy="140" r={R} fill="none"
+                    stroke={completed ? '#34d399' : PROGRESS_COLOR}
+                    strokeWidth={STROKE} strokeLinecap="round"
+                    strokeDasharray={`${dash} ${C - dash}`}
+                    transform="rotate(-90 140 140)"
+                    style={{ transition: 'stroke-dasharray 0.5s linear' }}
+                  />
+                </svg>
+                {completed ? (
+                  <div className="absolute inset-0 m-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 backdrop-blur">
+                    <Check className="h-8 w-8 text-emerald-300" />
+                  </div>
+                ) : showLoading ? (
+                  <div className="absolute inset-0 m-auto flex h-16 w-16 items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#2E7DFF]" />
+                  </div>
+                ) : showPlayBtn && (
+                  <button
+                    onClick={togglePlay}
+                    className="absolute inset-0 m-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/10 backdrop-blur transition hover:bg-white/20"
+                    aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
+                  >
+                    {isPlaying ? <Pause className="h-7 w-7 text-white" /> : <Play className="h-7 w-7 translate-x-0.5 text-white" />}
+                  </button>
+                )}
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="font-mono tabular-nums tracking-wider text-white" style={{ fontSize: '1.75rem', marginTop: '3.5rem' }}>
+                    {fmtHMS(displayTime)}
+                  </span>
+                  {playerDuration > 0 && !completed && (
+                    <span className="mt-1 font-mono text-xs text-white/40">{fmtHMS(playerDuration)}</span>
+                  )}
+                  {completed && (
+                    <span className="mt-1 text-xs text-emerald-300/80">Oração concluída</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Elemento <audio> nativo (oculto) — ref para áudios diretos */}
+            {sourceType === 'audio' && (
+              <audio ref={audioElRef} preload="metadata" className="hidden" />
             )}
 
             {/* Texto da oração */}
