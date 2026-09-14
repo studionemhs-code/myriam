@@ -1,0 +1,35 @@
+{
+  "name": "PrayerPlaylist",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da playlist (ex.: Ora\u00e7\u00f5es pela Manh\u00e3)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o opcional do tema ou inten\u00e7\u00e3o da playlist"
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

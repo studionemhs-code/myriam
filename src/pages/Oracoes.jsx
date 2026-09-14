@@ -1,11 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { supabaseEntities } from '@/api/supabase/entities';
-import { Heart, Share2, Music, X, Search, Headphones } from 'lucide-react';
+import { Heart, Share2, Music, X, Search, Headphones, ListPlus } from 'lucide-react';
 import AudioPlayer from '@/components/oracao/AudioPlayer';
 import ReadingModeButton from '@/components/reading/ReadingModeButton';
 import ImmersiveAudioPrayer from '@/components/oracao/ImmersiveAudioPrayer';
+import PlaylistManager from '@/components/oracao/PlaylistManager';
+import OfflinePrayersTab from '@/components/oracao/OfflinePrayersTab';
+import AddToPlaylistSheet from '@/components/oracao/AddToPlaylistSheet';
+import PrayerDownloadButton from '@/components/oracao/PrayerDownloadButton';
+
+const TABS = [
+  { id: 'oracoes', label: 'Orações' },
+  { id: 'playlists', label: 'Playlists' },
+  { id: 'offline', label: 'Offline' }
+];
 
 export default function Oracoes() {
+  const [tab, setTab] = useState('oracoes');
   const [categories, setCategories] = useState([]);
   const [prayers, setPrayers] = useState([]);
   const [favorites, setFavorites] = useState([]);
@@ -13,7 +24,10 @@ export default function Oracoes() {
   const [activeCat, setActiveCat] = useState('all');
   const [selected, setSelected] = useState(null);
   const [immersive, setImmersive] = useState(null);
+  const [queue, setQueue] = useState(null);
+  const [queueIndex, setQueueIndex] = useState(0);
   const [search, setSearch] = useState('');
+  const [addToPlaylist, setAddToPlaylist] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -56,6 +70,31 @@ export default function Oracoes() {
     }
   };
 
+  const openImmersive = (prayer) => {
+    setQueue(null);
+    setQueueIndex(0);
+    setImmersive(prayer);
+  };
+
+  const playQueue = (items) => {
+    if (!items.length) return;
+    setQueue(items);
+    setQueueIndex(0);
+    setImmersive(items[0]);
+  };
+
+  const nextInQueue = () => {
+    if (!queue) return;
+    const ni = queueIndex + 1;
+    if (ni < queue.length) { setQueueIndex(ni); setImmersive(queue[ni]); }
+  };
+  const prevInQueue = () => {
+    if (!queue) return;
+    const pi = queueIndex - 1;
+    if (pi >= 0) { setQueueIndex(pi); setImmersive(queue[pi]); }
+  };
+  const closeImmersive = () => { setImmersive(null); setQueue(null); setQueueIndex(0); };
+
   const filtered = prayers.filter((p) => {
     const matchCat = activeCat === 'favs' ? favIds.has(p.id) : activeCat === 'all' || p.category_id === activeCat;
     const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase());
@@ -72,91 +111,123 @@ export default function Oracoes() {
         <p className="mt-1 text-sm text-muted-foreground">Orações marianas para alimentar sua vida de fé</p>
       </div>
 
-      {/* Category tabs */}
+      {/* Tabs */}
       <div className="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        <button
-          onClick={() => setActiveCat('all')}
-          className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${activeCat === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
-        >
-          Todas
-        </button>
-        {favIds.size > 0 && (
+        {TABS.map((t) => (
           <button
-            onClick={() => setActiveCat('favs')}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${activeCat === 'favs' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${tab === t.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
           >
-            ❤ Favoritas
-          </button>
-        )}
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setActiveCat(c.id)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${activeCat === c.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
-          >
-            {c.name}
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar oração..."
-          className="w-full rounded-full border border-input bg-card py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
-        />
-      </div>
+      {tab === 'playlists' && (
+        <PlaylistManager onPlayQueue={playQueue} />
+      )}
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-primary" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="py-12 text-center text-sm text-muted-foreground">
-          Nenhuma oração encontrada.
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {filtered.map((p) => (
-            <div
-              key={p.id}
-              className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:shadow-md"
-              onClick={() => setSelected(p)}
+      {tab === 'offline' && (
+        <OfflinePrayersTab prayers={prayers} onPlay={openImmersive} />
+      )}
+
+      {tab === 'oracoes' && (
+        <>
+          {/* Category tabs */}
+          <div className="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
+            <button
+              onClick={() => setActiveCat('all')}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${activeCat === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
             >
-              {p.cover_url && (
-                <div className="aspect-video w-full overflow-hidden">
-                  <img src={p.cover_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
-                </div>
-              )}
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground">{catName(p.category_id)}</p>
-                    <h3 className="mt-0.5 truncate font-display text-base font-medium">{p.title}</h3>
-                  </div>
-                  {p.audio_url && <Music className="h-4 w-4 shrink-0 text-gold" />}
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleFav(p.id); }}
-                    className={`flex h-8 w-8 items-center justify-center rounded-full transition ${favIds.has(p.id) ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-500'}`}
-                  >
-                    <Heart className={`h-4 w-4 ${favIds.has(p.id) ? 'fill-current' : ''}`} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); sharePrayer(p); }}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+              Todas
+            </button>
+            {favIds.size > 0 && (
+              <button
+                onClick={() => setActiveCat('favs')}
+                className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${activeCat === 'favs' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+              >
+                ❤ Favoritas
+              </button>
+            )}
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setActiveCat(c.id)}
+                className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${activeCat === c.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar oração..."
+              className="w-full rounded-full border border-input bg-card py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
+            />
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-primary" />
             </div>
-          ))}
-        </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              Nenhuma oração encontrada.
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {filtered.map((p) => (
+                <div
+                  key={p.id}
+                  className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:shadow-md"
+                  onClick={() => setSelected(p)}
+                >
+                  {p.cover_url && (
+                    <div className="aspect-video w-full overflow-hidden">
+                      <img src={p.cover_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-muted-foreground">{catName(p.category_id)}</p>
+                        <h3 className="mt-0.5 truncate font-display text-base font-medium">{p.title}</h3>
+                      </div>
+                      {p.audio_url && <Music className="h-4 w-4 shrink-0 text-gold" />}
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleFav(p.id); }}
+                        className={`flex h-8 w-8 items-center justify-center rounded-full transition ${favIds.has(p.id) ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-500'}`}
+                      >
+                        <Heart className={`h-4 w-4 ${favIds.has(p.id) ? 'fill-current' : ''}`} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setAddToPlaylist(p); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary"
+                        title="Adicionar à playlist"
+                      >
+                        <ListPlus className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); sharePrayer(p); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Detail modal */}
@@ -181,10 +252,10 @@ export default function Oracoes() {
                   <AudioPlayer src={selected.audio_url} />
                 </div>
               )}
-              <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 {selected.audio_url ? (
                   <button
-                    onClick={() => setImmersive(selected)}
+                    onClick={() => { openImmersive(selected); setSelected(null); }}
                     className="flex items-center gap-2 rounded-full bg-deep px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-deep/90"
                   >
                     <Headphones className="h-4 w-4 text-gold" /> Modo Oração
@@ -192,8 +263,19 @@ export default function Oracoes() {
                 ) : (
                   <span />
                 )}
+                <button
+                  onClick={() => setAddToPlaylist(selected)}
+                  className="flex items-center gap-2 rounded-full bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-primary"
+                >
+                  <ListPlus className="h-4 w-4" /> Adicionar à playlist
+                </button>
                 <ReadingModeButton title={selected.title} contentHtml={selected.content} />
               </div>
+              {selected.audio_url && (
+                <div className="mt-3">
+                  <PrayerDownloadButton audioUrl={selected.audio_url} />
+                </div>
+              )}
               <div className="rich-text mt-6 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: selected.content || '' }} />
               <div className="mt-6 flex items-center gap-3 border-t border-border pt-4">
                 <button
@@ -215,14 +297,27 @@ export default function Oracoes() {
         </div>
       )}
 
+      {/* Add to playlist sheet */}
+      <AddToPlaylistSheet
+        open={!!addToPlaylist}
+        onClose={() => setAddToPlaylist(null)}
+        prayer={addToPlaylist}
+      />
+
       {/* Modo Oração imersivo */}
       <ImmersiveAudioPrayer
         open={!!immersive}
-        onClose={() => setImmersive(null)}
+        onClose={closeImmersive}
+        prayerId={immersive?.id}
+        prayerTitle={immersive?.title}
         title={immersive?.title}
         audioUrl={immersive?.audio_url}
         coverUrl={immersive?.cover_url}
         textHtml={immersive?.content}
+        source="oracoes"
+        queue={queue}
+        onNext={queue ? nextInQueue : undefined}
+        onPrev={queue ? prevInQueue : undefined}
       />
     </div>
   );

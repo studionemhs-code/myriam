@@ -39,6 +39,9 @@ export default function ModoOracao() {
       coverUrl={dayData?.image_url}
       textHtml={dayData?.text}
       prayerText={dayData?.prayer}
+      prayerId={`day:${dayNum}`}
+      prayerTitle={dayData?.title || `Dia ${dayNum}`}
+      source="caminho"
     />
   );
 }
