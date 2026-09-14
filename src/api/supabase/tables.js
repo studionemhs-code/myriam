@@ -48,6 +48,7 @@ export const SUPABASE_TABLES = {
   PrayerCategory: 'prayer_categories',
   Prayer: 'prayers',
   PrayerFavorite: 'prayer_favorites',
+  PrayerGalleryImage: 'prayer_gallery_images',
   RegistrationSettings: 'registration_settings',
   JourneyContent: 'journey_contents',
   DailyActivity: 'daily_activity',

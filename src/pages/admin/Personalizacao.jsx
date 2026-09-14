@@ -5,6 +5,7 @@ import { Field, inputCls, Loading } from '@/components/admin/ui';
 import { toast } from '@/components/ui/use-toast';
 import FileUpload from '@/components/admin/FileUpload';
 import { resetPersonalizationCache } from '@/hooks/usePersonalizationSettings';
+import PrayerGalleryManager from '@/components/admin/PrayerGalleryManager';
 
 const LEVELS = [
   { key: 'interessado', label: 'Interessado', hint: 'Usuários que ainda não iniciaram a preparação' },
@@ -136,6 +137,9 @@ export default function PersonalizacaoAdmin() {
           />
         </div>
       </section>
+
+      {/* Galeria do Modo Oração */}
+      <PrayerGalleryManager />
 
       {/* Favicon */}
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">

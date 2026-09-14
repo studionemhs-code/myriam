@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { supabaseEntities } from '@/api/supabase/entities';
-import { Heart, Share2, Music, X, Search } from 'lucide-react';
+import { Heart, Share2, Music, X, Search, Headphones } from 'lucide-react';
 import AudioPlayer from '@/components/oracao/AudioPlayer';
 import ReadingModeButton from '@/components/reading/ReadingModeButton';
+import ImmersiveAudioPrayer from '@/components/oracao/ImmersiveAudioPrayer';
 
 export default function Oracoes() {
   const [categories, setCategories] = useState([]);
@@ -11,6 +12,7 @@ export default function Oracoes() {
   const [loading, setLoading] = useState(true);
   const [activeCat, setActiveCat] = useState('all');
   const [selected, setSelected] = useState(null);
+  const [immersive, setImmersive] = useState(null);
   const [search, setSearch] = useState('');
 
   const load = async () => {
@@ -179,7 +181,17 @@ export default function Oracoes() {
                   <AudioPlayer src={selected.audio_url} />
                 </div>
               )}
-              <div className="flex justify-end">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                {selected.audio_url ? (
+                  <button
+                    onClick={() => setImmersive(selected)}
+                    className="flex items-center gap-2 rounded-full bg-deep px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-deep/90"
+                  >
+                    <Headphones className="h-4 w-4 text-gold" /> Modo Oração
+                  </button>
+                ) : (
+                  <span />
+                )}
                 <ReadingModeButton title={selected.title} contentHtml={selected.content} />
               </div>
               <div className="rich-text mt-6 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: selected.content || '' }} />
@@ -202,6 +214,16 @@ export default function Oracoes() {
           </div>
         </div>
       )}
+
+      {/* Modo Oração imersivo */}
+      <ImmersiveAudioPrayer
+        open={!!immersive}
+        onClose={() => setImmersive(null)}
+        title={immersive?.title}
+        audioUrl={immersive?.audio_url}
+        coverUrl={immersive?.cover_url}
+        textHtml={immersive?.content}
+      />
     </div>
   );
 }
