@@ -22,7 +22,17 @@ Deno.serve(async (req) => {
     const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session: { type: 'realtime', model: 'gpt-realtime', instructions: prompt, audio: { output: { voice: VOICES[agent.default_voice] || 'marin' } } } })
+      body: JSON.stringify({ session: {
+        type: 'realtime', model: 'gpt-realtime', instructions: prompt, output_modalities: ['audio'],
+        audio: {
+          input: {
+            noise_reduction: { type: 'near_field' },
+            transcription: { model: 'whisper-1', language: 'pt' },
+            turn_detection: { type: 'server_vad', threshold: 0.4, prefix_padding_ms: 300, silence_duration_ms: 700, create_response: true, interrupt_response: true }
+          },
+          output: { voice: VOICES[agent.default_voice] || 'marin' }
+        }
+      } })
     });
     const data = await response.json();
     if (!response.ok || !data?.value) return json({ error: data?.error?.message || 'Não foi possível iniciar a sessão de voz.' }, 500);

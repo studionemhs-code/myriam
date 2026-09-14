@@ -51,7 +51,7 @@ export default function AgentChat() {
       if (overrideFile) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file: overrideFile });
         const analyzed = overrideFile.type.startsWith('audio/')
-          ? await base44.integrations.Core.TranscribeAudio({ audio_url: file_url })
+          ? await base44.integrations.Core.TranscribeAudio({ audio_url: file_url, agent_id: selected.id })
           : await base44.integrations.Core.AnalyzeFile({ file_url, file_name: overrideFile.name, mime_type: overrideFile.type, model: selected.model });
         fileContext = typeof analyzed === 'string' ? analyzed : analyzed?.text || '';
         if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext;
@@ -60,7 +60,7 @@ export default function AgentChat() {
       const reply = res.data.reply || '';
       let audioUrl = '';
       if (mode !== 'text' && selected.voice_enabled !== false) {
-        const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: selected.default_voice || 'river' });
+        const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: selected.default_voice || 'river', agent_id: selected.id });
         audioUrl = speech?.url || '';
       }
       setMessages(m => [...m, { role: 'assistant', content: reply, audio_url: audioUrl }]);

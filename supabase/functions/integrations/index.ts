@@ -96,7 +96,20 @@ async function sendEmail(p: any) {
   return { ok: true, id: data.id };
 }
 
+async function resolveVoiceKey(agentId: unknown) {
+  if (!agentId) return OPENAI_KEY();
+  if (typeof agentId !== 'string') throw new Error('Agente inválido.');
+  const { data: agent, error } = await admin().from('ai_agents')
+    .select('openai_api_key,is_active,voice_enabled').eq('id', agentId).maybeSingle();
+  if (error) throw new Error('Não foi possível carregar a configuração de voz.');
+  if (!agent?.is_active || agent.voice_enabled === false) throw new Error('Voz indisponível para este agente.');
+  const key = agent.openai_api_key || OPENAI_KEY();
+  if (!key) throw new Error('Nenhuma chave API configurada para voz.');
+  return key;
+}
+
 async function transcribeAudio(p: any) {
+  const apiKey = await resolveVoiceKey(p.agent_id);
   const source = await fetch(p.audio_url);
   if (!source.ok) throw new Error('Não foi possível acessar o áudio gravado.');
   const audio = await source.blob();
@@ -106,7 +119,7 @@ async function transcribeAudio(p: any) {
   form.append('file', audio, `audio.${extension}`);
   form.append('model', 'whisper-1');
   const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-    method: 'POST', headers: { Authorization: `Bearer ${OPENAI_KEY()}` }, body: form
+    method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || 'Erro na transcrição');
@@ -153,9 +166,10 @@ async function analyzeFile(p: any) {
 
 // Gera áudio (TTS) e guarda no bucket público, devolvendo a URL definitiva.
 async function generateSpeech(p: any) {
+  const apiKey = await resolveVoiceKey(p.agent_id);
   const res = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${OPENAI_KEY()}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini-tts',
       voice: VOICES[p.voice as string] || 'alloy',
@@ -169,9 +183,9 @@ async function generateSpeech(p: any) {
   }
   const bytes = new Uint8Array(await res.arrayBuffer());
   const path = `speech/${crypto.randomUUID()}.mp3`;
-  const { error } = await admin().storage.from('public').upload(path, bytes, { contentType: 'audio/mpeg' });
+  const { error } = await admin().storage.from('uploads').upload(path, bytes, { contentType: 'audio/mpeg' });
   if (error) throw new Error(error.message);
-  const { data } = admin().storage.from('public').getPublicUrl(path);
+  const { data } = admin().storage.from('uploads').getPublicUrl(path);
   return { url: data.publicUrl };
 }
 
