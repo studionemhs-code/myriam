@@ -250,7 +250,7 @@ export default function Oracoes() {
               <h2 className="mt-1 font-display text-2xl">{selected.title}</h2>
               {selected.audio_url && (
                 <div className="mt-4">
-                  <AudioPlayer src={selected.audio_url} />
+                  <AudioPlayer src={selected.audio_url} youtubeId={selected.youtube_id} title={selected.title} />
                 </div>
               )}
               <div className="mt-4 flex flex-wrap items-center gap-2">
