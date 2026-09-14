@@ -4,6 +4,7 @@
     "edge_functions:write",
     "projects:read",
     "database:write",
-    "api-keys:read"
+    "api-keys:read",
+    "secrets:write"
   ]
 }
