@@ -7,7 +7,16 @@ const FCM_KEY = () => Deno.env.get('FCM_SERVER_KEY');
 
 // Vozes do app mapeadas para as vozes da OpenAI.
 const VOICES: Record<string, string> = {
-  river: 'alloy', honey: 'shimmer', sunny: 'nova', storm: 'onyx', spark: 'fable'
+  river: 'alloy', honey: 'shimmer', sunny: 'nova', storm: 'onyx', spark: 'fable',
+  marin_br: 'coral'
+};
+
+// Instruções de pronúncia/sotaque por idioma (gpt-4o-mini-tts suporta "instructions").
+const VOICE_LANG_INSTRUCTIONS: Record<string, string> = {
+  'pt-BR': 'Speak naturally in Brazilian Portuguese with a warm, clear Brazilian accent.',
+  'pt-PT': 'Speak naturally in European Portuguese with a Portuguese accent.',
+  'en': 'Speak naturally in English.',
+  'es': 'Speak naturally in Spanish.'
 };
 const FROM_EMAIL = () => Deno.env.get('EMAIL_FROM') || 'Theotokos <onboarding@resend.dev>';
 
@@ -167,15 +176,21 @@ async function analyzeFile(p: any) {
 // Gera áudio (TTS) e guarda no bucket público, devolvendo a URL definitiva.
 async function generateSpeech(p: any) {
   const apiKey = await resolveVoiceKey(p.agent_id);
+  const body: Record<string, unknown> = {
+    model: 'gpt-4o-mini-tts',
+    voice: VOICES[p.voice as string] || 'alloy',
+    input: String(p.text || '').slice(0, 5000),
+    response_format: 'mp3'
+  };
+  // A voz dedicada brasileira força PT-BR; senão usa o idioma selecionado.
+  const lang = p.voice === 'marin_br' ? 'pt-BR' : p.language_code;
+  if (lang && lang !== 'auto' && VOICE_LANG_INSTRUCTIONS[lang]) {
+    body.instructions = VOICE_LANG_INSTRUCTIONS[lang];
+  }
   const res = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini-tts',
-      voice: VOICES[p.voice as string] || 'alloy',
-      input: String(p.text || '').slice(0, 5000),
-      response_format: 'mp3'
-    })
+    body: JSON.stringify(body)
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

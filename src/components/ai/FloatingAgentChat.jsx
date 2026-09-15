@@ -74,7 +74,8 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
       const reply = await completeGithubArchitectAction(res.data);
       let audioUrl = '';
       if (mode !== 'text' && agent.voice_enabled !== false) {
-        const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: agent.default_voice || 'river', agent_id: agent.id });
+        const voiceLang = agent.default_voice === 'marin_br' ? 'pt-BR' : (agent.voice_language && agent.voice_language !== 'auto' ? agent.voice_language : undefined);
+        const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: agent.default_voice || 'river', ...(voiceLang ? { language_code: voiceLang } : {}), agent_id: agent.id });
         audioUrl = speech?.url || '';
       }
       setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'assistant', content: reply, audio_url: audioUrl, pending_action: res.data.pending_action || null }]);

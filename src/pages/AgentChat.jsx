@@ -81,7 +81,8 @@ export default function AgentChat() {
       const reply = await completeGithubArchitectAction(res.data);
       let audioUrl = '';
       if (mode !== 'text' && selected.voice_enabled !== false) {
-        const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: selected.default_voice || 'river', agent_id: selected.id });
+        const voiceLang = selected.default_voice === 'marin_br' ? 'pt-BR' : (selected.voice_language && selected.voice_language !== 'auto' ? selected.voice_language : undefined);
+        const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: selected.default_voice || 'river', ...(voiceLang ? { language_code: voiceLang } : {}), agent_id: selected.id });
         audioUrl = speech?.url || '';
       }
       setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'assistant', content: reply, audio_url: audioUrl, pending_action: res.data.pending_action || null }]);

@@ -25,6 +25,7 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     voice_enabled: agent?.voice_enabled ?? true,
     files_enabled: agent?.files_enabled ?? true,
     default_voice: agent?.default_voice || 'river',
+    voice_language: agent?.voice_language || 'pt-BR',
     message_delay_ms: agent?.message_delay_ms ?? 0,
     chat_retention_days: Math.max(7, agent?.chat_retention_days ?? 7)
   });
@@ -286,8 +287,9 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
         <div className="mb-4 grid gap-3 sm:grid-cols-2">
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.voice_enabled} onChange={e => set('voice_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" /><span className="text-sm">Entrada e resposta por voz</span></label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.files_enabled} onChange={e => set('files_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" /><span className="text-sm">Interpretar documentos e arquivos</span></label>
-          <Field label="Voz padrão"><select className={inputCls} value={form.default_voice} onChange={e => set('default_voice', e.target.value)}><option value="river">River — neutra</option><option value="honey">Honey — suave</option><option value="sunny">Sunny — alegre</option><option value="storm">Storm — formal</option><option value="spark">Spark — enérgica</option></select></Field>
-          <div className="sm:col-span-2"><AgentVoicePreview key={`${agent?.id || 'new'}-${form.default_voice}-${agent?.updated_date || ''}`} voice={form.default_voice} agent={agent} /></div>
+          <Field label="Voz padrão"><select className={inputCls} value={form.default_voice} onChange={e => set('default_voice', e.target.value)}><option value="river">River — neutra</option><option value="honey">Honey — suave</option><option value="sunny">Sunny — alegre</option><option value="storm">Storm — formal</option><option value="spark">Spark — enérgica</option><option value="marin_br">Marin — Brasileira</option></select></Field>
+          <Field label="Idioma da voz" hint="Define a pronúncia e o sotaque da síntese de voz"><select className={inputCls} value={form.voice_language} onChange={e => set('voice_language', e.target.value)}><option value="pt-BR">Português (Brasil)</option><option value="pt-PT">Português (Portugal)</option><option value="en">Inglês</option><option value="es">Espanhol</option><option value="auto">Automático (detectar do texto)</option></select></Field>
+          <div className="sm:col-span-2"><AgentVoicePreview key={`${agent?.id || 'new'}-${form.default_voice}-${form.voice_language}-${agent?.updated_date || ''}`} voice={form.default_voice} language={form.voice_language} agent={agent} /></div>
         </div>
 
         <label className="mb-3 flex items-center gap-2">

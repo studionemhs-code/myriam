@@ -1,6 +1,6 @@
 import { json, preflight, currentUser, admin } from '../_shared/utils.ts';
 
-const VOICES: Record<string, string> = { river: 'marin', honey: 'shimmer', sunny: 'nova', storm: 'onyx', spark: 'cedar' };
+const VOICES: Record<string, string> = { river: 'marin', honey: 'shimmer', sunny: 'nova', storm: 'onyx', spark: 'cedar', marin_br: 'marin' };
 
 Deno.serve(async (req) => {
   const pf = preflight(req); if (pf) return pf;

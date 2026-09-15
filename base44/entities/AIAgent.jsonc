@@ -116,9 +116,21 @@
         "honey",
         "sunny",
         "storm",
-        "spark"
+        "spark",
+        "marin_br"
       ],
       "default": "river"
+    },
+    "voice_language": {
+      "type": "string",
+      "enum": [
+        "pt-BR",
+        "pt-PT",
+        "en",
+        "es",
+        "auto"
+      ],
+      "default": "pt-BR"
     }
   },
   "required": [

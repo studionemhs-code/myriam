@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 const SAMPLE = 'Olá! Que bom ter você aqui. Sou seu assistente virtual e estou aqui para acompanhar sua caminhada de fé. Como posso ajudar você hoje?';
 
-export default function AgentVoicePreview({ voice, agent }) {
+export default function AgentVoicePreview({ voice, language, agent }) {
   const [url, setUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -19,7 +19,8 @@ export default function AgentVoicePreview({ voice, agent }) {
     pending.current = true; setBusy(true); setError('');
     try {
       if (url) { audio.current.currentTime = 0; await audio.current.play(); return; }
-      const result = await base44.integrations.Core.GenerateSpeech({ text: SAMPLE, voice, ...(useSavedAgent ? { agent_id: agent.id } : {}) });
+      const langCode = voice === 'marin_br' ? 'pt-BR' : (language && language !== 'auto' ? language : undefined);
+      const result = await base44.integrations.Core.GenerateSpeech({ text: SAMPLE, voice, ...(langCode ? { language_code: langCode } : {}), ...(useSavedAgent ? { agent_id: agent.id } : {}) });
       if (!result?.url) throw new Error('Não foi possível gerar a prévia de voz.');
       if (alive.current) setUrl(result.url);
     } catch (err) {
