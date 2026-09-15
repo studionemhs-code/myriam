@@ -105,7 +105,8 @@ async function sendEmail(p: any) {
   return { ok: true, id: data.id };
 }
 
-async function resolveVoiceKey(agentId: unknown) {
+async function resolveVoiceKey(agentId: unknown, overrideKey?: unknown) {
+  if (typeof overrideKey === 'string' && overrideKey.trim()) return overrideKey.trim();
   if (!agentId) return OPENAI_KEY();
   if (typeof agentId !== 'string') throw new Error('Agente inválido.');
   const { data: agent, error } = await admin().from('ai_agents')
@@ -175,7 +176,7 @@ async function analyzeFile(p: any) {
 
 // Gera áudio (TTS) e guarda no bucket público, devolvendo a URL definitiva.
 async function generateSpeech(p: any) {
-  const apiKey = await resolveVoiceKey(p.agent_id);
+  const apiKey = await resolveVoiceKey(p.agent_id, p.api_key);
   const body: Record<string, unknown> = {
     model: 'gpt-4o-mini-tts',
     voice: VOICES[p.voice as string] || 'alloy',
@@ -317,6 +318,9 @@ Deno.serve(async (req) => {
     // Validação mínima de schema do payload.
     const required = REQUIRED_FIELDS[endpoint] || [];
     const p = payload || {};
+    if (endpoint === 'GenerateSpeech' && p.api_key && user.role !== 'admin') {
+      return json({ error: 'Forbidden: apenas administradores podem testar uma chave personalizada' }, 403);
+    }
     for (const field of required) {
       if (p[field] === undefined || p[field] === null || p[field] === '') {
         return json({ error: `Campo obrigatório ausente: ${field}` }, 400);
