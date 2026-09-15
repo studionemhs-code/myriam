@@ -11,6 +11,7 @@ import { approveArchitectAction, completeGithubArchitectAction } from '@/lib/arc
 import useAgentConversation from '@/components/ai/useAgentConversation';
 import prepareAgentAttachment from '@/components/ai/prepareAgentAttachment';
 import useAvailableAgents from '@/components/ai/useAvailableAgents';
+import ArchitectConnectionStatus from '@/components/ai/ArchitectConnectionStatus';
 
 export default function AgentChat() {
   const { data: available, error: agentsError } = useAvailableAgents();
@@ -21,7 +22,7 @@ export default function AgentChat() {
   const [mode, setMode] = useState('text');
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
-  const { messages, setMessages, conversationId: activeConvId, setConversationId: setActiveConvId, loadingHistory, historyError } = useAgentConversation(selected, sending);
+  const { messages, setMessages, conversationId: activeConvId, setConversationId: setActiveConvId, loadingHistory, historyError, architectContext, architectStatus } = useAgentConversation(selected, sending);
   const [liveOpen, setLiveOpen] = useState(false);
   const scrollRef = useRef(null);
 
@@ -50,7 +51,9 @@ export default function AgentChat() {
         fileContext = prepared.context; attachment = prepared.attachment;
         if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext || 'Mensagem de voz';
       }
-      const res = await base44.functions.invoke('chatWithAgent', { agent_id: selected.id, message: msg || 'Analise o arquivo anexado.', conversation_id: activeConvId, file_context: fileContext, attachment });
+      const technicalContext = selected.architect_mode_enabled ? architectContext : '';
+      const combinedContext = [technicalContext && `--- CONTEXTO TÉCNICO AUTOMÁTICO DO MODO ARQUITETO ---\n${technicalContext}`, fileContext].filter(Boolean).join('\n\n');
+      const res = await base44.functions.invoke('chatWithAgent', { agent_id: selected.id, message: msg || 'Analise o arquivo anexado.', conversation_id: activeConvId, file_context: combinedContext, attachment });
       const reply = await completeGithubArchitectAction(res.data);
       let audioUrl = '';
       if (mode !== 'text' && selected.voice_enabled !== false) {
@@ -131,6 +134,7 @@ export default function AgentChat() {
       </div>
 
       {historyError && <p role="alert" className="mb-2 text-xs text-destructive">{historyError}</p>}
+      <ArchitectConnectionStatus status={architectStatus} />
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4">
         {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
         {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} approvalBusy={sending} />)}

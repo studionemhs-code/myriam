@@ -9,6 +9,7 @@ import LiveVoiceConversation from './LiveVoiceConversation';
 import { approveArchitectAction, completeGithubArchitectAction } from '@/lib/architectGithub';
 import useAgentConversation from '@/components/ai/useAgentConversation';
 import prepareAgentAttachment from '@/components/ai/prepareAgentAttachment';
+import ArchitectConnectionStatus from '@/components/ai/ArchitectConnectionStatus';
 
 export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) {
 
@@ -16,7 +17,7 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
   const [mode, setMode] = useState('text');
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
-  const { messages, setMessages, conversationId: convId, setConversationId: setConvId, loadingHistory, historyError } = useAgentConversation(agent, sending);
+  const { messages, setMessages, conversationId: convId, setConversationId: setConvId, loadingHistory, historyError, architectContext, architectStatus } = useAgentConversation(agent, sending);
   const [liveOpen, setLiveOpen] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -53,7 +54,9 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
         fileContext = prepared.context; attachment = prepared.attachment;
         if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext || 'Mensagem de voz';
       }
-      const res = await base44.functions.invoke('chatWithAgent', { agent_id: agent.id, message: msg || 'Analise o arquivo anexado.', conversation_id: convId, file_context: fileContext, attachment });
+      const technicalContext = agent.architect_mode_enabled ? architectContext : '';
+      const combinedContext = [technicalContext && `--- CONTEXTO TÉCNICO AUTOMÁTICO DO MODO ARQUITETO ---\n${technicalContext}`, fileContext].filter(Boolean).join('\n\n');
+      const res = await base44.functions.invoke('chatWithAgent', { agent_id: agent.id, message: msg || 'Analise o arquivo anexado.', conversation_id: convId, file_context: combinedContext, attachment });
       const reply = await completeGithubArchitectAction(res.data);
       let audioUrl = '';
       if (mode !== 'text' && agent.voice_enabled !== false) {
@@ -117,6 +120,7 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
 
         {/* Messages */}
         {historyError && <p role="alert" className="px-4 py-2 text-xs text-destructive">{historyError}</p>}
+        <div className="px-4 pt-2"><ArchitectConnectionStatus status={architectStatus} /></div>
         <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-background px-4 py-4">
           {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
           {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} approvalBusy={sending} />)}

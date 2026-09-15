@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/api/supabase/client';
+import { base44Source } from '@/api/base44SourceClient';
 
 export default function useAgentConversation(agent, busy) {
   const [messages, setMessages] = useState([]), [conversationId, setConversationId] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false), [historyError, setHistoryError] = useState('');
+  const [architectContext, setArchitectContext] = useState('');
+  const [architectStatus, setArchitectStatus] = useState(null);
   const busyRef = useRef(busy), refreshRef = useRef(() => {}); busyRef.current = busy;
   useEffect(() => {
     if (!agent?.id) return;
@@ -36,6 +39,26 @@ export default function useAgentConversation(agent, busy) {
     window.addEventListener('focus', sync); window.addEventListener('online', sync); document.addEventListener('visibilitychange', sync);
     return () => { active = false; clearInterval(timer); if (channel) supabase.removeChannel(channel); window.removeEventListener('focus', sync); window.removeEventListener('online', sync); document.removeEventListener('visibilitychange', sync); };
   }, [agent?.id]);
+  useEffect(() => {
+    if (!agent?.id || !agent.architect_mode_enabled) {
+      setArchitectContext(''); setArchitectStatus(null); return;
+    }
+    let active = true;
+    setArchitectContext(''); setArchitectStatus({ state: 'checking' });
+    supabase.auth.getSession().then(async ({ data }) => {
+      try {
+        const accessToken = data.session?.access_token;
+        if (!accessToken) throw new Error('Sessão administrativa não encontrada.');
+        const response = await base44Source.functions.invoke('githubArchitect', { access_token: accessToken, agent_id: agent.id, bootstrap: true });
+        if (!active) return;
+        setArchitectContext(response.data.context || '');
+        setArchitectStatus({ state: 'connected', diagnostics: response.data.diagnostics });
+      } catch (error) {
+        if (active) setArchitectStatus({ state: 'error', message: error.message || 'Falha no diagnóstico técnico.' });
+      }
+    });
+    return () => { active = false; };
+  }, [agent?.id, agent?.architect_mode_enabled]);
   useEffect(() => { if (!busy) refreshRef.current(); }, [busy]);
-  return { messages, setMessages, conversationId, setConversationId, loadingHistory, historyError };
+  return { messages, setMessages, conversationId, setConversationId, loadingHistory, historyError, architectContext, architectStatus };
 }

@@ -53,7 +53,7 @@ async function getSupabaseContext(base44, userToken) {
     headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
   });
   if (profiles[0]?.role !== 'admin') throw new Error('Apenas administradores podem alterar o código-fonte.');
-  return { user: authUser, serviceKey };
+  return { user: authUser, serviceKey, supabaseToken: accessToken };
 }
 
 async function supabaseRows(path, serviceKey, options = {}) {
@@ -125,6 +125,48 @@ async function planChanges(base44, githubToken, request, operation, baseBranch) 
   });
 }
 
+async function buildArchitectContext(base44, githubToken, supabaseToken, repository) {
+  const tree = await requestJson(`https://api.github.com/repos/${REPOSITORY}/git/trees/${encodeURIComponent(repository.default_branch)}?recursive=1`, {
+    headers: githubHeaders(githubToken)
+  });
+  const paths = (tree.tree || []).filter((item) => item.type === 'blob').map((item) => item.path);
+  const preferred = [
+    'package.json', 'src/App.jsx', 'src/index.css', 'tailwind.config.js',
+    'src/components/AppLayout.jsx', 'src/components/AdminLayout.jsx',
+    'src/api/base44Client.js', 'src/api/supabase/tables.js',
+    'src/api/supabase/entities.js', 'src/api/supabase/auth.js',
+    'src/api/supabase/storageAndFunctions.js',
+    'supabase/functions/chat-with-agent/index.ts',
+    'supabase/functions/integrations/index.ts'
+  ].filter((path) => paths.includes(path));
+  const files = [];
+  for (const path of preferred) {
+    const file = await githubFile(githubToken, path, repository.default_branch);
+    files.push({ path, content: file.content.slice(0, 12000) });
+  }
+  const schema = await requestJson(`https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query/read-only`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${supabaseToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: "select table_name, column_name, data_type, is_nullable from information_schema.columns where table_schema = 'public' order by table_name, ordinal_position" })
+  });
+  const summary = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    prompt: `Crie um contexto técnico operacional, compacto e preciso, para o Modo Arquiteto do app MYRIAM. Ele deve permitir compreender sem explicações do administrador: arquitetura geral, rotas e telas, componentes e fluxos principais, Design System (tokens, tipografia, cores, responsividade), frontend, autenticação, camada Supabase, entidades/tabelas, Edge Functions, integrações e regras obrigatórias de segurança. Não invente. Diga que arquivos específicos devem ser relidos do GitHub antes de uma alteração.\n\nÁRVORE DO REPOSITÓRIO:\n${paths.slice(0, 3000).join('\n')}\n\nSCHEMA SUPABASE:\n${JSON.stringify(schema).slice(0, 60000)}\n\nARQUIVOS-BASE:\n${files.map((file) => `--- ${file.path} ---\n${file.content}`).join('\n\n')}`,
+    response_json_schema: {
+      type: 'object',
+      properties: { context: { type: 'string' } },
+      required: ['context']
+    }
+  });
+  return {
+    context: summary.context,
+    diagnostics: {
+      github: `Conectado a ${repository.full_name} (${repository.default_branch})`,
+      supabase: `Conectado ao projeto ${PROJECT_REF} (${Array.isArray(schema) ? schema.length : 0} colunas mapeadas)`,
+      commit: tree.sha || null
+    }
+  };
+}
+
 async function createPullRequest(githubToken, plan, baseBranch) {
   const baseRef = await requestJson(`https://api.github.com/repos/${REPOSITORY}/git/ref/heads/${encodeURIComponent(baseBranch)}`, {
     headers: githubHeaders(githubToken)
@@ -161,9 +203,16 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
-    if (!payload.access_token || !payload.conversation_id) return Response.json({ error: 'Dados obrigatórios ausentes.' }, { status: 400 });
+    if (!payload.access_token) return Response.json({ error: 'Sessão administrativa ausente.' }, { status: 400 });
 
-    const { user, serviceKey } = await getSupabaseContext(base44, payload.access_token);
+    const { user, serviceKey, supabaseToken } = await getSupabaseContext(base44, payload.access_token);
+    const { accessToken: githubToken } = await base44.asServiceRole.connectors.getConnection('github');
+    const repository = await requestJson(`https://api.github.com/repos/${REPOSITORY}`, { headers: githubHeaders(githubToken) });
+    if (payload.bootstrap === true) {
+      return Response.json(await buildArchitectContext(base44, githubToken, supabaseToken, repository));
+    }
+    if (!payload.conversation_id) return Response.json({ error: 'Conversa obrigatória ausente.' }, { status: 400 });
+
     const conversations = await supabaseRows(`agent_conversations?id=eq.${encodeURIComponent(payload.conversation_id)}&created_by_id=eq.${encodeURIComponent(user.id)}&select=*`, serviceKey);
     const conversation = conversations[0];
     const action = conversation?.pending_action;
@@ -171,8 +220,6 @@ export default async function(req) {
       return Response.json({ error: 'Nenhuma ação GitHub confirmada está pendente.' }, { status: 409 });
     }
 
-    const { accessToken: githubToken } = await base44.asServiceRole.connectors.getConnection('github');
-    const repository = await requestJson(`https://api.github.com/repos/${REPOSITORY}`, { headers: githubHeaders(githubToken) });
     const plan = await planChanges(base44, githubToken, action.args.request, action.args.operation, repository.default_branch);
 
     let reply = plan.reply;
