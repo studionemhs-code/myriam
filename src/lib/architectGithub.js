@@ -1,6 +1,5 @@
 import { base44 } from '@/api/base44Client';
-import { supabase } from '@/api/supabase/client';
-import { base44Source } from '@/api/base44SourceClient';
+import { invokeEdgeFunction } from '@/api/supabase/storageAndFunctions';
 
 export async function approveArchitectAction({ agentId, conversationId }) {
   const response = await base44.functions.invoke('chatWithAgent', {
@@ -25,12 +24,7 @@ export async function respondToArchitectProposal({ agentId, conversationId, acti
 export async function completeGithubArchitectAction(responseData) {
   if (!responseData?.github_action) return responseData?.reply || '';
 
-  const { data: sessionData } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (!accessToken) throw new Error('Sessão administrativa não encontrada.');
-
-  const response = await base44Source.functions.invoke('githubArchitect', {
-    access_token: accessToken,
+  const response = await invokeEdgeFunction('githubArchitect', {
     conversation_id: responseData.conversation_id,
     agent_id: responseData.agent_id
   });

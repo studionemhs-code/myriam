@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/api/supabase/client';
-import { base44Source } from '@/api/base44SourceClient';
+import { invokeEdgeFunction } from '@/api/supabase/storageAndFunctions';
 
 export default function useAgentConversation(agent, busy) {
   const [messages, setMessages] = useState([]), [conversationId, setConversationId] = useState(null);
@@ -49,7 +49,7 @@ export default function useAgentConversation(agent, busy) {
       try {
         const accessToken = data.session?.access_token;
         if (!accessToken) throw new Error('Sessão administrativa não encontrada.');
-        const response = await base44Source.functions.invoke('githubArchitect', { access_token: accessToken, agent_id: agent.id, bootstrap: true });
+        const response = await invokeEdgeFunction('githubArchitect', { agent_id: agent.id, bootstrap: true });
         if (!active) return;
         setArchitectContext(response.data.context || '');
         setArchitectStatus({ state: 'connected', diagnostics: response.data.diagnostics });
