@@ -7,6 +7,7 @@ import AgentComposer from '@/components/ai/AgentComposer';
 import AgentMessage from '@/components/ai/AgentMessage';
 import LiveVoiceConversation from '@/components/ai/LiveVoiceConversation';
 import { supabase } from '@/api/supabase/client';
+import { completeGithubArchitectAction } from '@/lib/architectGithub';
 
 export default function AgentChat() {
   const [agents, setAgents] = useState(null);
@@ -75,7 +76,7 @@ export default function AgentChat() {
         if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext;
       }
       const res = await base44.functions.invoke('chatWithAgent', { agent_id: selected.id, message: msg || 'Analise o arquivo anexado.', conversation_id: activeConvId, file_context: fileContext });
-      const reply = res.data.reply || '';
+      const reply = await completeGithubArchitectAction(res.data);
       let audioUrl = '';
       if (mode !== 'text' && selected.voice_enabled !== false) {
         const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: selected.default_voice || 'river', agent_id: selected.id });

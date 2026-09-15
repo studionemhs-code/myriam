@@ -216,10 +216,11 @@ async function architectBroadcastNotification(
 }
 
 type ArchitectAction = {
-  tool: 'architect_crud' | 'architect_invite_user' | 'architect_broadcast_notification';
+  tool: 'architect_crud' | 'architect_invite_user' | 'architect_broadcast_notification' | 'architect_github';
   args: Record<string, any>;
   summary: string;
   requested_at: string;
+  confirmed_at?: string;
 };
 
 const normalizeReply = (value: string) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
@@ -229,6 +230,7 @@ const isArchitectCancellation = (value: string) => /^(nao\b|cancelar\b|cancele\b
 function describeArchitectAction(tool: string, args: any): string {
   if (tool === 'architect_crud') return `${args.operation} em ${args.table}${args.id ? ` (ID ${args.id})` : ''} com ${JSON.stringify(args.data || args.filter || {})}`;
   if (tool === 'architect_invite_user') return `convidar ${args.email} com papel ${args.role || 'user'}`;
+  if (tool === 'architect_github') return `${args.operation} no código-fonte de studionemhs-code/myriam: ${args.request}`;
   return `enviar notificação "${args.title}" para ${Array.isArray(args.target) ? args.target.length + ' usuários' : args.target}`;
 }
 
@@ -308,6 +310,18 @@ const TOOL_DEFS = [
 // ============================================================================
 
 const ARCHITECT_TOOL_DEFS = [
+  { type: 'function', function: {
+    name: 'architect_github',
+    description: 'MODO ARQUITETO: prepara sugestões, edições ou exclusões no código-fonte do repositório studionemhs-code/myriam. Edições e exclusões são aplicadas somente em uma nova branch e entregues como pull request para revisão. Nunca altera diretamente a branch principal.',
+    parameters: {
+      type: 'object',
+      properties: {
+        operation: { type: 'string', enum: ['edit', 'delete', 'suggest'], description: 'Tipo de trabalho no código-fonte' },
+        request: { type: 'string', description: 'Descrição completa e específica do que deve ser analisado ou alterado' }
+      },
+      required: ['operation', 'request']
+    }
+  }},
   { type: 'function', function: {
     name: 'architect_crud',
     description: 'MODO ARQUITETO: cria, lista, atualiza ou exclui registros em qualquer tabela do sistema. Use para gerenciar conteúdos da caminhada (preparation_days), orações (prayers), notificações (notifications), conteúdos ACAMF (acamf_contents), jornadas (collective_journeys), configurações, etc. Operação "list" retorna registros; "create" insere; "update" altera (precisa id); "delete" remove (precisa id).',
@@ -404,6 +418,20 @@ Deno.serve(async (req) => {
 
     let pendingAction: ArchitectAction | null = isArchitect ? conversation?.pending_action || null : null;
     if (pendingAction && isArchitectConfirmation(message)) {
+      if (pendingAction.tool === 'architect_github') {
+        const now = new Date().toISOString();
+        const reply = 'Confirmação recebida. Estou preparando a análise do código e o pull request para revisão.';
+        const confirmedAction = { ...pendingAction, confirmed_at: now };
+        await db.from('agent_conversations').update({
+          pending_action: confirmedAction,
+          messages: [
+            ...(conversation.messages || []),
+            { role: 'user', content: message, timestamp: now },
+            { role: 'assistant', content: reply, timestamp: now }
+          ]
+        }).eq('id', conversation.id).eq('created_by_id', user.id);
+        return json({ reply, conversation_id: conversation.id, agent_id, github_action: true, used_tools: true });
+      }
       const result = await executeArchitectAction(pendingAction, db);
       await auditArchitectAction(pendingAction, result, user, agent_id, conversation.id, db);
       const now = new Date().toISOString();
@@ -459,7 +487,7 @@ Deno.serve(async (req) => {
     if (file_context) systemPrompt += `\n\n--- ARQUIVO ANEXADO PELO USUÁRIO ---\n${String(file_context).slice(0, 100000)}`;
 
     if (isArchitect) {
-      systemPrompt += '\n\n--- MODO ARQUITETO ATIVO ---\nVocê tem permissões de administrador total. Pode criar, editar, listar e excluir registros em qualquer tabela do sistema usando a ferramenta architect_crud. Tabelas principais: preparation_days (dias da caminhada), prayers (orações), prayer_categories, notifications (notificações/novidades), acamf_contents (conteúdos ACAMF), collective_journeys (jornadas), marian_calendar_events (calendário mariano), courses, journey_contents, certificate_templates, feature_flags, store_settings, webhook_automations, consecration_settings, registration_settings, notification_settings, warranty_settings, association_settings, catalog_products, quote_requests e architect_audit_log (histórico das ações do modo Arquiteto).\n\nVocê também pode convidar usuários (architect_invite_user) e enviar notificações/novidades (architect_broadcast_notification).\n\nDiretrizes:\n- Toda ação que altera dados (criar, editar, excluir, convidar ou enviar notificações) exige consentimento explícito. A ferramenta armazenará a ação pendente sem executá-la; descreva exatamente a ação e peça ao admin para responder "Confirmo" ou "Cancelar". Nunca afirme que ela foi executada antes da confirmação.\n- Operações apenas de leitura/listagem podem ser executadas imediatamente, sem confirmação.\n- Ao criar conteúdo, use os campos corretos de cada tabela. Se não souber os campos, faça um "list" primeiro para ver a estrutura.\n- Seja proativo: ajude o admin a gerenciar todo o sistema — criar dias de preparação, orações, notificações, jornadas, conteúdos, etc.\n- Para criar um dia da caminhada: architect_crud com table="preparation_days", operation="create", data={day_number, title, description, phase, text, prayer, practice, gender, is_published}.\n- Para criar uma oração: architect_crud com table="prayers", operation="create", data={title, category_id, content, is_published}.\n- Para enviar novidade: architect_broadcast_notification com category="novidades", title, body, target="all".';
+      systemPrompt += '\n\n--- MODO ARQUITETO ATIVO ---\nVocê tem permissões de administrador total. Pode criar, editar, listar e excluir registros em qualquer tabela do sistema usando a ferramenta architect_crud. Tabelas principais: preparation_days (dias da caminhada), prayers (orações), prayer_categories, notifications (notificações/novidades), acamf_contents (conteúdos ACAMF), collective_journeys (jornadas), marian_calendar_events (calendário mariano), courses, journey_contents, certificate_templates, feature_flags, store_settings, webhook_automations, consecration_settings, registration_settings, notification_settings, warranty_settings, association_settings, catalog_products, quote_requests e architect_audit_log (histórico das ações do modo Arquiteto).\n\nVocê também pode convidar usuários (architect_invite_user), enviar notificações/novidades (architect_broadcast_notification) e trabalhar no código-fonte do repositório studionemhs-code/myriam (architect_github). Para código, use suggest para recomendações e edit/delete para mudanças; toda mudança será criada em branch separada e entregue como pull request, nunca diretamente na branch principal.\n\nDiretrizes:\n- Toda ação que altera dados (criar, editar, excluir, convidar ou enviar notificações) exige consentimento explícito. A ferramenta armazenará a ação pendente sem executá-la; descreva exatamente a ação e peça ao admin para responder "Confirmo" ou "Cancelar". Nunca afirme que ela foi executada antes da confirmação.\n- Operações apenas de leitura/listagem podem ser executadas imediatamente, sem confirmação.\n- Ao criar conteúdo, use os campos corretos de cada tabela. Se não souber os campos, faça um "list" primeiro para ver a estrutura.\n- Seja proativo: ajude o admin a gerenciar todo o sistema — criar dias de preparação, orações, notificações, jornadas, conteúdos, etc.\n- Para criar um dia da caminhada: architect_crud com table="preparation_days", operation="create", data={day_number, title, description, phase, text, prayer, practice, gender, is_published}.\n- Para criar uma oração: architect_crud com table="prayers", operation="create", data={title, category_id, content, is_published}.\n- Para enviar novidade: architect_broadcast_notification com category="novidades", title, body, target="all".';
     }
 
     const modelMap: Record<string, string> = {
@@ -503,7 +531,7 @@ Deno.serve(async (req) => {
             else if (tc.function.name === 'list_prayers') result = await listPrayers(args.category ?? null, db);
             else if (tc.function.name === 'get_active_journeys') result = await getActiveJourneys(db, user.id);
             else if (tc.function.name === 'architect_crud' && args.operation === 'list') result = await architectCrud(args.table, args.operation, args.data, args.filter, args.id, db);
-            else if (['architect_crud', 'architect_invite_user', 'architect_broadcast_notification'].includes(tc.function.name)) {
+            else if (['architect_crud', 'architect_invite_user', 'architect_broadcast_notification', 'architect_github'].includes(tc.function.name)) {
               if (pendingAction) {
                 result = `Já existe uma ação aguardando confirmação: ${pendingAction.summary}. Peça ao admin para confirmar ou cancelar.`;
               } else {

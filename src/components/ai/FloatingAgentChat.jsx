@@ -6,6 +6,7 @@ import FloatingAgentIcon from './FloatingAgentIcon';
 import AgentComposer from './AgentComposer';
 import AgentMessage from './AgentMessage';
 import LiveVoiceConversation from './LiveVoiceConversation';
+import { completeGithubArchitectAction } from '@/lib/architectGithub';
 
 export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) {
   const [messages, setMessages] = useState([]);
@@ -68,7 +69,7 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
         if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext;
       }
       const res = await base44.functions.invoke('chatWithAgent', { agent_id: agent.id, message: msg || 'Analise o arquivo anexado.', conversation_id: convId, file_context: fileContext });
-      const reply = res.data.reply || '';
+      const reply = await completeGithubArchitectAction(res.data);
       let audioUrl = '';
       if (mode !== 'text' && agent.voice_enabled !== false) {
         const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: agent.default_voice || 'river', agent_id: agent.id });
