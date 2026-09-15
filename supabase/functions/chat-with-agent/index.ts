@@ -390,8 +390,8 @@ Deno.serve(async (req) => {
     const user = await currentUser(req);
     if (!user) return json({ error: 'Unauthorized' }, 401);
 
-    const { agent_id, message, conversation_id, file_context } = await req.json();
-    if (!agent_id || !message) return json({ error: 'agent_id e message são obrigatórios' }, 400);
+    const { agent_id, message, conversation_id, file_context, approve_pending_action = false } = await req.json();
+    if (!agent_id || (!message && !approve_pending_action)) return json({ error: 'agent_id e message são obrigatórios' }, 400);
 
     const db = admin();
     const { data: agent } = await db.from('ai_agents').select('*').eq('id', agent_id).maybeSingle();
@@ -417,7 +417,7 @@ Deno.serve(async (req) => {
     }
 
     let pendingAction: ArchitectAction | null = isArchitect ? conversation?.pending_action || null : null;
-    if (pendingAction && isArchitectConfirmation(message)) {
+    if (pendingAction && approve_pending_action === true) {
       if (pendingAction.tool === 'architect_github') {
         const now = new Date().toISOString();
         const reply = 'Confirmação recebida. Estou preparando a análise do código e o pull request para revisão.';
@@ -487,7 +487,7 @@ Deno.serve(async (req) => {
     if (file_context) systemPrompt += `\n\n--- ARQUIVO ANEXADO PELO USUÁRIO ---\n${String(file_context).slice(0, 100000)}`;
 
     if (isArchitect) {
-      systemPrompt += '\n\n--- MODO ARQUITETO ATIVO ---\nVocê tem permissões de administrador total. Pode criar, editar, listar e excluir registros em qualquer tabela do sistema usando a ferramenta architect_crud. Tabelas principais: preparation_days (dias da caminhada), prayers (orações), prayer_categories, notifications (notificações/novidades), acamf_contents (conteúdos ACAMF), collective_journeys (jornadas), marian_calendar_events (calendário mariano), courses, journey_contents, certificate_templates, feature_flags, store_settings, webhook_automations, consecration_settings, registration_settings, notification_settings, warranty_settings, association_settings, catalog_products, quote_requests e architect_audit_log (histórico das ações do modo Arquiteto).\n\nVocê também pode convidar usuários (architect_invite_user), enviar notificações/novidades (architect_broadcast_notification) e trabalhar no código-fonte do repositório studionemhs-code/myriam (architect_github). Para código, use suggest para recomendações e edit/delete para mudanças; toda mudança será criada em branch separada e entregue como pull request, nunca diretamente na branch principal.\n\nDiretrizes:\n- Toda ação que altera dados (criar, editar, excluir, convidar ou enviar notificações) exige consentimento explícito. A ferramenta armazenará a ação pendente sem executá-la; descreva exatamente a ação e peça ao admin para responder "Confirmo" ou "Cancelar". Nunca afirme que ela foi executada antes da confirmação.\n- Operações apenas de leitura/listagem podem ser executadas imediatamente, sem confirmação.\n- Ao criar conteúdo, use os campos corretos de cada tabela. Se não souber os campos, faça um "list" primeiro para ver a estrutura.\n- Seja proativo: ajude o admin a gerenciar todo o sistema — criar dias de preparação, orações, notificações, jornadas, conteúdos, etc.\n- Para criar um dia da caminhada: architect_crud com table="preparation_days", operation="create", data={day_number, title, description, phase, text, prayer, practice, gender, is_published}.\n- Para criar uma oração: architect_crud com table="prayers", operation="create", data={title, category_id, content, is_published}.\n- Para enviar novidade: architect_broadcast_notification com category="novidades", title, body, target="all".';
+      systemPrompt += '\n\n--- MODO ARQUITETO ATIVO ---\nVocê tem permissões de administrador total. Pode criar, editar, listar e excluir registros em qualquer tabela do sistema usando a ferramenta architect_crud. Tabelas principais: preparation_days (dias da caminhada), prayers (orações), prayer_categories, notifications (notificações/novidades), acamf_contents (conteúdos ACAMF), collective_journeys (jornadas), marian_calendar_events (calendário mariano), courses, journey_contents, certificate_templates, feature_flags, store_settings, webhook_automations, consecration_settings, registration_settings, notification_settings, warranty_settings, association_settings, catalog_products, quote_requests e architect_audit_log (histórico das ações do modo Arquiteto).\n\nVocê também pode convidar usuários (architect_invite_user), enviar notificações/novidades (architect_broadcast_notification) e trabalhar no código-fonte do repositório studionemhs-code/myriam (architect_github). Para código, use suggest para recomendações e edit/delete para mudanças; toda mudança será criada em branch separada e entregue como pull request, nunca diretamente na branch principal.\n\nDiretrizes:\n- Toda ação que altera dados (criar, editar, excluir, convidar ou enviar notificações) exige aprovação pelo botão "Aprovar Mudança". A ferramenta armazenará a ação pendente sem executá-la; descreva exatamente a ação e oriente o admin a tocar no botão. Confirmações digitadas no chat não autorizam a execução. Nunca afirme que ela foi executada antes da aprovação pelo botão.\n- Operações apenas de leitura/listagem podem ser executadas imediatamente, sem confirmação.\n- Ao criar conteúdo, use os campos corretos de cada tabela. Se não souber os campos, faça um "list" primeiro para ver a estrutura.\n- Seja proativo: ajude o admin a gerenciar todo o sistema — criar dias de preparação, orações, notificações, jornadas, conteúdos, etc.\n- Para criar um dia da caminhada: architect_crud com table="preparation_days", operation="create", data={day_number, title, description, phase, text, prayer, practice, gender, is_published}.\n- Para criar uma oração: architect_crud com table="prayers", operation="create", data={title, category_id, content, is_published}.\n- Para enviar novidade: architect_broadcast_notification com category="novidades", title, body, target="all".';
     }
 
     const modelMap: Record<string, string> = {
@@ -536,7 +536,7 @@ Deno.serve(async (req) => {
                 result = `Já existe uma ação aguardando confirmação: ${pendingAction.summary}. Peça ao admin para confirmar ou cancelar.`;
               } else {
                 pendingAction = { tool: tc.function.name as ArchitectAction['tool'], args, summary: describeArchitectAction(tc.function.name, args), requested_at: new Date().toISOString() };
-                result = `AÇÃO PENDENTE DE CONSENTIMENTO: ${pendingAction.summary}. Nenhuma alteração foi executada. Peça confirmação explícita ao admin.`;
+                result = `AÇÃO PENDENTE DE CONSENTIMENTO: ${pendingAction.summary}. Nenhuma alteração foi executada. Oriente o admin a tocar no botão \"Aprovar Mudança\".`;
               }
             }
             else result = 'Ferramenta desconhecida.';
@@ -576,7 +576,12 @@ Deno.serve(async (req) => {
       conversation = created;
     }
 
-    return json({ reply: assistantMessage, conversation_id: conversation?.id, used_tools: usedTools });
+    return json({
+      reply: assistantMessage,
+      conversation_id: conversation?.id,
+      used_tools: usedTools,
+      pending_action: pendingAction ? { summary: pendingAction.summary, requested_at: pendingAction.requested_at } : null
+    });
   } catch (error) {
     return json({ error: (error as Error).message }, 500);
   }

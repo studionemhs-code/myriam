@@ -6,7 +6,7 @@ import FloatingAgentIcon from './FloatingAgentIcon';
 import AgentComposer from './AgentComposer';
 import AgentMessage from './AgentMessage';
 import LiveVoiceConversation from './LiveVoiceConversation';
-import { completeGithubArchitectAction } from '@/lib/architectGithub';
+import { approveArchitectAction, completeGithubArchitectAction } from '@/lib/architectGithub';
 
 export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) {
   const [messages, setMessages] = useState([]);
@@ -34,7 +34,9 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
       if (!active) return;
       const conversation = data?.[0];
       setConvId(conversation?.id || null);
-      setMessages(conversation?.messages?.filter(message => message.role !== 'system') || (agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []));
+      const loadedMessages = conversation?.messages?.filter(message => message.role !== 'system') || (agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []);
+      if (conversation?.pending_action) loadedMessages.push({ role: 'assistant', pending_action: conversation.pending_action });
+      setMessages(loadedMessages);
       await supabase.rpc('mark_agent_conversation_read', { p_agent_id: agent.id });
       if (active) setLoadingHistory(false);
     })();
@@ -75,9 +77,24 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
         const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: agent.default_voice || 'river', agent_id: agent.id });
         audioUrl = speech?.url || '';
       }
-      setMessages(m => [...m, { role: 'assistant', content: reply, audio_url: audioUrl }]);
+      setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'assistant', content: reply, audio_url: audioUrl, pending_action: res.data.pending_action || null }]);
       if (live && audioUrl) new Audio(audioUrl).play().catch(() => {});
       if (res.data.conversation_id) setConvId(res.data.conversation_id);
+      onAssistantReply?.(mountedRef.current);
+    } catch (err) {
+      setMessages(m => [...m, { role: 'assistant', content: 'Erro: ' + (err.message || 'tente novamente') }]);
+    } finally { setSending(false); }
+  };
+
+  const approveChange = async () => {
+    if (sending || !convId) return;
+    setSending(true);
+    try {
+      const result = await approveArchitectAction({ agentId: agent.id, conversationId: convId });
+      setMessages(m => [...m.map(item => ({ ...item, pending_action: null })),
+        { role: 'user', content: 'Mudança aprovada pelo botão.' },
+        { role: 'assistant', content: result.reply, pr_url: result.pr_url }
+      ]);
       onAssistantReply?.(mountedRef.current);
     } catch (err) {
       setMessages(m => [...m, { role: 'assistant', content: 'Erro: ' + (err.message || 'tente novamente') }]);
@@ -113,7 +130,7 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-background px-4 py-4">
           {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
-          {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} />)}
+          {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} approvalBusy={sending} />)}
           {sending && (
             <div className="flex justify-start">
               <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-3">

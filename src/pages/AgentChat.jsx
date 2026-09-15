@@ -7,7 +7,7 @@ import AgentComposer from '@/components/ai/AgentComposer';
 import AgentMessage from '@/components/ai/AgentMessage';
 import LiveVoiceConversation from '@/components/ai/LiveVoiceConversation';
 import { supabase } from '@/api/supabase/client';
-import { completeGithubArchitectAction } from '@/lib/architectGithub';
+import { approveArchitectAction, completeGithubArchitectAction } from '@/lib/architectGithub';
 
 export default function AgentChat() {
   const [agents, setAgents] = useState(null);
@@ -47,7 +47,9 @@ export default function AgentChat() {
       if (error) throw error;
       const conversation = data?.[0];
       if (conversation) {
-        setMessages((conversation.messages || []).filter(message => message.role !== 'system'));
+        const loadedMessages = (conversation.messages || []).filter(message => message.role !== 'system');
+        if (conversation.pending_action) loadedMessages.push({ role: 'assistant', pending_action: conversation.pending_action });
+        setMessages(loadedMessages);
         setActiveConvId(conversation.id);
       } else {
         setMessages(agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []);
@@ -82,9 +84,23 @@ export default function AgentChat() {
         const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: selected.default_voice || 'river', agent_id: selected.id });
         audioUrl = speech?.url || '';
       }
-      setMessages(m => [...m, { role: 'assistant', content: reply, audio_url: audioUrl }]);
+      setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'assistant', content: reply, audio_url: audioUrl, pending_action: res.data.pending_action || null }]);
       if (live && audioUrl) new Audio(audioUrl).play().catch(() => {});
       if (res.data.conversation_id) setActiveConvId(res.data.conversation_id);
+    } catch (err) {
+      setMessages(m => [...m, { role: 'assistant', content: 'Erro: ' + (err.message || 'tente novamente') }]);
+    } finally { setSending(false); }
+  };
+
+  const approveChange = async () => {
+    if (sending || !activeConvId) return;
+    setSending(true);
+    try {
+      const result = await approveArchitectAction({ agentId: selected.id, conversationId: activeConvId });
+      setMessages(m => [...m.map(item => ({ ...item, pending_action: null })),
+        { role: 'user', content: 'Mudança aprovada pelo botão.' },
+        { role: 'assistant', content: result.reply, pr_url: result.pr_url }
+      ]);
     } catch (err) {
       setMessages(m => [...m, { role: 'assistant', content: 'Erro: ' + (err.message || 'tente novamente') }]);
     } finally { setSending(false); }
@@ -137,7 +153,7 @@ export default function AgentChat() {
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4">
         {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
-        {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} />)}
+        {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} approvalBusy={sending} />)}
         {sending && (
           <div className="flex justify-start">
             <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-3">
