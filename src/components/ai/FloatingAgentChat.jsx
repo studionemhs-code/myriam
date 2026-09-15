@@ -6,7 +6,7 @@ import FloatingAgentIcon from './FloatingAgentIcon';
 import AgentComposer from './AgentComposer';
 import AgentMessage from './AgentMessage';
 import LiveVoiceConversation from './LiveVoiceConversation';
-import { approveArchitectAction, completeGithubArchitectAction } from '@/lib/architectGithub';
+import { approveArchitectAction, completeGithubArchitectAction, respondToArchitectProposal } from '@/lib/architectGithub';
 import useAgentConversation from '@/components/ai/useAgentConversation';
 import prepareAgentAttachment from '@/components/ai/prepareAgentAttachment';
 import ArchitectConnectionStatus from '@/components/ai/ArchitectConnectionStatus';
@@ -92,6 +92,19 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
     } finally { setSending(false); }
   };
 
+  const handleProposal = async (action, text = '') => {
+    if (sending || !convId) return;
+    setSending(true);
+    try {
+      const result = await respondToArchitectProposal({ agentId: agent.id, conversationId: convId, action, text });
+      const userText = action === 'reject' ? 'Proposta recusada.' : action === 'edit' ? `Proposta editada:\n${text}` : `Contraproposta:\n${text}`;
+      setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'user', content: userText }, { role: 'assistant', content: result.reply, pending_action: result.pending_action || null }]);
+      onAssistantReply?.(mountedRef.current);
+    } catch (err) {
+      setMessages(m => [...m, { role: 'assistant', content: 'Erro: ' + (err.message || 'tente novamente') }]);
+    } finally { setSending(false); }
+  };
+
   const sendAudio = async (audioFile) => send(audioFile, false);
 
   return (
@@ -123,7 +136,7 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
         <div className="px-4 pt-2"><ArchitectConnectionStatus status={architectStatus} /></div>
         <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-background px-4 py-4">
           {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
-          {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} approvalBusy={sending} />)}
+          {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} onReject={() => handleProposal('reject')} onRevise={(text, action) => handleProposal(action, text)} approvalBusy={sending} />)}
           {sending && (
             <div className="flex justify-start">
               <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-3">

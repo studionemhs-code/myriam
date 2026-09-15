@@ -7,7 +7,7 @@ import AgentComposer from '@/components/ai/AgentComposer';
 import AgentMessage from '@/components/ai/AgentMessage';
 import LiveVoiceConversation from '@/components/ai/LiveVoiceConversation';
 import { supabase } from '@/api/supabase/client';
-import { approveArchitectAction, completeGithubArchitectAction } from '@/lib/architectGithub';
+import { approveArchitectAction, completeGithubArchitectAction, respondToArchitectProposal } from '@/lib/architectGithub';
 import useAgentConversation from '@/components/ai/useAgentConversation';
 import prepareAgentAttachment from '@/components/ai/prepareAgentAttachment';
 import useAvailableAgents from '@/components/ai/useAvailableAgents';
@@ -87,6 +87,18 @@ export default function AgentChat() {
     } finally { setSending(false); }
   };
 
+  const handleProposal = async (action, text = '') => {
+    if (sending || !activeConvId) return;
+    setSending(true);
+    try {
+      const result = await respondToArchitectProposal({ agentId: selected.id, conversationId: activeConvId, action, text });
+      const userText = action === 'reject' ? 'Proposta recusada.' : action === 'edit' ? `Proposta editada:\n${text}` : `Contraproposta:\n${text}`;
+      setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'user', content: userText }, { role: 'assistant', content: result.reply, pending_action: result.pending_action || null }]);
+    } catch (err) {
+      setMessages(m => [...m, { role: 'assistant', content: 'Erro: ' + (err.message || 'tente novamente') }]);
+    } finally { setSending(false); }
+  };
+
   const sendAudio = async (audioFile) => send(audioFile, false);
 
   if (agentsError && !agents) return <p role="alert" className="py-12 text-center text-destructive">Não foi possível carregar os assistentes. Tentando novamente...</p>;
@@ -137,7 +149,7 @@ export default function AgentChat() {
       <ArchitectConnectionStatus status={architectStatus} />
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4">
         {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
-        {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} approvalBusy={sending} />)}
+        {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} onReject={() => handleProposal('reject')} onRevise={(text, action) => handleProposal(action, text)} approvalBusy={sending} />)}
         {sending && (
           <div className="flex justify-start">
             <div className="flex items-center gap-1.5 rounded-2xl bg-muted px-4 py-3">

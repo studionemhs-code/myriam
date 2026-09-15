@@ -392,8 +392,10 @@ Deno.serve(async (req) => {
     const user = await currentUser(req);
     if (!user) return json({ error: 'Unauthorized' }, 401);
 
-    const { agent_id, message, conversation_id, file_context, attachment, approve_pending_action = false } = await req.json();
-    if (!agent_id || (!message && !approve_pending_action)) return json({ error: 'agent_id e message são obrigatórios' }, 400);
+    const payload = await req.json();
+    const { agent_id, conversation_id, file_context, attachment, approve_pending_action = false, reject_pending_action = false, revise_pending_action = null } = payload;
+    const message = String(payload.message || '').trim();
+    if (!agent_id || (!message && !approve_pending_action && !reject_pending_action)) return json({ error: 'agent_id e message são obrigatórios' }, 400);
 
     const db = admin();
     const agent = await accessibleAgent(agent_id, user);
@@ -411,6 +413,12 @@ Deno.serve(async (req) => {
     const history = (conversation.messages || []).filter((m: any) => m.role !== 'system' && typeof m.content === 'string').map((m: any) => ({ role: m.role, content: m.content }));
 
     let pendingAction: ArchitectAction | null = isArchitect ? conversation?.pending_action || null : null;
+    let pendingRevisionContext = '';
+    if (pendingAction && revise_pending_action && message) {
+      const modeLabel = revise_pending_action === 'edit' ? 'texto editado da proposta' : 'contraproposta do administrador';
+      pendingRevisionContext = `\n\n--- REVISÃO DA PROPOSTA PENDENTE ---\nProposta anterior: ${pendingAction.summary}\n${modeLabel}: ${message}\nSubstitua a proposta anterior por uma nova ação pendente que reflita exatamente esta revisão.`;
+      pendingAction = null;
+    }
     if (pendingAction && approve_pending_action === true) {
       if (pendingAction.tool === 'architect_github') {
         const now = new Date().toISOString();
@@ -432,9 +440,9 @@ Deno.serve(async (req) => {
       ], null);
       return json({ reply, conversation_id: conversation.id, used_tools: true });
     }
-    if (pendingAction && isArchitectCancellation(message)) {
+    if (pendingAction && (reject_pending_action === true || isArchitectCancellation(message))) {
       const now = new Date().toISOString();
-      const reply = `Ação cancelada: ${pendingAction.summary}. Nenhuma alteração foi realizada.`;
+      const reply = `Proposta recusada: ${pendingAction.summary}. Nenhuma alteração foi realizada.`;
       await appendAgentMessages(db, conversation.id, user.id, [
         { id: crypto.randomUUID(), role: 'user', content: message, timestamp: now },
         { id: crypto.randomUUID(), role: 'assistant', content: reply, timestamp: now }
@@ -479,6 +487,7 @@ Deno.serve(async (req) => {
     if (file_context) systemPrompt += `\n\n--- ARQUIVO ANEXADO PELO USUÁRIO ---\n${String(file_context).slice(0, 100000)}`;
 
     if (isArchitect) {
+      systemPrompt += pendingRevisionContext;
       systemPrompt += '\n\n--- MODO ARQUITETO ATIVO ---\nVocê tem permissões de administrador total. Pode criar, editar, listar e excluir registros em qualquer tabela do sistema usando a ferramenta architect_crud. Tabelas principais: preparation_days (dias da caminhada), prayers (orações), prayer_categories, notifications (notificações/novidades), acamf_contents (conteúdos ACAMF), collective_journeys (jornadas), marian_calendar_events (calendário mariano), courses, journey_contents, certificate_templates, feature_flags, store_settings, webhook_automations, consecration_settings, registration_settings, notification_settings, warranty_settings, association_settings, catalog_products, quote_requests e architect_audit_log (histórico das ações do modo Arquiteto).\n\nVocê também pode convidar usuários (architect_invite_user), enviar notificações/novidades (architect_broadcast_notification) e trabalhar no código-fonte do repositório studionemhs-code/myriam (architect_github). Para código, use suggest para recomendações e edit/delete para mudanças; toda mudança será criada em branch separada e entregue como pull request, nunca diretamente na branch principal.\n\nDiretrizes:\n- Toda ação que altera dados (criar, editar, excluir, convidar ou enviar notificações) exige aprovação pelo botão "Aprovar Mudança". A ferramenta armazenará a ação pendente sem executá-la; descreva exatamente a ação e oriente o admin a tocar no botão. Confirmações digitadas no chat não autorizam a execução. Nunca afirme que ela foi executada antes da aprovação pelo botão.\n- Operações apenas de leitura/listagem podem ser executadas imediatamente, sem confirmação.\n- Ao criar conteúdo, use os campos corretos de cada tabela. Se não souber os campos, faça um "list" primeiro para ver a estrutura.\n- Seja proativo: ajude o admin a gerenciar todo o sistema — criar dias de preparação, orações, notificações, jornadas, conteúdos, etc.\n- Para criar um dia da caminhada: architect_crud com table="preparation_days", operation="create", data={day_number, title, description, phase, text, prayer, practice, gender, is_published}.\n- Para criar uma oração: architect_crud com table="prayers", operation="create", data={title, category_id, content, is_published}.\n- Para enviar novidade: architect_broadcast_notification com category="novidades", title, body, target="all".';
     }
 
