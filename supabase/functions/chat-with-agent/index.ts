@@ -1,6 +1,7 @@
 import { json, preflight, currentUser, admin } from '../_shared/utils.ts';
 import { accessibleAgent, agentKey, requestAgentOpenAI } from '../_shared/agentAccess.ts';
 import { loadAgentThread, appendAgentMessages } from '../_shared/agentConversation.ts';
+import { agentIdentity } from '../_shared/agentIdentity.ts';
 
 // ============================================================================
 // FERRAMENTAS GERAIS
@@ -374,8 +375,7 @@ const ARCHITECT_TOOL_DEFS = [
 // ============================================================================
 function extractFacts(message: string): string[] {
   const facts: string[] = [];
-  const nameMatch = message.match(/(?:meu nome é|me chamo|eu sou o|eu sou a)\s+([A-Za-zÀ-ÿ]{2,})/i);
-  if (nameMatch) facts.push(`O usuário se chama ${nameMatch[1]}`);
+  // O nome vem do perfil atual, nunca da extração de trechos da conversa.
   const lower = message.toLowerCase();
   if (lower.includes('já me consagrei') || lower.includes('sou consagrad')) facts.push('O usuário já é consagrado');
   if (lower.includes('estou em preparação') || lower.includes('estou me preparando')) facts.push('O usuário está em preparação');
@@ -455,7 +455,8 @@ Deno.serve(async (req) => {
     const memoryFacts: any[] = memoryRow?.facts || [];
 
     // === CONTEXTO DO USUÁRIO (injetado no prompt) ===
-    const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    const { data: profile, error: profileError } = await db.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if (profileError) throw profileError;
     const { data: progress } = await db.from('user_progress').select('current_day,completed_days,status').eq('created_by_id', user.id).order('created_date', { ascending: false }).limit(1).maybeSingle();
     const today = new Date();
     const future = new Date(today.getTime() + 30 * 86400000);
@@ -463,7 +464,7 @@ Deno.serve(async (req) => {
 
     const statusLabels: Record<string, string> = { interessado: 'Interessado', preparacao: 'Em Preparação', consagrado: 'Consagrado', usuario_escolhe: 'A definir' };
     let userContext = '\n\n--- CONTEXTO DO USUÁRIO ---\n';
-    userContext += `Nome: ${profile?.full_name || profile?.display_name || 'Não informado'}\n`;
+    userContext += `Nome: ${profile?.display_name?.trim() || profile?.full_name?.trim() || 'Não informado'}\n`;
     userContext += `Status espiritual: ${statusLabels[profile?.status] || 'Interessado'}\n`;
     if (profile?.consecration_date) userContext += `Data de consagração: ${profile.consecration_date}\n`;
     if (progress && profile?.status === 'preparacao') {
@@ -480,7 +481,7 @@ Deno.serve(async (req) => {
     let systemPrompt = agent.instructions || 'Você é um assistente espiritual útil.';
     if (agent.knowledge_content) systemPrompt += '\n\n--- CONHECIMENTO ---\n' + agent.knowledge_content;
     if (memoryFacts.length > 0) {
-      systemPrompt += '\n\n--- O QUE VOCÊ LEMBRA DO USUÁRIO ---\n' + memoryFacts.map((f) => `- ${f.fact}`).join('\n');
+      systemPrompt += '\n\n--- O QUE VOCÊ LEMBRA DO USUÁRIO ---\n' + memoryFacts.filter((f) => !/^O usuário se chama\b/i.test(String(f.fact || '').trim())).map((f) => `- ${f.fact}`).join('\n');
     }
     systemPrompt += userContext;
     if (agent.reasoning_enabled) systemPrompt += '\n\nMODO RACIOCÍNIO: Analise cuidadosamente antes de responder.';
@@ -497,6 +498,8 @@ Deno.serve(async (req) => {
     };
     const model = modelMap[agent.model] || 'gpt-4o-mini';
 
+    // Reaplica a identidade atual após todo o contexto, inclusive o modo Arquiteto.
+    systemPrompt += agentIdentity(profile);
     // Loop de tool-use
     const messages: any[] = [{ role: 'system', content: systemPrompt }, ...history, { role: 'user', content: message }];
     let assistantMessage = '';
