@@ -54,7 +54,11 @@ export default function useAgentConversation(agent, busy) {
         setArchitectContext(response.data.context || '');
         setArchitectStatus({ state: 'connected', diagnostics: response.data.diagnostics });
       } catch (error) {
-        if (active) setArchitectStatus({ state: 'error', message: error.message || 'Falha no diagnóstico técnico.' });
+        const detail = error.response?.data?.error || error.response?.data?.message;
+        const message = detail || (error.response?.status === 404
+          ? 'O serviço de diagnóstico do Arquiteto não foi encontrado (404).'
+          : error.message || 'Não foi possível verificar as conexões.');
+        if (active) setArchitectStatus({ state: 'error', message: `Falha ao carregar o contexto técnico: ${message}` });
       }
     });
     return () => { active = false; };
