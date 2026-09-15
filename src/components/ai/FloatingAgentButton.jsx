@@ -5,13 +5,15 @@ import FloatingAgentIcon from './FloatingAgentIcon';
 import FloatingAgentChat from './FloatingAgentChat';
 import AgentUnreadBadge from './AgentUnreadBadge';
 import useAgentUnread from '@/hooks/useAgentUnread';
+import useAvailableAgents from '@/components/ai/useAvailableAgents';
 
 const POS_KEY = 'floating_agent_bottom';
 const DRAG_THRESHOLD = 6; // px — abaixo disso conta como clique
 
 export default function FloatingAgentButton() {
   const { isVisible } = useFeatureFlags();
-  const [agent, setAgent] = useState(null);
+  const { data: available } = useAvailableAgents();
+  const agent = available?.floatingMain;
   const [open, setOpen] = useState(false);
   const [chatVersion, setChatVersion] = useState(0);
   const openRef = useRef(false);
@@ -21,18 +23,7 @@ export default function FloatingAgentButton() {
   });
   const dragRef = useRef({ dragging: false, startY: 0, startBottom: 0, moved: false, lastBottom: bottomPx });
 
-  useEffect(() => {
-    if (!isVisible('assistente_ia_flutuante')) return;
-    let active = true;
-    (async () => {
-      try {
-        const res = await base44.functions.invoke('listActiveAgents', {});
-        if (active && res.data?.floatingMain) setAgent(res.data.floatingMain);
-      } catch { /* ignore */ }
-    })();
-    return () => { active = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
 
   const applyDrag = (clientY) => {
     const dy = clientY - dragRef.current.startY;

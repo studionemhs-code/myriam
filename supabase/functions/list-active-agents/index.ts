@@ -6,7 +6,10 @@ Deno.serve(async (req) => {
     const user = await currentUser(req);
     if (!user) return json({ error: 'Unauthorized' }, 401);
 
-    const { data: agents } = await admin().from('ai_agents').select('*').eq('is_active', true);
+    let query = admin().from('ai_agents').select('*').eq('is_active', true);
+    if (user.role !== 'admin') query = query.eq('admin_only', false);
+    const { data: agents, error } = await query;
+    if (error) throw error;
 
     // Sanitiza: nunca expõe a chave API do agente.
     const sanitized = (agents || []).map((a) => ({
@@ -20,6 +23,8 @@ Deno.serve(async (req) => {
       voice_enabled: a.voice_enabled !== false,
       files_enabled: a.files_enabled !== false,
       default_voice: a.default_voice || 'river',
+      voice_language: a.voice_language || 'pt-BR',
+      admin_only: a.admin_only === true,
       architect_mode_enabled: user.role === 'admin' && a.architect_mode_enabled === true
     }));
 

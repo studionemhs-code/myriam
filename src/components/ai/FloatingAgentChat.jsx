@@ -7,15 +7,16 @@ import AgentComposer from './AgentComposer';
 import AgentMessage from './AgentMessage';
 import LiveVoiceConversation from './LiveVoiceConversation';
 import { approveArchitectAction, completeGithubArchitectAction } from '@/lib/architectGithub';
+import useAgentConversation from '@/components/ai/useAgentConversation';
+import prepareAgentAttachment from '@/components/ai/prepareAgentAttachment';
 
 export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) {
-  const [messages, setMessages] = useState([]);
+
   const [input, setInput] = useState('');
   const [mode, setMode] = useState('text');
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(true);
-  const [convId, setConvId] = useState(null);
+  const { messages, setMessages, conversationId: convId, setConversationId: setConvId, loadingHistory, historyError } = useAgentConversation(agent, sending);
   const [liveOpen, setLiveOpen] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -26,22 +27,7 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
     return () => { mountedRef.current = false; };
   }, []);
 
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      setLoadingHistory(true);
-      const { data } = await supabase.rpc('load_agent_conversation', { p_agent_id: agent.id });
-      if (!active) return;
-      const conversation = data?.[0];
-      setConvId(conversation?.id || null);
-      const loadedMessages = conversation?.messages?.filter(message => message.role !== 'system') || (agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []);
-      if (conversation?.pending_action) loadedMessages.push({ role: 'assistant', pending_action: conversation.pending_action });
-      setMessages(loadedMessages);
-      await supabase.rpc('mark_agent_conversation_read', { p_agent_id: agent.id });
-      if (active) setLoadingHistory(false);
-    })();
-    return () => { active = false; };
-  }, [agent]);
+
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -61,22 +47,23 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
     setMessages(m => [...m, { role: 'user', content: typed || (overrideFile?.type?.startsWith('audio/') ? 'Mensagem de voz' : 'Analise este arquivo.'), file_name: overrideFile?.name }]);
     try {
       let msg = typed;
-      let fileContext = '';
+      let fileContext = '', attachment;
       if (overrideFile) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: overrideFile });
-        const analyzed = overrideFile.type.startsWith('audio/')
-          ? await base44.integrations.Core.TranscribeAudio({ audio_url: file_url, agent_id: agent.id })
-          : await base44.integrations.Core.AnalyzeFile({ file_url, file_name: overrideFile.name, mime_type: overrideFile.type, model: agent.model });
-        fileContext = typeof analyzed === 'string' ? analyzed : analyzed?.text || '';
-        if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext;
+        const prepared = await prepareAgentAttachment(overrideFile, agent);
+        fileContext = prepared.context; attachment = prepared.attachment;
+        if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext || 'Mensagem de voz';
       }
-      const res = await base44.functions.invoke('chatWithAgent', { agent_id: agent.id, message: msg || 'Analise o arquivo anexado.', conversation_id: convId, file_context: fileContext });
+      const res = await base44.functions.invoke('chatWithAgent', { agent_id: agent.id, message: msg || 'Analise o arquivo anexado.', conversation_id: convId, file_context: fileContext, attachment });
       const reply = await completeGithubArchitectAction(res.data);
       let audioUrl = '';
       if (mode !== 'text' && agent.voice_enabled !== false) {
         const voiceLang = agent.default_voice === 'marin_br' ? 'pt-BR' : (agent.voice_language && agent.voice_language !== 'auto' ? agent.voice_language : undefined);
         const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: agent.default_voice || 'river', ...(voiceLang ? { language_code: voiceLang } : {}), agent_id: agent.id });
         audioUrl = speech?.url || '';
+        if (audioUrl && res.data.assistant_message_id) {
+          const { error } = await supabase.rpc('set_agent_message_audio', { p_conversation_id: res.data.conversation_id, p_message_id: res.data.assistant_message_id, p_audio_url: audioUrl });
+          if (error) throw error;
+        }
       }
       setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'assistant', content: reply, audio_url: audioUrl, pending_action: res.data.pending_action || null }]);
       if (live && audioUrl) new Audio(audioUrl).play().catch(() => {});
@@ -129,7 +116,8 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-background px-4 py-4">
+        {historyError && <p role="alert" className="px-4 py-2 text-xs text-destructive">{historyError}</p>}
+        <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-background px-4 py-4">
           {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
           {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} approvalBusy={sending} />)}
           {sending && (
@@ -145,7 +133,7 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
 
         {/* Input */}
         <div className="shrink-0 border-t border-border bg-card px-3 py-3">
-          <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending || loadingHistory} allowFiles={agent.files_enabled !== false} allowVoice={agent.voice_enabled !== false} />
+          <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending || loadingHistory || !!historyError} allowFiles={agent.files_enabled !== false} allowVoice={agent.voice_enabled !== false} />
           {liveOpen && <LiveVoiceConversation agent={agent} onClose={() => setLiveOpen(false)} />}
         </div>
       </div>

@@ -1,4 +1,6 @@
 import { json, preflight, currentUser, admin } from '../_shared/utils.ts';
+import { accessibleAgent, agentKey, requestAgentOpenAI } from '../_shared/agentAccess.ts';
+import { loadAgentThread, appendAgentMessages } from '../_shared/agentConversation.ts';
 
 // ============================================================================
 // FERRAMENTAS GERAIS
@@ -390,15 +392,12 @@ Deno.serve(async (req) => {
     const user = await currentUser(req);
     if (!user) return json({ error: 'Unauthorized' }, 401);
 
-    const { agent_id, message, conversation_id, file_context, approve_pending_action = false } = await req.json();
+    const { agent_id, message, conversation_id, file_context, attachment, approve_pending_action = false } = await req.json();
     if (!agent_id || (!message && !approve_pending_action)) return json({ error: 'agent_id e message são obrigatórios' }, 400);
 
     const db = admin();
-    const { data: agent } = await db.from('ai_agents').select('*').eq('id', agent_id).maybeSingle();
-    if (!agent || !agent.is_active) return json({ error: 'Agente não disponível' }, 404);
-
-    const apiKey = agent.openai_api_key || Deno.env.get('OPENAI_API_KEY');
-    if (!apiKey) return json({ error: 'Nenhuma chave API configurada.' }, 500);
+    const agent = await accessibleAgent(agent_id, user);
+    const apiKey = agentKey(agent);
 
     const enabledTools = (agent.tools_enabled || []) as string[];
     let activeTools = TOOL_DEFS.filter((t) => enabledTools.includes(t.function.name));
@@ -407,14 +406,9 @@ Deno.serve(async (req) => {
     const isArchitect = agent.architect_mode_enabled && user.role === 'admin';
     if (isArchitect) activeTools = [...activeTools, ...ARCHITECT_TOOL_DEFS];
 
-    // Histórico
-    let conversation: any = null;
-    let history: { role: string; content: string }[] = [];
-    if (conversation_id) {
-      const { data } = await db.from('agent_conversations').select('*').eq('id', conversation_id).eq('agent_id', agent_id).eq('created_by_id', user.id).maybeSingle();
-      conversation = data;
-      history = ((data?.messages || []) as any[]).filter((m) => m.role !== 'system').map((m) => ({ role: m.role, content: m.content }));
-    }
+    // Resolve o mesmo histórico em todos os dispositivos, sem confiar em IDs locais antigos.
+    const conversation = await loadAgentThread(db, agent_id, user.id);
+    const history = (conversation.messages || []).filter((m: any) => m.role !== 'system' && typeof m.content === 'string').map((m: any) => ({ role: m.role, content: m.content }));
 
     let pendingAction: ArchitectAction | null = isArchitect ? conversation?.pending_action || null : null;
     if (pendingAction && approve_pending_action === true) {
@@ -422,31 +416,29 @@ Deno.serve(async (req) => {
         const now = new Date().toISOString();
         const reply = 'Confirmação recebida. Estou preparando a análise do código e o pull request para revisão.';
         const confirmedAction = { ...pendingAction, confirmed_at: now };
-        await db.from('agent_conversations').update({
-          pending_action: confirmedAction,
-          messages: [
-            ...(conversation.messages || []),
-            { role: 'user', content: message, timestamp: now },
-            { role: 'assistant', content: reply, timestamp: now }
-          ]
-        }).eq('id', conversation.id).eq('created_by_id', user.id);
+        await appendAgentMessages(db, conversation.id, user.id, [
+          { id: crypto.randomUUID(), role: 'user', content: message, timestamp: now },
+          { id: crypto.randomUUID(), role: 'assistant', content: reply, timestamp: now }
+        ], confirmedAction);
         return json({ reply, conversation_id: conversation.id, agent_id, github_action: true, used_tools: true });
       }
       const result = await executeArchitectAction(pendingAction, db);
       await auditArchitectAction(pendingAction, result, user, agent_id, conversation.id, db);
       const now = new Date().toISOString();
       const reply = /^Erro/i.test(result) ? `A ação autorizada falhou. ${result}` : `Ação autorizada e concluída. ${result}`;
-      await db.from('agent_conversations').update({ pending_action: null, messages: [
-        ...(conversation.messages || []), { role: 'user', content: message, timestamp: now }, { role: 'assistant', content: reply, timestamp: now }
-      ] }).eq('id', conversation.id).eq('created_by_id', user.id);
+      await appendAgentMessages(db, conversation.id, user.id, [
+        { id: crypto.randomUUID(), role: 'user', content: message, timestamp: now },
+        { id: crypto.randomUUID(), role: 'assistant', content: reply, timestamp: now }
+      ], null);
       return json({ reply, conversation_id: conversation.id, used_tools: true });
     }
     if (pendingAction && isArchitectCancellation(message)) {
       const now = new Date().toISOString();
       const reply = `Ação cancelada: ${pendingAction.summary}. Nenhuma alteração foi realizada.`;
-      await db.from('agent_conversations').update({ pending_action: null, messages: [
-        ...(conversation.messages || []), { role: 'user', content: message, timestamp: now }, { role: 'assistant', content: reply, timestamp: now }
-      ] }).eq('id', conversation.id).eq('created_by_id', user.id);
+      await appendAgentMessages(db, conversation.id, user.id, [
+        { id: crypto.randomUUID(), role: 'user', content: message, timestamp: now },
+        { id: crypto.randomUUID(), role: 'assistant', content: reply, timestamp: now }
+      ], null);
       return json({ reply, conversation_id: conversation.id, used_tools: false });
     }
 
@@ -506,13 +498,8 @@ Deno.serve(async (req) => {
       if (!model.startsWith('gpt-5')) body.temperature = agent.temperature ?? 0.7;
       if (activeTools.length > 0) { body.tools = activeTools; body.tool_choice = 'auto'; }
 
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+      const res = await requestAgentOpenAI('chat/completions', body, apiKey);
       const completion = await res.json();
-      if (!res.ok) return json({ error: completion.error?.message || 'Erro na OpenAI' }, 500);
 
       const msg = completion.choices[0].message;
       if (msg.tool_calls?.length > 0) {
@@ -565,20 +552,15 @@ Deno.serve(async (req) => {
 
     // Salvar conversa
     const now = new Date().toISOString();
-    const userMsg = { role: 'user', content: message, timestamp: now };
-    const assistantMsg = { role: 'assistant', content: assistantMessage, timestamp: now };
-    if (conversation) {
-      await db.from('agent_conversations').update({ messages: [...(conversation.messages || []), userMsg, assistantMsg], pending_action: pendingAction }).eq('id', conversation.id).eq('created_by_id', user.id);
-    } else {
-      const { data: created } = await db.from('agent_conversations').insert({
-        agent_id, agent_name: agent.name, title: message.substring(0, 50), messages: [userMsg, assistantMsg], pending_action: pendingAction, created_by_id: user.id
-      }).select().single();
-      conversation = created;
-    }
+    const userMsg = { id: crypto.randomUUID(), role: 'user', content: message, timestamp: now,
+      ...(attachment && agent.files_enabled !== false ? { file_name: String(attachment.file_name || '').slice(0, 255), file_uri: String(attachment.file_uri || '').slice(0, 2048), mime_type: String(attachment.mime_type || '').slice(0, 100) } : {}) };
+    const assistantMsg = { id: crypto.randomUUID(), role: 'assistant', content: assistantMessage, timestamp: now };
+    await appendAgentMessages(db, conversation.id, user.id, [userMsg, assistantMsg], pendingAction);
 
     return json({
       reply: assistantMessage,
-      conversation_id: conversation?.id,
+      assistant_message_id: assistantMsg.id,
+      conversation_id: conversation.id,
       used_tools: usedTools,
       pending_action: pendingAction ? { summary: pendingAction.summary, requested_at: pendingAction.requested_at } : null
     });

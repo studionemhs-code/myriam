@@ -1,4 +1,4 @@
-export default function realtimeEvents({ agentName, setStatus, setError, setHeard, setReply }) {
+export default function realtimeEvents({ agentName, setStatus, setError, setHeard, setReply, onTranscript }) {
   let speaking = false;
   return (event) => {
     const message = JSON.parse(event.data);
@@ -8,7 +8,12 @@ export default function realtimeEvents({ agentName, setStatus, setError, setHear
       case 'input_audio_buffer.speech_stopped':
         setStatus('Preparando resposta...'); break;
       case 'conversation.item.input_audio_transcription.completed':
-        setHeard(message.transcript || ''); break;
+        setHeard(message.transcript || '');
+        if (message.transcript) onTranscript?.('user', message.transcript, message.item_id || message.event_id);
+        break;
+      case 'response.output_audio_transcript.done':
+        if (message.transcript) onTranscript?.('assistant', message.transcript, message.item_id || message.event_id);
+        break;
       case 'conversation.item.input_audio_transcription.failed':
         setError('Não foi possível reconhecer sua fala. Encerre e tente novamente.'); break;
       case 'response.created':

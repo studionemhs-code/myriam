@@ -17,6 +17,7 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     knowledge_files: agent?.knowledge_files || [],
     openai_api_key: agent?.openai_api_key || '',
     is_active: agent?.is_active ?? true,
+    admin_only: agent?.admin_only ?? false,
     icon_url: agent?.icon_url || '',
     is_floating_main: agent?.is_floating_main ?? false,
     tools_enabled: agent?.tools_enabled || [],
@@ -162,10 +163,16 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
           <input type="range" min="0" max="1" step="0.1" value={form.temperature} onChange={e => set('temperature', parseFloat(e.target.value))} className="w-full" />
         </Field>
         <Field label="Status">
-          <label className="flex items-center gap-2 pt-6">
-            <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} className="h-4 w-4 rounded border-border" />
-            <span className="text-sm">Disponível para os usuários</span>
-          </label>
+          <div className="flex flex-wrap gap-4 pt-6">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={form.is_active && !form.admin_only} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked, admin_only: false }))} className="h-4 w-4 rounded border-border" />
+              <span className="text-sm">Disponível para os usuários</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={form.is_active && form.admin_only} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked, admin_only: e.target.checked }))} className="h-4 w-4 rounded border-border" />
+              <span className="text-sm">Disponível apenas para admin</span>
+            </label>
+          </div>
         </Field>
       </div>
 

@@ -58,6 +58,10 @@
       "type": "boolean",
       "default": true
     },
+    "admin_only": {
+      "type": "boolean",
+      "default": false
+    },
     "icon_url": {
       "type": "string",
       "format": "uri"

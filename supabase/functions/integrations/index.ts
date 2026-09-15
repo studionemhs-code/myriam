@@ -1,4 +1,6 @@
 import { json, preflight, currentUser, admin, findProfile } from '../_shared/utils.ts';
+import { accessibleAgent, agentKey, requestAgentOpenAI } from '../_shared/agentAccess.ts';
+import analyzeAgentVideo from '../_shared/analyzeAgentVideo.ts';
 
 const OPENAI_KEY = () => Deno.env.get('OPENAI_API_KEY');
 const RESEND_KEY = () => Deno.env.get('RESEND_API_KEY');
@@ -20,15 +22,9 @@ const VOICE_LANG_INSTRUCTIONS: Record<string, string> = {
 };
 const FROM_EMAIL = () => Deno.env.get('EMAIL_FROM') || 'Theotokos <onboarding@resend.dev>';
 
-const openai = async (path: string, body: unknown) => {
-  const res = await fetch(`https://api.openai.com/v1/${path}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${OPENAI_KEY()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Erro na OpenAI');
-  return data;
+const openai = async (path: string, body: unknown, key?: string) => {
+  const response = await requestAgentOpenAI(path, body, key || agentKey());
+  return response.json();
 };
 
 async function invokeLLM(p: any) {
@@ -46,7 +42,7 @@ async function invokeLLM(p: any) {
     ...(p.response_json_schema
       ? { response_format: { type: 'json_schema', json_schema: { name: 'resposta', schema: p.response_json_schema, strict: false } } }
       : {})
-  });
+  }, p._agentKey);
   const text = data.choices[0].message.content;
   return p.response_json_schema ? JSON.parse(text) : text;
 }
@@ -105,34 +101,24 @@ async function sendEmail(p: any) {
   return { ok: true, id: data.id };
 }
 
-async function resolveVoiceKey(agentId: unknown, overrideKey?: unknown) {
+async function resolveVoiceKey(agentId: unknown, overrideKey?: unknown, resolvedKey?: string) {
   if (typeof overrideKey === 'string' && overrideKey.trim()) return overrideKey.trim();
-  if (!agentId) return OPENAI_KEY();
-  if (typeof agentId !== 'string') throw new Error('Agente inválido.');
-  const { data: agent, error } = await admin().from('ai_agents')
-    .select('openai_api_key,is_active,voice_enabled').eq('id', agentId).maybeSingle();
-  if (error) throw new Error('Não foi possível carregar a configuração de voz.');
-  if (!agent?.is_active || agent.voice_enabled === false) throw new Error('Voz indisponível para este agente.');
-  const key = agent.openai_api_key || OPENAI_KEY();
-  if (!key) throw new Error('Nenhuma chave API configurada para voz.');
-  return key;
+  return resolvedKey || agentKey();
 }
 
 async function transcribeAudio(p: any) {
-  const apiKey = await resolveVoiceKey(p.agent_id);
+  const apiKey = await resolveVoiceKey(p.agent_id, undefined, p._agentKey);
   const source = await fetch(p.audio_url);
   if (!source.ok) throw new Error('Não foi possível acessar o áudio gravado.');
   const audio = await source.blob();
-  const type = audio.type || source.headers.get('content-type') || 'audio/webm';
+  if (audio.size > 20 * 1024 * 1024) throw new Error('Envie um áudio ou vídeo de até 20 MB.');
+  const type = p.mime_type || audio.type || source.headers.get('content-type') || 'audio/webm';
   const extension = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : type.includes('mpeg') ? 'mp3' : 'webm';
   const form = new FormData();
   form.append('file', audio, `audio.${extension}`);
   form.append('model', 'whisper-1');
-  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-    method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form
-  });
+  const res = await requestAgentOpenAI('audio/transcriptions', form, apiKey);
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Erro na transcrição');
   return data.text;
 }
 
@@ -153,10 +139,11 @@ async function analyzeFile(p: any) {
   const response = await fetch(p.file_url);
   if (!response.ok) throw new Error('Não foi possível acessar o arquivo.');
   const mime = p.mime_type || response.headers.get('content-type') || 'application/octet-stream';
-  if (mime.startsWith('audio/')) return { text: await transcribeAudio({ audio_url: p.file_url }) };
+  if (mime.startsWith('video/')) return analyzeAgentVideo(p, transcribeAudio);
+  if (mime.startsWith('audio/')) return { text: await transcribeAudio({ ...p, audio_url: p.file_url }) };
   if (mime.startsWith('text/') || mime.includes('csv') || mime.includes('json')) {
     const text = (await response.text()).slice(0, 100000);
-    const summary = await invokeLLM({ model: p.model, prompt: `Interprete este arquivo e extraia as informações relevantes para responder às perguntas do usuário:\n\n${text}` });
+    const summary = await invokeLLM({ model: p.model, _agentKey: p._agentKey, prompt: `Interprete este arquivo e extraia as informações relevantes para responder às perguntas do usuário:\n\n${text}` });
     return { text: summary };
   }
   const bytes = new Uint8Array(await response.arrayBuffer());
@@ -170,14 +157,14 @@ async function analyzeFile(p: any) {
   const data = await openai('responses', {
     model: 'gpt-4o',
     input: [{ role: 'user', content: [{ type: 'input_text', text: 'Interprete este arquivo e descreva todas as informações relevantes.' }, part] }]
-  });
+  }, p._agentKey);
   return { text: data.output_text || data.output?.flatMap((item: any) => item.content || []).map((item: any) => item.text || '').join('\n') || 'Arquivo processado.' };
 }
 
 // Gera áudio (TTS) e guarda no bucket público, devolvendo a URL definitiva.
 async function generateSpeech(p: any) {
   const customKey = typeof p.api_key === 'string' && p.api_key.trim() ? p.api_key.trim() : null;
-  const apiKey = await resolveVoiceKey(p.agent_id, customKey);
+  const apiKey = await resolveVoiceKey(p.agent_id, customKey, p._agentKey);
   const body: Record<string, unknown> = {
     model: 'gpt-4o-mini-tts',
     voice: VOICES[p.voice as string] || 'alloy',
@@ -189,23 +176,7 @@ async function generateSpeech(p: any) {
   if (lang && lang !== 'auto' && VOICE_LANG_INSTRUCTIONS[lang]) {
     body.instructions = VOICE_LANG_INSTRUCTIONS[lang];
   }
-  const requestSpeech = (key: string) => fetch('https://api.openai.com/v1/audio/speech', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-
-  let res = await requestSpeech(apiKey as string);
-  if (!res.ok && customKey && res.status === 401 && OPENAI_KEY() && customKey !== OPENAI_KEY()) {
-    res = await requestSpeech(OPENAI_KEY() as string);
-  }
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const message = res.status === 401
-      ? 'A chave de voz configurada não foi aceita. Verifique a chave padrão do sistema.'
-      : err.error?.message || 'Erro ao gerar áudio';
-    throw new Error(message);
-  }
+  const res = await requestAgentOpenAI('audio/speech', body, apiKey);
   const bytes = new Uint8Array(await res.arrayBuffer());
   const path = `speech/${crypto.randomUUID()}.mp3`;
   const { error } = await admin().storage.from('uploads').upload(path, bytes, { contentType: 'audio/mpeg' });
@@ -326,7 +297,14 @@ Deno.serve(async (req) => {
 
     // Validação mínima de schema do payload.
     const required = REQUIRED_FIELDS[endpoint] || [];
-    const p = payload || {};
+    const p = { ...(payload || {}), _agentKey: undefined };
+    if (p.agent_id) {
+      const agent = await accessibleAgent(p.agent_id, user);
+      const audioAttachment = endpoint === 'AnalyzeFile' && String(p.mime_type || '').startsWith('audio/');
+      if (endpoint === 'AnalyzeFile' && agent.files_enabled === false && !(audioAttachment && agent.voice_enabled !== false)) return json({ error: 'Arquivos desativados para este agente.' }, 403);
+      if (['GenerateSpeech', 'TranscribeAudio'].includes(endpoint) && agent.voice_enabled === false) return json({ error: 'Voz desativada para este agente.' }, 403);
+      p._agentKey = agentKey(agent);
+    }
     if (endpoint === 'GenerateSpeech' && p.api_key && user.role !== 'admin') {
       return json({ error: 'Forbidden: apenas administradores podem testar uma chave personalizada' }, 403);
     }

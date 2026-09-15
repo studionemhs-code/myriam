@@ -7,7 +7,7 @@ import { PageHeader, StatPill, GoldDivider } from '@/components/ui/marian';
 import { formatDate } from '@/lib/marianDates';
 import SpiritualStatus from '@/components/perfil/SpiritualStatus';
 import JourneyTimeline from '@/components/perfil/JourneyTimeline';
-import PrayerHistorySection from '@/components/perfil/PrayerHistorySection';
+
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 
 const STORE_URL = 'https://www.lojatheotokos.com.br';
@@ -133,8 +133,6 @@ export default function Perfil() {
         <StatPill value={stats.reflections} label="reflexões" />
         <StatPill value={stats.intentions} label="intenções" />
       </div>
-
-      <PrayerHistorySection />
 
       <GoldDivider />
 

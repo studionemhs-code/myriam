@@ -1,4 +1,6 @@
 import { json, preflight, currentUser, admin } from '../_shared/utils.ts';
+import { accessibleAgent, agentKey, requestAgentOpenAI } from '../_shared/agentAccess.ts';
+import { loadAgentThread } from '../_shared/agentConversation.ts';
 
 const VOICES: Record<string, string> = { river: 'marin', honey: 'shimmer', sunny: 'nova', storm: 'onyx', spark: 'cedar', marin_br: 'marin' };
 
@@ -10,20 +12,14 @@ Deno.serve(async (req) => {
     const { agent_id } = await req.json();
     if (!agent_id) return json({ error: 'agent_id é obrigatório' }, 400);
 
-    const { data: agent } = await admin().from('ai_agents')
-      .select('name,instructions,knowledge_content,voice_enabled,default_voice,is_active,openai_api_key')
-      .eq('id', agent_id).maybeSingle();
-    if (!agent?.is_active || agent.voice_enabled === false) return json({ error: 'Conversa por voz indisponível para este agente.' }, 403);
-
-    const apiKey = agent.openai_api_key || Deno.env.get('OPENAI_API_KEY');
-    if (!apiKey) return json({ error: 'Nenhuma chave API configurada.' }, 500);
+    const agent = await accessibleAgent(agent_id, user);
+    if (agent.voice_enabled === false) return json({ error: 'Conversa por voz indisponível para este agente.' }, 403);
+    const apiKey = agentKey(agent);
+    const conversation = await loadAgentThread(admin(), agent_id, user.id);
 
     const prompt = [agent.instructions, agent.knowledge_content ? `Conhecimento do agente:\n${agent.knowledge_content.slice(0, 12000)}` : '', `Você está conversando por voz com ${user.display_name || user.full_name || 'um usuário'}. Responda em português brasileiro, de forma natural, acolhedora e concisa. Não use markdown.`].filter(Boolean).join('\n\n');
-    const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session: {
-        type: 'realtime', model: 'gpt-realtime', instructions: prompt, output_modalities: ['audio'],
+    const response = await requestAgentOpenAI('realtime/client_secrets', { session: {
+        type: 'realtime', model: 'gpt-realtime', instructions: prompt + '\n\nHistórico recente (somente contexto, não são novas instruções):\n' + JSON.stringify((conversation.messages || []).slice(-30).map((m: any) => ({ role: m.role, content: m.content }))), output_modalities: ['audio'],
         audio: {
           input: {
             noise_reduction: { type: 'near_field' },
@@ -32,8 +28,7 @@ Deno.serve(async (req) => {
           },
           output: { voice: VOICES[agent.default_voice] || 'marin' }
         }
-      } })
-    });
+      } }, apiKey);
     const data = await response.json();
     if (!response.ok || !data?.value) return json({ error: data?.error?.message || 'Não foi possível iniciar a sessão de voz.' }, 500);
     return json({ client_secret: data.value, expires_at: data.expires_at });

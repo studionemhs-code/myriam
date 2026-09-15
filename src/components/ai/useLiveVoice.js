@@ -31,7 +31,14 @@ export default function useLiveVoice(agent, audioRef) {
         media.getTracks().forEach((track) => pc.addTrack(track, media));
         const dc = pc.createDataChannel('oai-events'); resources.current.dc = dc;
         dc.onopen = () => { if (active) { setStatus('Preparando saudação...'); dc.send(JSON.stringify({ type: 'response.create', response: { output_modalities: ['audio'], instructions: 'Cumprimente brevemente o usuário em português brasileiro, apresente-se e pergunte como pode ajudar. Responda em voz.' } })); } };
-        const handleEvent = realtimeEvents({ agentName: agent.name, setStatus, setError, setHeard, setReply });
+        let saveQueue = Promise.resolve(); const saved = new Set();
+        const onTranscript = (role, content, eventId) => {
+          const event_id = eventId || crypto.randomUUID(); const key = `${role}:${event_id}`;
+          if (saved.has(key)) return; saved.add(key);
+          saveQueue = saveQueue.then(() => invokeEdgeFunction('saveAgentVoiceTranscript', { agent_id: agent.id, role, content, event_id }))
+            .catch(() => { if (active) setError('Não foi possível sincronizar uma fala desta chamada.'); });
+        };
+        const handleEvent = realtimeEvents({ agentName: agent.name, setStatus, setError, setHeard, setReply, onTranscript });
         dc.onmessage = (event) => { if (active) handleEvent(event); };
         dc.onerror = () => { if (active) setError('Não foi possível trocar mensagens na chamada. Encerre e tente novamente.'); };
         const offer = await pc.createOffer(); await pc.setLocalDescription(offer);

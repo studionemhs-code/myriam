@@ -12,6 +12,8 @@ import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import GlobalSearch from '@/components/GlobalSearch';
 import MyriamIcon from '@/components/MyriamIcon';
+import ChainCircleIcon from '@/components/navigation/ChainCircleIcon';
+import PrayingHandsIcon from '@/components/navigation/PrayingHandsIcon';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import FloatingAgentButton from '@/components/ai/FloatingAgentButton';
 import NovidadePopup from '@/components/notifications/NovidadePopup';
@@ -25,9 +27,9 @@ const STORE_URL = 'https://www.lojatheotokos.com.br';
 
 const navItems = [
   { to: '/', label: 'Hoje', icon: Home },
-  { to: '/caminho', label: 'Caminho', icon: Flower2 },
+  { to: '/caminho', label: 'Caminho', icon: ChainCircleIcon },
   { to: '/acamf', label: 'ACAMF', icon: BookOpen, feature: 'acamf' },
-  { to: '/oracoes', label: 'Orações', icon: Heart },
+  { to: '/oracoes', label: 'Orações', icon: PrayingHandsIcon },
   { to: '/myriam', label: 'Myriam', icon: MyriamIcon, feature: 'myriam' },
   { to: '/perfil', label: 'Perfil', icon: User },
 ];
@@ -249,7 +251,7 @@ export default function AppLayout() {
             <GlobalSearch />
           </div>
         </div>
-        <div className="mx-auto max-w-3xl px-4 pb-28 pt-6 lg:max-w-4xl lg:px-8 lg:pb-12">
+        <div className={location.pathname === '/agentes' ? 'w-full px-3 pb-24 pt-3 lg:px-6 lg:pb-4 lg:pt-4' : 'mx-auto max-w-3xl px-4 pb-28 pt-6 lg:max-w-4xl lg:px-8 lg:pb-12'}>
           <FeatureAccessGate>
             <PageTransition />
           </FeatureAccessGate>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { base44 } from '@/api/base44Client';
+import usePreparationStageCounts from '@/components/admin/usePreparationStageCounts';
 
 const PHASES = [
   { key: 'desejo', name: 'Desejo', full: 'Espírito de Desejo', range: 'Dias 1–12', min: 1, max: 12 },
@@ -22,24 +22,8 @@ function CustomTooltip({ active, payload }) {
 }
 
 export default function PreparationStagesChart() {
-  const [data, setData] = useState(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const progress = await base44.entities.UserProgress.filter({ status: 'ativa' }, '-created_date', 500);
-        const counts = PHASES.map((p) => ({
-          name: p.name,
-          full: p.full,
-          range: p.range,
-          usuarios: progress.filter((r) => r.current_day >= p.min && r.current_day <= p.max).length,
-        }));
-        setData(counts);
-      } catch (e) {
-        setData(PHASES.map((p) => ({ name: p.name, full: p.full, range: p.range, usuarios: 0 })));
-      }
-    })();
-  }, []);
+  const { data, error } = usePreparationStageCounts(PHASES);
+  if (error) return <p role="alert" className="py-8 text-center text-sm text-destructive">{error.message}</p>;
 
   if (!data) {
     return <div className="py-8 text-center text-sm text-muted-foreground">Carregando gráfico...</div>;

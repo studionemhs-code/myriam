@@ -8,28 +8,26 @@ import AgentMessage from '@/components/ai/AgentMessage';
 import LiveVoiceConversation from '@/components/ai/LiveVoiceConversation';
 import { supabase } from '@/api/supabase/client';
 import { approveArchitectAction, completeGithubArchitectAction } from '@/lib/architectGithub';
+import useAgentConversation from '@/components/ai/useAgentConversation';
+import prepareAgentAttachment from '@/components/ai/prepareAgentAttachment';
+import useAvailableAgents from '@/components/ai/useAvailableAgents';
 
 export default function AgentChat() {
-  const [agents, setAgents] = useState(null);
+  const { data: available, error: agentsError } = useAvailableAgents();
+  const agents = available?.agents;
   const [selected, setSelected] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [activeConvId, setActiveConvId] = useState(null);
+
   const [input, setInput] = useState('');
   const [mode, setMode] = useState('text');
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+  const { messages, setMessages, conversationId: activeConvId, setConversationId: setActiveConvId, loadingHistory, historyError } = useAgentConversation(selected, sending);
   const [liveOpen, setLiveOpen] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await base44.functions.invoke('listActiveAgents', {});
-        setAgents(res.data.agents || []);
-      } catch { setAgents([]); }
-    })();
-  }, []);
+    if (agents) setSelected(current => current ? agents.find(item => item.id === current.id) || null : null);
+  }, [agents]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -37,29 +35,7 @@ export default function AgentChat() {
     }
   }, [messages]);
 
-  const startChat = async (agent) => {
-    setSelected(agent);
-    setMessages([]);
-    setActiveConvId(null);
-    setLoadingHistory(true);
-    try {
-      const { data, error } = await supabase.rpc('load_agent_conversation', { p_agent_id: agent.id });
-      if (error) throw error;
-      const conversation = data?.[0];
-      if (conversation) {
-        const loadedMessages = (conversation.messages || []).filter(message => message.role !== 'system');
-        if (conversation.pending_action) loadedMessages.push({ role: 'assistant', pending_action: conversation.pending_action });
-        setMessages(loadedMessages);
-        setActiveConvId(conversation.id);
-      } else {
-        setMessages(agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []);
-      }
-    } catch {
-      setMessages(agent.welcome_message ? [{ role: 'assistant', content: agent.welcome_message }] : []);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
+  const startChat = (agent) => setSelected(agent);
 
   const send = async (overrideFile = file, live = mode === 'live') => {
     if ((!input.trim() && !overrideFile) || sending) return;
@@ -68,22 +44,23 @@ export default function AgentChat() {
     setMessages(m => [...m, { role: 'user', content: typed || (overrideFile?.type?.startsWith('audio/') ? 'Mensagem de voz' : 'Analise este arquivo.'), file_name: overrideFile?.name }]);
     try {
       let msg = typed;
-      let fileContext = '';
+      let fileContext = '', attachment;
       if (overrideFile) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: overrideFile });
-        const analyzed = overrideFile.type.startsWith('audio/')
-          ? await base44.integrations.Core.TranscribeAudio({ audio_url: file_url, agent_id: selected.id })
-          : await base44.integrations.Core.AnalyzeFile({ file_url, file_name: overrideFile.name, mime_type: overrideFile.type, model: selected.model });
-        fileContext = typeof analyzed === 'string' ? analyzed : analyzed?.text || '';
-        if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext;
+        const prepared = await prepareAgentAttachment(overrideFile, selected);
+        fileContext = prepared.context; attachment = prepared.attachment;
+        if (!msg && overrideFile.type.startsWith('audio/')) msg = fileContext || 'Mensagem de voz';
       }
-      const res = await base44.functions.invoke('chatWithAgent', { agent_id: selected.id, message: msg || 'Analise o arquivo anexado.', conversation_id: activeConvId, file_context: fileContext });
+      const res = await base44.functions.invoke('chatWithAgent', { agent_id: selected.id, message: msg || 'Analise o arquivo anexado.', conversation_id: activeConvId, file_context: fileContext, attachment });
       const reply = await completeGithubArchitectAction(res.data);
       let audioUrl = '';
       if (mode !== 'text' && selected.voice_enabled !== false) {
         const voiceLang = selected.default_voice === 'marin_br' ? 'pt-BR' : (selected.voice_language && selected.voice_language !== 'auto' ? selected.voice_language : undefined);
         const speech = await base44.integrations.Core.GenerateSpeech({ text: reply, voice: selected.default_voice || 'river', ...(voiceLang ? { language_code: voiceLang } : {}), agent_id: selected.id });
         audioUrl = speech?.url || '';
+        if (audioUrl && res.data.assistant_message_id) {
+          const { error } = await supabase.rpc('set_agent_message_audio', { p_conversation_id: res.data.conversation_id, p_message_id: res.data.assistant_message_id, p_audio_url: audioUrl });
+          if (error) throw error;
+        }
       }
       setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'assistant', content: reply, audio_url: audioUrl, pending_action: res.data.pending_action || null }]);
       if (live && audioUrl) new Audio(audioUrl).play().catch(() => {});
@@ -109,6 +86,7 @@ export default function AgentChat() {
 
   const sendAudio = async (audioFile) => send(audioFile, false);
 
+  if (agentsError && !agents) return <p role="alert" className="py-12 text-center text-destructive">Não foi possível carregar os assistentes. Tentando novamente...</p>;
   if (!agents) {
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
@@ -137,9 +115,9 @@ export default function AgentChat() {
   }
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 180px)', minHeight: '400px' }}>
+    <div className="flex h-[calc(100dvh-220px)] min-h-[380px] w-full flex-col lg:h-[calc(100dvh-96px)]">
       <div className="mb-3 flex items-center gap-3">
-        <button onClick={() => { setSelected(null); setActiveConvId(null); }} className="text-muted-foreground hover:text-foreground">
+        <button disabled={sending} onClick={() => { setSelected(null); setActiveConvId(null); }} className="text-muted-foreground hover:text-foreground disabled:opacity-40">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
@@ -152,7 +130,8 @@ export default function AgentChat() {
         {selected.architect_mode_enabled && <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-medium text-amber-800"><Hammer className="h-3 w-3" /> Arquiteto</span>}
       </div>
 
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4">
+      {historyError && <p role="alert" className="mb-2 text-xs text-destructive">{historyError}</p>}
+      <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4">
         {loadingHistory && <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
         {!loadingHistory && messages.map((message, index) => <AgentMessage key={index} message={message} onApprove={approveChange} approvalBusy={sending} />)}
         {sending && (
@@ -167,7 +146,7 @@ export default function AgentChat() {
       </div>
 
       <div className="mt-3">
-        <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending || loadingHistory} allowFiles={selected.files_enabled !== false} allowVoice={selected.voice_enabled !== false} />
+        <AgentComposer input={input} setInput={setInput} mode={mode} setMode={setMode} file={file} setFile={setFile} onSend={() => send()} onAudio={sendAudio} onStartLive={() => setLiveOpen(true)} busy={sending || loadingHistory || !!historyError} allowFiles={selected.files_enabled !== false} allowVoice={selected.voice_enabled !== false} />
         {liveOpen && <LiveVoiceConversation agent={selected} onClose={() => setLiveOpen(false)} />}
       </div>
     </div>
