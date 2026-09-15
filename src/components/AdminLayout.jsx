@@ -23,6 +23,7 @@ const items = [
   { to: '/admin/jornadas', label: 'Jornadas Coletivas', icon: Sparkles },
   { to: '/admin/certificados', label: 'Certificados', icon: Award },
   { to: '/admin/agentes', label: 'Agentes IA', icon: Bot },
+  { to: '/admin/historico-arquiteto', label: 'Histórico Arquiteto', icon: Activity },
   { to: '/admin/associacao', label: 'Associação', icon: Crown },
   { to: '/admin/garantia', label: 'Garantia Vitalícia', icon: ShieldCheck },
   { to: '/admin/garantia/config', label: 'Config. Garantia', icon: Settings2 },

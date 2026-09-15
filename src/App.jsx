@@ -56,6 +56,7 @@ import CategoriesAdmin from '@/pages/admin/CategoriesAdmin';
 import CertificatesAdmin from '@/pages/admin/CertificatesAdmin';
 import AssociacaoAdmin from '@/pages/admin/AssociacaoAdmin';
 import AgentsAdmin from '@/pages/admin/AgentsAdmin';
+import ArchitectHistory from '@/pages/admin/ArchitectHistory';
 import Certificado from '@/pages/Certificado';
 import Historico from '@/pages/Historico';
 import Associacao from '@/pages/Associacao';
@@ -170,6 +171,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/certificados" element={<CertificatesAdmin />} />
           <Route path="/admin/associacao" element={<AssociacaoAdmin />} />
           <Route path="/admin/agentes" element={<AgentsAdmin />} />
+          <Route path="/admin/historico-arquiteto" element={<ArchitectHistory />} />
           <Route path="/admin/relatorios" element={<Reports />} />
           <Route path="/admin/usuarios" element={<UsersAdmin />} />
           <Route path="/admin/orcamentos" element={<OrcamentosDashboard />} />

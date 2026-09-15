@@ -4,6 +4,7 @@ import { AdminPageTitle, Loading, Badge } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
 import { Bot, Plus, Pencil, Trash2, X } from 'lucide-react';
 import AgentEditor from '@/components/admin/AgentEditor';
+import { Link } from 'react-router-dom';
 
 export default function AgentsAdmin() {
   const [agents, setAgents] = useState(null);
@@ -31,6 +32,8 @@ export default function AgentsAdmin() {
         subtitle="Crie assistentes multimodais com os modelos da plataforma"
         action={<Button onClick={() => setEditing({})}><Plus className="mr-1.5 h-4 w-4" /> Novo Agente</Button>}
       />
+
+      <Button asChild variant="outline" className="mb-5"><Link to="/admin/historico-arquiteto">Histórico do Modo Arquiteto</Link></Button>
 
       {editing && (
         <div className="mb-6 rounded-xl border border-border bg-card p-5">
