@@ -176,7 +176,8 @@ async function analyzeFile(p: any) {
 
 // Gera áudio (TTS) e guarda no bucket público, devolvendo a URL definitiva.
 async function generateSpeech(p: any) {
-  const apiKey = await resolveVoiceKey(p.agent_id, p.api_key);
+  const customKey = typeof p.api_key === 'string' && p.api_key.trim() ? p.api_key.trim() : null;
+  const apiKey = await resolveVoiceKey(p.agent_id, customKey);
   const body: Record<string, unknown> = {
     model: 'gpt-4o-mini-tts',
     voice: VOICES[p.voice as string] || 'alloy',
@@ -188,14 +189,22 @@ async function generateSpeech(p: any) {
   if (lang && lang !== 'auto' && VOICE_LANG_INSTRUCTIONS[lang]) {
     body.instructions = VOICE_LANG_INSTRUCTIONS[lang];
   }
-  const res = await fetch('https://api.openai.com/v1/audio/speech', {
+  const requestSpeech = (key: string) => fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
+
+  let res = await requestSpeech(apiKey as string);
+  if (!res.ok && customKey && res.status === 401 && OPENAI_KEY() && customKey !== OPENAI_KEY()) {
+    res = await requestSpeech(OPENAI_KEY() as string);
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || 'Erro ao gerar áudio');
+    const message = res.status === 401
+      ? 'A chave de voz configurada não foi aceita. Verifique a chave padrão do sistema.'
+      : err.error?.message || 'Erro ao gerar áudio';
+    throw new Error(message);
   }
   const bytes = new Uint8Array(await res.arrayBuffer());
   const path = `speech/${crypto.randomUUID()}.mp3`;
