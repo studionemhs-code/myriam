@@ -480,6 +480,14 @@ Deno.serve(async (req) => {
     // System prompt
     let systemPrompt = agent.instructions || 'Você é um assistente espiritual útil.';
     if (agent.knowledge_content) systemPrompt += '\n\n--- CONHECIMENTO ---\n' + agent.knowledge_content;
+    // Fontes externas processadas (sites, YouTube, Instagram, áudio)
+    const knowledgeSources = (agent.knowledge_sources || []).filter((s: any) => s.status === 'ready' && s.extracted_content);
+    if (knowledgeSources.length > 0) {
+      const sourcesText = knowledgeSources.map((s: any) =>
+        `[Fonte: ${s.label || s.url} (${s.type})]\n${s.extracted_content}`
+      ).join('\n\n');
+      systemPrompt += '\n\n--- FONTES DE CONHECIMENTO EXTERNAS ---\n' + sourcesText;
+    }
     if (memoryFacts.length > 0) {
       systemPrompt += '\n\n--- O QUE VOCÊ LEMBRA DO USUÁRIO ---\n' + memoryFacts.filter((f) => !/^O usuário se chama\b/i.test(String(f.fact || '').trim())).map((f) => `- ${f.fact}`).join('\n');
     }

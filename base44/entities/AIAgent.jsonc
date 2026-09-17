@@ -30,6 +30,51 @@
       },
       "default": []
     },
+    "knowledge_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "site",
+              "youtube",
+              "instagram",
+              "audio"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "label": {
+            "type": "string"
+          },
+          "extracted_content": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "ready",
+              "error"
+            ],
+            "default": "pending"
+          },
+          "error_message": {
+            "type": "string"
+          },
+          "processed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "default": []
+    },
     "model": {
       "type": "string",
       "enum": [

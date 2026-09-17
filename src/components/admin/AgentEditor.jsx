@@ -3,7 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { Field, inputCls } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
 import AgentVoicePreview from '@/components/admin/AgentVoicePreview';
-import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain, BookHeart, Sparkles, Footprints, Hammer } from 'lucide-react';
+import KnowledgeSourcesEditor from '@/components/admin/KnowledgeSourcesEditor';
+import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain, BookHeart, Sparkles, Footprints, Hammer, BookOpen } from 'lucide-react';
 
 export default function AgentEditor({ agent, onSave, onCancel }) {
   const [form, setForm] = useState({
@@ -15,6 +16,7 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     temperature: agent?.temperature ?? 0.7,
     knowledge_content: agent?.knowledge_content || '',
     knowledge_files: agent?.knowledge_files || [],
+    knowledge_sources: agent?.knowledge_sources || [],
     openai_api_key: agent?.openai_api_key || '',
     is_active: agent?.is_active ?? true,
     admin_only: agent?.admin_only ?? false,
@@ -176,8 +178,8 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
         </Field>
       </div>
 
-      <Field label="Fontes de Conhecimento" hint="Carregue arquivos (PDF, DOC, TXT) ou cole o texto diretamente">
-        <div className="space-y-2">
+      <Field label="Fontes de Conhecimento" hint="Documentos (PDF, DOC, TXT), texto manual e fontes externas (sites, YouTube, Instagram, áudio)">
+        <div className="space-y-3">
           <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm hover:bg-muted">
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             {uploading ? 'Processando arquivo...' : 'Carregar arquivo de conhecimento'}
@@ -194,9 +196,18 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
               ))}
             </div>
           )}
-          <textarea className={inputCls} rows={8} value={form.knowledge_content} onChange={e => set('knowledge_content', e.target.value)} placeholder="Conteúdo de conhecimento do agente (extraído dos arquivos ou digitado manualmente)..." />
+          <textarea className={inputCls} rows={6} value={form.knowledge_content} onChange={e => set('knowledge_content', e.target.value)} placeholder="Conteúdo de conhecimento do agente (extraído dos arquivos ou digitado manualmente)..." />
         </div>
       </Field>
+
+      <div className="rounded-xl border border-border bg-muted/20 p-4">
+        <p className="mb-1 flex items-center gap-2 text-sm font-medium"><BookOpen className="h-4 w-4 text-gold" /> Fontes Externas</p>
+        <p className="mb-3 text-xs text-muted-foreground">Adicione sites, vídeos do YouTube, posts do Instagram ou arquivos de áudio. O conteúdo é extraído automaticamente ao adicionar e usado como conhecimento pelo agente.</p>
+        <KnowledgeSourcesEditor
+          sources={form.knowledge_sources}
+          onChange={(sources) => set('knowledge_sources', sources)}
+        />
+      </div>
 
       {/* Ícone do agente (botão flutuante) */}
       <Field label="Ícone do agente (botão flutuante)" hint="Logo/ícone exibido no botão flutuante. Em branco usa o ícone padrão.">
