@@ -1,4 +1,5 @@
 import { json, preflight, currentUser, admin, notifyUser } from '../_shared/utils.ts';
+import { sendProactiveAgentMessage, buildDailyItinerary } from '../_shared/proactiveAgent.ts';
 
 const computeEaster = (year: number) => {
   const a = year % 19, b = Math.floor(year / 100), c = year % 100;
@@ -121,7 +122,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ ok: true, created });
+    // === Resumo matinal proativo do agente (follow-up) ===
+    // Para cada usuário com opt-in ativo, o agente flutuante envia uma mensagem
+    // personalizada no chat + notificação no sino, com base no itinerário do dia.
+    let proactiveSent = 0;
+    for (const p of profiles || []) {
+      if (p.agent_proactive_enabled === false) continue;
+      const progress = progressByUser[p.id];
+      const itinerary = await buildDailyItinerary(db, p, progress);
+      if (!itinerary) continue;
+      const result = await sendProactiveAgentMessage(db, p.id, itinerary.context, itinerary.title, itinerary.body, itinerary.link);
+      if (result.ok) proactiveSent++;
+    }
+
+    return json({ ok: true, created, proactiveSent });
   } catch (error) {
     return json({ error: (error as Error).message }, 500);
   }

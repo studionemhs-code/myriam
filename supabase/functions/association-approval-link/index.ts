@@ -1,4 +1,5 @@
 import { json, preflight, admin } from '../_shared/utils.ts';
+import { sendProactiveAgentMessage } from '../_shared/proactiveAgent.ts';
 
 // Função pública (sem auth) para a autoridade certificadora.
 Deno.serve(async (req) => {
@@ -75,6 +76,13 @@ Deno.serve(async (req) => {
         body: `Sua inscrição na Associação Maria Rainha dos Corações foi aprovada pela autoridade certificadora. Nº ${inscriptionNumber}.`,
         link: '/associacao'
       });
+
+      // Mensagem proativa do agente celebrando o ingresso na Associação (sujeita ao opt-in mestre)
+      const welcomeContext = `O usuário acaba de ser aprovado na Associação Maria Rainha dos Corações (Nº ${inscriptionNumber}). Celebre o ingresso, explique brevemente que como membro ele pode lucrar indulgências plenárias em datas especiais (Anunciação, São Luís Montfort, Imaculada Conceição, Natal, Quinta-feira Santa e aniversário de ingresso) e convide-o a explorar a área da Associação no app.`;
+      await sendProactiveAgentMessage(db, request.user_id, welcomeContext,
+        'Bem-vindo à Associação Maria Rainha dos Corações',
+        `Sua inscrição foi aprovada (Nº ${inscriptionNumber}). O assistente preparou uma mensagem para você.`,
+        '/associacao');
 
       return json({ ok: true, inscriptionNumber, approvedDate });
     }

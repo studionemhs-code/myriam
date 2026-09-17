@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Bell, ShoppingBag, ChevronRight, Shield, Heart } from 'lucide-react';
+import { Settings, Bell, ShoppingBag, ChevronRight, Shield, Heart, Bot } from 'lucide-react';
 import { PageHeader, GoldDivider, Ornament } from '@/components/ui/marian';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import DeleteAccountSection from '@/components/configuracoes/DeleteAccountSection';
@@ -22,10 +22,14 @@ export default function Configuracoes() {
   const { user, update } = useCurrentUser();
   const [prefs, setPrefs] = useState(Object.fromEntries(PREFS.map((p) => [p.key, true])));
   const [saving, setSaving] = useState(false);
+  const [proactiveEnabled, setProactiveEnabled] = useState(true);
 
   useEffect(() => {
     if (user?.notification_prefs) {
       setPrefs({ ...Object.fromEntries(PREFS.map((p) => [p.key, true])), ...user.notification_prefs });
+    }
+    if (user?.agent_proactive_enabled !== undefined) {
+      setProactiveEnabled(user.agent_proactive_enabled !== false);
     }
   }, [user]);
 
@@ -35,6 +39,15 @@ export default function Configuracoes() {
     setSaving(true);
     try {
       await update({ notification_prefs: newPrefs });
+    } finally { setSaving(false); }
+  };
+
+  const toggleProactive = async () => {
+    const newValue = !proactiveEnabled;
+    setProactiveEnabled(newValue);
+    setSaving(true);
+    try {
+      await update({ agent_proactive_enabled: newValue });
     } finally { setSaving(false); }
   };
 
@@ -58,6 +71,20 @@ export default function Configuracoes() {
           ))}
         </div>
         {saving && <p className="mt-2 text-xs text-muted-foreground">Salvando...</p>}
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-border bg-card p-4">
+        <p className="mb-1 flex items-center gap-2 font-display text-lg"><Bot className="h-4 w-4 text-gold" /> Assistente de IA</p>
+        <p className="mb-3 text-xs text-muted-foreground">O assistente pode iniciar conversas com você para lembrá-lo das orações do Caminho, jornadas ativas e datas especiais da Associação. Você pode desativar quando quiser.</p>
+        <div className="flex items-center justify-between py-2">
+          <span className="text-sm">Permitir que o assistente inicie conversas comigo</span>
+          <button
+            onClick={toggleProactive}
+            className={`relative h-6 w-11 rounded-full transition ${proactiveEnabled ? 'bg-gold' : 'bg-muted'}`}
+          >
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${proactiveEnabled ? 'left-5' : 'left-0.5'}`} />
+          </button>
+        </div>
       </section>
 
       <section className="mt-4 rounded-2xl border border-border bg-card p-4">
