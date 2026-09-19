@@ -35,36 +35,45 @@ function stripInternalImports(code) {
 }
 
 // Inline um import: lê o arquivo shared, stripa exports, stripa imports internos
-function inlineImport(importPath) {
+function inlineImport(importPath, isDefault = false) {
   // importPath ex: '../_shared/utils.ts' → filename: 'utils.ts'
   const filename = path.basename(importPath);
   const code = readShared(filename);
-  return stripExport(stripInternalImports(code));
+  const stripped = stripExport(stripInternalImports(code));
+  // Para default exports, remove "export default " → declaração normal
+  if (isDefault) return stripped.replace(/^export\s+default\s+/m, '');
+  return stripped;
 }
 
-// Processa o código da função: encontra imports de ../_shared/, inlineia, remove a linha de import
+// Processa o código da função: encontra imports de ../_shared/ (named e default), inlineia, remove a linha de import
 function inlineSharedImports(funcCode) {
-  const importRegex = /import\s+\{([^}]+)\}\s+from\s+['"](\.\.\/_shared\/[^'"]+)['"];?\n?/g;
+  // Regex para imports named: import { X, Y } from '../_shared/...'
+  const namedRegex = /import\s+\{([^}]+)\}\s+from\s+['"](\.\.\/_shared\/[^'"]+)['"];?\n?/g;
+  // Regex para imports default: import X from '../_shared/...'
+  const defaultRegex = /import\s+(\w+)\s+from\s+['"](\.\.\/_shared\/[^'"]+)['"];?\n?/g;
+
   const inlinedBlocks = [];
+  const seen = new Set();
   let match;
 
-  // Coleta todos os imports de ../_shared/
-  const imports = [];
-  while ((match = importRegex.exec(funcCode)) !== null) {
-    imports.push({ statement: match[0], path: match[2] });
-  }
-
-  // Inline cada import (deduplicado por filename)
-  const seen = new Set();
-  for (const imp of imports) {
-    const filename = path.basename(imp.path);
+  // Coleta e inlineia imports named
+  while ((match = namedRegex.exec(funcCode)) !== null) {
+    const filename = path.basename(match[2]);
     if (seen.has(filename)) continue;
     seen.add(filename);
-    inlinedBlocks.push(inlineImport(imp.path));
+    inlinedBlocks.push(inlineImport(match[2], false));
+  }
+
+  // Coleta e inlineia imports default
+  while ((match = defaultRegex.exec(funcCode)) !== null) {
+    const filename = path.basename(match[2]);
+    if (seen.has(filename)) continue;
+    seen.add(filename);
+    inlinedBlocks.push(inlineImport(match[2], true));
   }
 
   // Remove as linhas de import do código original
-  const cleanedCode = funcCode.replace(importRegex, '');
+  const cleanedCode = funcCode.replace(namedRegex, '').replace(defaultRegex, '');
 
   // Monta: blocos inlined + código da função
   const combined = inlinedBlocks.join('\n\n') + '\n\n' + cleanedCode;
