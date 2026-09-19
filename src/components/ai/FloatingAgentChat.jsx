@@ -68,7 +68,7 @@ export default function FloatingAgentChat({ agent, onClose, onAssistantReply }) 
           if (error) throw error;
         }
       }
-      setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'assistant', content: reply, audio_url: audioUrl, pending_action: res.data.pending_action || null }]);
+      setMessages(m => [...m.map(item => ({ ...item, pending_action: null })), { role: 'assistant', content: reply, audio_url: audioUrl, pending_action: res.data.pending_action || null, generated_files: res.data.generated_files || null }]);
       if (live && audioUrl) new Audio(audioUrl).play().catch(() => {});
       if (res.data.conversation_id) setConvId(res.data.conversation_id);
       onAssistantReply?.(mountedRef.current);

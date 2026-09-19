@@ -126,7 +126,9 @@
           "get_preparation_day",
           "list_acamf_content",
           "list_prayers",
-          "get_active_journeys"
+          "get_active_journeys",
+          "generate_pdf",
+          "generate_image"
         ]
       },
       "default": []
@@ -180,6 +182,18 @@
         "auto"
       ],
       "default": "pt-BR"
+    },
+    "max_pdfs_per_month": {
+      "type": "integer",
+      "default": 10,
+      "minimum": 0,
+      "description": "Limite mensal de PDFs que usuarios comuns podem gerar por este agente. Admins nao tem limite."
+    },
+    "max_images_per_month": {
+      "type": "integer",
+      "default": 10,
+      "minimum": 0,
+      "description": "Limite mensal de imagens que usuarios comuns podem gerar por este agente. Admins nao tem limite."
     }
   },
   "required": [

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Field, inputCls } from '@/components/admin/ui';
 import { Button } from '@/components/ui/button';
 import AgentVoicePreview from '@/components/admin/AgentVoicePreview';
 import KnowledgeSourcesEditor from '@/components/admin/KnowledgeSourcesEditor';
-import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain, BookHeart, Sparkles, Footprints, Hammer, BookOpen } from 'lucide-react';
+import { Upload, Loader2, X, FileText, Eye, EyeOff, KeyRound, Bot, Calculator, Globe, Database, Brain, BookHeart, Sparkles, Footprints, Hammer, BookOpen, FilePlus, ImagePlus } from 'lucide-react';
+import { supabase } from '@/api/supabase/client';
 
 export default function AgentEditor({ agent, onSave, onCancel }) {
   const [form, setForm] = useState({
@@ -30,12 +31,24 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
     default_voice: agent?.default_voice || 'river',
     voice_language: agent?.voice_language || 'pt-BR',
     message_delay_ms: agent?.message_delay_ms ?? 0,
-    chat_retention_days: Math.max(7, agent?.chat_retention_days ?? 7)
+    chat_retention_days: Math.max(7, agent?.chat_retention_days ?? 7),
+    max_pdfs_per_month: agent?.max_pdfs_per_month ?? 10,
+    max_images_per_month: agent?.max_images_per_month ?? 10
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [usage, setUsage] = useState(null);
+
+  useEffect(() => {
+    if (!agent?.id) { setUsage(null); return; }
+    let active = true;
+    const monthYear = new Date().toISOString().slice(0, 7);
+    supabase.from('agent_file_quotas').select('pdf_count,image_count').eq('agent_id', agent.id).eq('month_year', monthYear)
+      .then(({ data }) => { if (!active) return; setUsage(data || []); });
+    return () => { active = false; };
+  }, [agent?.id]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -301,6 +314,43 @@ export default function AgentEditor({ agent, onSave, onCancel }) {
             onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'get_active_journeys'] : form.tools_enabled.filter(t => t !== 'get_active_journeys'))}
           />
         </div>
+
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Geração de arquivos</p>
+        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <ToolToggle
+            icon={FilePlus}
+            label="Gerar PDF"
+            description="Cria documentos PDF sob demanda"
+            checked={form.tools_enabled.includes('generate_pdf')}
+            onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'generate_pdf'] : form.tools_enabled.filter(t => t !== 'generate_pdf'))}
+          />
+          <ToolToggle
+            icon={ImagePlus}
+            label="Gerar Imagem"
+            description="Cria imagens por IA sob demanda"
+            checked={form.tools_enabled.includes('generate_image')}
+            onChange={(v) => set('tools_enabled', v ? [...form.tools_enabled, 'generate_image'] : form.tools_enabled.filter(t => t !== 'generate_image'))}
+          />
+        </div>
+
+        <div className="mb-4 grid gap-3 sm:grid-cols-2">
+          <Field label="Limite mensal de PDFs (usuários)" hint="Máximo de PDFs que usuários comuns podem gerar por mês. Admins não têm limite.">
+            <input type="number" min="0" step="1" className={inputCls} value={form.max_pdfs_per_month} onChange={e => set('max_pdfs_per_month', Math.max(0, parseInt(e.target.value) || 0))} />
+          </Field>
+          <Field label="Limite mensal de imagens (usuários)" hint="Máximo de imagens que usuários comuns podem gerar por mês. Admins não têm limite.">
+            <input type="number" min="0" step="1" className={inputCls} value={form.max_images_per_month} onChange={e => set('max_images_per_month', Math.max(0, parseInt(e.target.value) || 0))} />
+          </Field>
+        </div>
+
+        {agent?.id && usage && (
+          <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">Uso deste mês (usuários)</p>
+            <p className="mt-1">
+              {usage.reduce((s, r) => s + (r.pdf_count || 0), 0)} PDFs · {usage.reduce((s, r) => s + (r.image_count || 0), 0)} imagens geradas
+              {usage.length > 0 && ` por ${usage.length} usuário(s)`}
+            </p>
+          </div>
+        )}
 
         <div className="mb-4 grid gap-3 sm:grid-cols-2">
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.voice_enabled} onChange={e => set('voice_enabled', e.target.checked)} className="h-4 w-4 rounded border-border" /><span className="text-sm">Entrada e resposta por voz</span></label>

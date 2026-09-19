@@ -2,6 +2,7 @@ import { json, preflight, currentUser, admin } from '../_shared/utils.ts';
 import { accessibleAgent, agentKey, requestAgentOpenAI } from '../_shared/agentAccess.ts';
 import { loadAgentThread, appendAgentMessages } from '../_shared/agentConversation.ts';
 import { agentIdentity } from '../_shared/agentIdentity.ts';
+import { jsPDF } from 'npm:jspdf@4.0.0';
 
 // ============================================================================
 // FERRAMENTAS GERAIS
@@ -305,6 +306,29 @@ const TOOL_DEFS = [
     name: 'get_active_journeys',
     description: 'Lista jornadas coletivas ativas e indica se o usuário participa de alguma. Use para convidar o usuário a participar ou acompanhar seu progresso.',
     parameters: { type: 'object', properties: {}, required: [] }
+  }},
+  { type: 'function', function: {
+    name: 'generate_pdf',
+    description: 'Gera um documento PDF com o conteúdo fornecido e o entrega como anexo clicável na conversa. Use quando o usuário pedir um documento, resumo, relatório, certificado ou qualquer texto formatado em PDF. Forneça o título e o conteúdo completo em texto (use \\n para separar parágrafos e seções).',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Título do documento (ex: "Resumo da Minha Jornada Espiritual")' },
+        content: { type: 'string', description: 'Conteúdo completo do documento em texto puro. Use quebras de linha (\\n) para separar parágrafos e seções.' }
+      },
+      required: ['title', 'content']
+    }
+  }},
+  { type: 'function', function: {
+    name: 'generate_image',
+    description: 'Gera uma imagem usando IA a partir de um prompt descritivo e a entrega como anexo clicável na conversa. Use quando o usuário pedir uma ilustração, imagem, arte ou visualização. Descreva a imagem em detalhes.',
+    parameters: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', description: 'Descrição detalhada da imagem a ser gerada (ex: "Nossa Senhora com manto azul, estilo pintura clássica, luz dourada")' }
+      },
+      required: ['prompt']
+    }
   }}
 ];
 
@@ -381,6 +405,143 @@ function extractFacts(message: string): string[] {
   if (lower.includes('estou em preparação') || lower.includes('estou me preparando')) facts.push('O usuário está em preparação');
   if (lower.match(/minha consagração.*\d{1,2}\/\d{1,2}/)) facts.push('O usuário mencionou uma data de consagração');
   return facts;
+}
+
+// ============================================================================
+// GERAÇÃO DE ARQUIVOS (PDF E IMAGEM)
+// ============================================================================
+
+function generatePdfBytes(title: string, content: string): Uint8Array {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 50;
+  const maxWidth = pageWidth - margin * 2;
+
+  // Cabeçalho com cor mariana
+  doc.setFillColor(75, 37, 109);
+  doc.rect(0, 0, pageWidth, 70, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text(String(title || 'Documento').slice(0, 80), margin, 45);
+
+  // Corpo
+  doc.setTextColor(45, 45, 45);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+
+  let y = 95;
+  const paragraphs = String(content || '').split('\n');
+  for (const para of paragraphs) {
+    if (!para.trim()) { y += 8; continue; }
+    const lines = doc.splitTextToSize(para, maxWidth);
+    for (const line of lines) {
+      if (y > pageHeight - 50) { doc.addPage(); y = margin; }
+      doc.text(line, margin, y);
+      y += 15;
+    }
+  }
+
+  // Rodapé
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(160, 160, 160);
+    doc.text('Myriam — Comunidade Mariana', margin, pageHeight - 25);
+    doc.text(`${i}/${pageCount}`, pageWidth - margin - 30, pageHeight - 25);
+  }
+
+  return new Uint8Array(doc.output('arraybuffer'));
+}
+
+async function generateImageBytes(prompt: string, apiKey: string): Promise<{ bytes: Uint8Array; mime: string }> {
+  const res = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'dall-e-3', prompt, n: 1, size: '1024x1024' })
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(detail?.error?.message || 'Falha ao gerar imagem');
+  }
+  const data = await res.json();
+  const imageUrl = data.data?.[0]?.url;
+  if (!imageUrl) throw new Error('A API não retornou uma imagem.');
+  const imgRes = await fetch(imageUrl);
+  if (!imgRes.ok) throw new Error('Falha ao baixar imagem gerada');
+  const bytes = new Uint8Array(await imgRes.arrayBuffer());
+  return { bytes, mime: 'image/png' };
+}
+
+async function uploadFileBytes(db: any, bytes: Uint8Array, mime: string, ext: string): Promise<string> {
+  const path = `agent-files/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await db.storage.from('uploads').upload(path, bytes, { contentType: mime, upsert: false });
+  if (error) throw new Error(`Erro ao enviar arquivo: ${error.message}`);
+  const { data } = db.storage.from('uploads').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function monthYearNow(): string {
+  return new Date().toISOString().slice(0, 7);
+}
+
+async function checkQuota(db: any, userId: string, agentId: string, type: 'pdf' | 'image', max: number): Promise<{ ok: boolean; message?: string }> {
+  const { data } = await db.from('agent_file_quotas')
+    .select('*').eq('user_id', userId).eq('agent_id', agentId).eq('month_year', monthYearNow()).maybeSingle();
+  const current = data?.[type === 'pdf' ? 'pdf_count' : 'image_count'] || 0;
+  if (current >= max) {
+    return { ok: false, message: `Você atingiu o limite mensal de ${max} ${type === 'pdf' ? 'PDFs' : 'imagens'} gerados por este agente. O limite será renovado no próximo mês.` };
+  }
+  return { ok: true };
+}
+
+async function incrementQuota(db: any, userId: string, agentId: string, type: 'pdf' | 'image'): Promise<void> {
+  const my = monthYearNow();
+  const countField = type === 'pdf' ? 'pdf_count' : 'image_count';
+  const { data } = await db.from('agent_file_quotas')
+    .select('*').eq('user_id', userId).eq('agent_id', agentId).eq('month_year', my).maybeSingle();
+  if (data) {
+    await db.from('agent_file_quotas').update({ [countField]: (data[countField] || 0) + 1, updated_at: new Date().toISOString() }).eq('id', data.id);
+  } else {
+    await db.from('agent_file_quotas').insert({
+      user_id: userId, agent_id: agentId, month_year: my,
+      pdf_count: type === 'pdf' ? 1 : 0, image_count: type === 'image' ? 1 : 0
+    });
+  }
+}
+
+function sanitizeFileName(title: string): string {
+  return (title || 'documento').replace(/[^\w\s-]/g, '').trim().slice(0, 40) || 'documento';
+}
+
+async function handleFileGeneration(
+  type: 'pdf' | 'image', args: any, agent: any, user: any, apiKey: string, db: any
+): Promise<{ result: string; file?: any }> {
+  const isAdmin = user.role === 'admin';
+  const max = type === 'pdf' ? (agent.max_pdfs_per_month ?? 10) : (agent.max_images_per_month ?? 10);
+  if (!isAdmin) {
+    const q = await checkQuota(db, user.id, agent.id, type, max);
+    if (!q.ok) return { result: q.message! };
+  }
+  try {
+    if (type === 'pdf') {
+      const bytes = generatePdfBytes(args.title, args.content);
+      const url = await uploadFileBytes(db, bytes, 'application/pdf', 'pdf');
+      if (!isAdmin) await incrementQuota(db, user.id, agent.id, 'pdf');
+      const fileName = `${sanitizeFileName(args.title)}.pdf`;
+      return { result: `PDF gerado com sucesso: ${fileName}. O arquivo foi anexado a esta mensagem.`, file: { url, name: fileName, type: 'pdf', mime_type: 'application/pdf' } };
+    } else {
+      const { bytes, mime } = await generateImageBytes(args.prompt, apiKey);
+      const url = await uploadFileBytes(db, bytes, mime, 'png');
+      if (!isAdmin) await incrementQuota(db, user.id, agent.id, 'image');
+      const fileName = `imagem-${Date.now()}.png`;
+      return { result: `Imagem gerada com sucesso. O arquivo foi anexado a esta mensagem.`, file: { url, name: fileName, type: 'image', mime_type: mime } };
+    }
+  } catch (e) {
+    return { result: `Erro ao gerar ${type === 'pdf' ? 'PDF' : 'imagem'}: ${(e as Error).message}` };
+  }
 }
 
 // ============================================================================
@@ -512,6 +673,7 @@ Deno.serve(async (req) => {
     const messages: any[] = [{ role: 'system', content: systemPrompt }, ...history, { role: 'user', content: message }];
     let assistantMessage = '';
     let usedTools = false;
+    const generatedFiles: any[] = [];
 
     for (let iter = 0; iter < 6; iter++) {
       const body: any = { model, messages };
@@ -537,6 +699,11 @@ Deno.serve(async (req) => {
             else if (tc.function.name === 'list_acamf_content') result = await listAcamfContent(args.category ?? null, args.limit ?? 6, db);
             else if (tc.function.name === 'list_prayers') result = await listPrayers(args.category ?? null, db);
             else if (tc.function.name === 'get_active_journeys') result = await getActiveJourneys(db, user.id);
+            else if (tc.function.name === 'generate_pdf' || tc.function.name === 'generate_image') {
+              const gen = await handleFileGeneration(tc.function.name === 'generate_pdf' ? 'pdf' : 'image', args, agent, user, apiKey, db);
+              result = gen.result;
+              if (gen.file) generatedFiles.push(gen.file);
+            }
             else if (tc.function.name === 'architect_crud' && args.operation === 'list') result = await architectCrud(args.table, args.operation, args.data, args.filter, args.id, db);
             else if (['architect_crud', 'architect_invite_user', 'architect_broadcast_notification', 'architect_github'].includes(tc.function.name)) {
               if (pendingAction) {
@@ -574,7 +741,8 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const userMsg = { id: crypto.randomUUID(), role: 'user', content: message, timestamp: now,
       ...(attachment && agent.files_enabled !== false ? { file_name: String(attachment.file_name || '').slice(0, 255), file_uri: String(attachment.file_uri || '').slice(0, 2048), mime_type: String(attachment.mime_type || '').slice(0, 100) } : {}) };
-    const assistantMsg = { id: crypto.randomUUID(), role: 'assistant', content: assistantMessage, timestamp: now };
+    const assistantMsg = { id: crypto.randomUUID(), role: 'assistant', content: assistantMessage, timestamp: now,
+      ...(generatedFiles.length > 0 ? { generated_files: generatedFiles } : {}) };
     await appendAgentMessages(db, conversation.id, user.id, [userMsg, assistantMsg], pendingAction);
 
     return json({
@@ -582,6 +750,7 @@ Deno.serve(async (req) => {
       assistant_message_id: assistantMsg.id,
       conversation_id: conversation.id,
       used_tools: usedTools,
+      generated_files: generatedFiles.length > 0 ? generatedFiles : undefined,
       pending_action: pendingAction ? { summary: pendingAction.summary, requested_at: pendingAction.requested_at } : null
     });
   } catch (error) {
