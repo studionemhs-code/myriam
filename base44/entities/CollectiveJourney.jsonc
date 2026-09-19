@@ -58,20 +58,30 @@
           "description": {
             "type": "string"
           },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Data espec\u00edfica do calend\u00e1rio \u00e0 qual esta etapa est\u00e1 vinculada"
+          },
           "content_source": {
             "type": "string",
             "enum": [
               "none",
               "acamf",
+              "prayer",
               "journey_library",
               "inline"
             ],
             "default": "none",
-            "description": "Origem do conte\u00fado da etapa: ACAMF, biblioteca de jornada, ou conte\u00fado inline pr\u00f3prio"
+            "description": "Origem do conte\u00fado da etapa: ACAMF, ora\u00e7\u00e3o, biblioteca de jornada, ou conte\u00fado inline pr\u00f3prio"
           },
           "content_id": {
             "type": "string",
             "description": "ID do conte\u00fado ACAMF vinculado (quando content_source = 'acamf')"
+          },
+          "prayer_id": {
+            "type": "string",
+            "description": "ID da ora\u00e7\u00e3o vinculada (quando content_source = 'prayer')"
           },
           "journey_content_id": {
             "type": "string",
@@ -119,7 +129,7 @@
         }
       },
       "default": [],
-      "description": "Etapas gamificadas da jornada, cada uma podendo ter conte\u00fado vinculado"
+      "description": "Etapas gamificadas da jornada, cada uma vinculada a uma data do calend\u00e1rio e podendo ter conte\u00fado associado"
     },
     "content_ids": {
       "type": "array",

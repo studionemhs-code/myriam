@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Check, Lock, BookOpen, FileText, Music, Video, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, Check, Lock, BookOpen, FileText, Music, Video, Image as ImageIcon, Hand } from 'lucide-react';
 
 const typeIcons = { texto: FileText, pdf: FileText, audio: Music, video: Video, imagem: ImageIcon };
 
@@ -18,6 +18,20 @@ function StepContent({ content }) {
         </div>
         <ChevronLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
       </Link>
+    );
+  }
+
+  if (type === 'prayer') {
+    return (
+      <div className="rounded-xl border border-border bg-muted/20 p-4">
+        {data.cover_url && <img src={data.cover_url} alt="" className="mb-3 h-32 w-full rounded-lg object-cover" />}
+        <div className="mb-2 flex items-center gap-2">
+          <Hand className="h-4 w-4 text-gold" />
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Oração</p>
+        </div>
+        {data.content && <div className="rich-text text-sm" dangerouslySetInnerHTML={{ __html: data.content }} />}
+        {data.audio_url && <audio controls src={data.audio_url} className="mt-3 w-full" />}
+      </div>
     );
   }
 

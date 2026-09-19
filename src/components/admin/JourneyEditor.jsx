@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Loader2, Bell, Target, BookOpen, PenLine } from 'lucid
 import { base44 } from '@/api/base44Client';
 import { Field, inputCls } from '@/components/admin/ui';
 import JourneyContentManager from '@/components/admin/JourneyContentManager';
+import JourneyCalendar from '@/components/admin/journey-calendar/JourneyCalendar';
 
 const statusLabels = { rascunho: 'Rascunho', ativa: 'Ativa', pausada: 'Pausada', encerrada: 'Encerrada' };
 
@@ -24,18 +25,21 @@ export default function JourneyEditor({ journey, onClose, onSave }) {
   });
   const [contents, setContents] = useState([]);
   const [journeyLib, setJourneyLib] = useState([]);
+  const [prayers, setPrayers] = useState([]);
   const [loadingContents, setLoadingContents] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [acamf, lib] = await Promise.all([
+        const [acamf, lib, prs] = await Promise.all([
           base44.entities.ACAMFContent.filter({ status: 'publicado' }, '-published_date', 100),
-          base44.entities.JourneyContent.list('-created_date', 200)
+          base44.entities.JourneyContent.list('-created_date', 200),
+          base44.entities.Prayer.filter({ is_published: true }, 'sort_order', 200)
         ]);
         setContents(acamf);
         setJourneyLib(lib);
+        setPrayers(prs);
       } catch (e) { /* ignore */ }
       setLoadingContents(false);
     })();
@@ -66,7 +70,7 @@ export default function JourneyEditor({ journey, onClose, onSave }) {
       const payload = {
         ...form,
         notices: (form.notices || []).filter((n) => n.text && n.text.trim()),
-        steps: (form.steps || []).filter((s) => s.title && s.title.trim())
+        steps: (form.steps || []).filter((s) => s.title && s.title.trim()).sort((a, b) => (a.date || '').localeCompare(b.date || ''))
       };
       await onSave(payload);
     } finally {
@@ -119,70 +123,16 @@ export default function JourneyEditor({ journey, onClose, onSave }) {
           </div>
         </div>
 
-        {/* Etapas (gamificação) com conteúdos */}
+        {/* Calendário visual de etapas */}
         <div className="mt-6">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 font-display text-base"><Target className="h-4 w-4 text-gold" /> Etapas da jornada</h3>
-            <button onClick={addStep} className="flex items-center gap-1 text-sm text-primary"><Plus className="h-4 w-4" /> Adicionar etapa</button>
-          </div>
-          <p className="mb-2 text-xs text-muted-foreground">Cada etapa pode ter um conteúdo vinculado: da ACAMF, da biblioteca de jornada, ou criado inline.</p>
-          <div className="space-y-3">
-            {(form.steps || []).map((s, i) => (
-              <div key={i} className="rounded-xl border border-border p-3">
-                <div className="flex gap-2">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">{i + 1}</div>
-                  <div className="flex-1 space-y-2">
-                    <input className={inputCls} placeholder="Título da etapa" value={s.title || ''} onChange={(e) => updateStep(i, 'title', e.target.value)} />
-                    <input className={inputCls} placeholder="Descrição (opcional)" value={s.description || ''} onChange={(e) => updateStep(i, 'description', e.target.value)} />
-                  </div>
-                  <button onClick={() => removeStep(i)} className="shrink-0 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
-                </div>
-                {/* Seletor de conteúdo da etapa */}
-                <div className="mt-2 space-y-2 pl-9">
-                  <Field label="Conteúdo da etapa">
-                    <select className={inputCls} value={s.content_source || 'none'} onChange={(e) => updateStep(i, 'content_source', e.target.value)}>
-                      {Object.entries(sourceLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                  </Field>
-                  {s.content_source === 'acamf' && (
-                    <select className={inputCls} value={s.content_id || ''} onChange={(e) => updateStep(i, 'content_id', e.target.value)}>
-                      <option value="">— Selecione um conteúdo ACAMF —</option>
-                      {contents.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-                    </select>
-                  )}
-                  {s.content_source === 'journey_library' && (
-                    <select className={inputCls} value={s.journey_content_id || ''} onChange={(e) => updateStep(i, 'journey_content_id', e.target.value)}>
-                      <option value="">— Selecione um conteúdo da biblioteca —</option>
-                      {journeyLib.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-                    </select>
-                  )}
-                  {s.content_source === 'inline' && (
-                    <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
-                      <input className={inputCls} placeholder="Título do conteúdo" value={s.content_data?.title || ''} onChange={(e) => updateStep(i, 'content_data', { ...s.content_data, title: e.target.value })} />
-                      <select className={inputCls} value={s.content_data?.content_type || 'texto'} onChange={(e) => updateStep(i, 'content_data', { ...s.content_data, content_type: e.target.value })}>
-                        <option value="texto">Texto</option>
-                        <option value="pdf">PDF</option>
-                        <option value="audio">Áudio</option>
-                        <option value="video">Vídeo (YouTube)</option>
-                        <option value="imagem">Imagem</option>
-                      </select>
-                      <textarea className={inputCls} rows={3} placeholder="Conteúdo (rich text / HTML)" value={s.content_data?.content || ''} onChange={(e) => updateStep(i, 'content_data', { ...s.content_data, content: e.target.value })} />
-                      <input className={inputCls} placeholder="URL do arquivo (PDF, áudio, imagem)" value={s.content_data?.file_url || s.content_data?.audio_url || ''} onChange={(e) => {
-                        const ct = s.content_data?.content_type;
-                        const key = ct === 'audio' ? 'audio_url' : 'file_url';
-                        updateStep(i, 'content_data', { ...s.content_data, [key]: e.target.value });
-                      }} />
-                      {s.content_data?.content_type === 'video' && (
-                        <input className={inputCls} placeholder="ID do YouTube" value={s.content_data?.youtube_id || ''} onChange={(e) => updateStep(i, 'content_data', { ...s.content_data, youtube_id: e.target.value })} />
-                      )}
-                      <input className={inputCls} placeholder="URL da capa (opcional)" value={s.content_data?.cover_url || ''} onChange={(e) => updateStep(i, 'content_data', { ...s.content_data, cover_url: e.target.value })} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-            {(form.steps || []).length === 0 && <p className="text-xs text-muted-foreground">Nenhuma etapa adicionada.</p>}
-          </div>
+          <JourneyCalendar
+            form={form}
+            set={set}
+            contents={contents}
+            prayers={prayers}
+            journeyLib={journeyLib}
+            loadingContents={loadingContents}
+          />
         </div>
 
         {/* Avisos */}

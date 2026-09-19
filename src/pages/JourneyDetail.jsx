@@ -17,6 +17,7 @@ export default function JourneyDetail() {
   const [journey, setJourney] = useState(null);
   const [acamfContents, setAcamfContents] = useState([]);
   const [journeyLibraryContents, setJourneyLibraryContents] = useState([]);
+  const [prayerContents, setPrayerContents] = useState([]);
   const [participant, setParticipant] = useState(null);
   const [participantCount, setParticipantCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -45,6 +46,13 @@ export default function JourneyDetail() {
       if (libIds.size > 0) {
         const allLib = await base44.entities.JourneyContent.list('-created_date', 200);
         setJourneyLibraryContents(allLib.filter((c) => libIds.has(c.id)));
+      }
+
+      // Carrega orações referenciadas nas etapas
+      const prayerIds = new Set((j?.steps || []).filter((s) => s.content_source === 'prayer' && s.prayer_id).map((s) => s.prayer_id));
+      if (prayerIds.size > 0) {
+        const allPrayers = await base44.entities.Prayer.list('sort_order', 200);
+        setPrayerContents(allPrayers.filter((p) => prayerIds.has(p.id)));
       }
 
       const parts = await base44.entities.JourneyParticipant.filter({ journey_id: id });
@@ -135,7 +143,7 @@ export default function JourneyDetail() {
     return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
   }
 
-  const steps = journey.steps || [];
+  const steps = [...(journey.steps || [])].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   const completedSteps = participant?.completed_steps || [];
   const allDone = steps.length > 0 && completedSteps.length === steps.length;
   const isRenewal = journey.journey_type === 'renovacao';
@@ -149,6 +157,9 @@ export default function JourneyDetail() {
     }
     if (step.content_source === 'journey_library' && step.journey_content_id) {
       return { type: 'journey_library', data: journeyLibraryContents.find((c) => c.id === step.journey_content_id) };
+    }
+    if (step.content_source === 'prayer' && step.prayer_id) {
+      return { type: 'prayer', data: prayerContents.find((p) => p.id === step.prayer_id) };
     }
     if (step.content_source === 'inline' && step.content_data) {
       return { type: 'inline', data: step.content_data };
